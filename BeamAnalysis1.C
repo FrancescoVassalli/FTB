@@ -171,7 +171,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	maintree->SetBranchAddress("peak",&mypeak);
 	maintree->SetBranchAddress("pedestal",&mypedestal);
 	maintree->SetBranchAddress("runnumber",&runnumber);
-	TH1F* ht = new TH1F("temp","",250,0,10000);
+	TH1F* ht = new TH1F("temp","",250,200,10000);
 	queue<float> veto[4];
 	queue<float> hHodo[8];
 	queue<float> vHodo[8];
@@ -180,11 +180,10 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	float tempglass;
 	for (Long64_t i = 0; i < LENGTH; ++i)
 	{
-		//cout<<"here"<<'\n';
 		maintree->GetEntry(i);
 		DiffADC myPs(&mypeak[0],&mypedestal[0]);
-		/* get the veto */
-		for (int j = 0; j < VETOSIZE; ++j)
+		/* get the veto only use this segment if you need to know more than the PbGl */
+		/*for (int j = 0; j < VETOSIZE; ++j)
 		{
 			veto[j].push(myPs.getVeto(j));
 		}
@@ -195,12 +194,11 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 		}
 		cerenkov.push(myPs.getCerenkov());
 		tempglass = myPs.getGoodPbGl();
-		//cout<<"there"<<'\n';
+		*/
 		if(tempglass>0){
 			goodPbGl.push(tempglass);
 			ht->Fill(tempglass);
 		}
-		//cout<<tempglass<<'\n';
 	}
 	ht->Sumw2();
 	TCanvas *tc = new TCanvas();
@@ -208,13 +206,18 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	TLegend *tl = new TLegend(.15,.7,.4,.85);
 	tl->AddEntry(ht,"PbGl 8 Gev Beam","l");
 
-
 	makeNiceHist(ht);
 	axisTitles(ht,"#Delta ADC","Count");
 	axisTitleSize(ht,.03);
 	axisLabelSize(ht,.03);
 	smallBorders();
-	TF1* gaus = new TF1("gaus","gaus",200,10000);
+
+	int maxbin = ht->GetMaximumBin();
+	float gausLowBound = ht->GetBinLowEdge(maxbin);
+	float temp = gausLowBound*.7;
+	float gausUpbound = gausLowBound +temp;
+	gausLowBound -= temp; 
+	TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
 
 	gaus->SetLineColor(kRed);
 	ht->Fit(gaus,"R");       //“R” Use the range specified in the function range
