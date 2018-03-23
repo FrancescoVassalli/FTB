@@ -184,8 +184,8 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 		DiffADC myPs(&mypeak[0],&mypedestal[0]);
 		/* get the veto only use this segment if you need to know more than the PbGl 
 		From CHASE - For some reason the code would not run with this commented out */
-
-		for (int j = 0; j < VETOSIZE; ++j)
+		/*It should work if it is commented from HERE:  */
+		/*for (int j = 0; j < VETOSIZE; ++j)
 		{
 			veto[j].push(myPs.getVeto(j));
 		}
@@ -194,7 +194,9 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 			hHodo[j].push(myPs.gethHodo(j));
 			vHodo[j].push(myPs.getvHodo(j));
 		}
-		cerenkov.push(myPs.getCerenkov());
+		cerenkov.push(myPs.getCerenkov()); */
+		/* To HERE: the tempglass = myPs.getGoodPbGl(); is need*/
+
 		tempglass = myPs.getGoodPbGl();
 		
 		if(tempglass>0){
