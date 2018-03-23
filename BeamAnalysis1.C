@@ -107,6 +107,7 @@ void recursiveGaus(TH1F* h, TF1* gaus, float* data, int lazyMan){
 
 ///////////Franceso's class to pull the appropriate data from the tree (what a champ) //////////////////////////
 /* these are chase's chagnes */
+/* fran chagnes */
 class DiffADC
 {
 public:
