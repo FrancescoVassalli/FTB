@@ -106,8 +106,6 @@ void recursiveGaus(TH1F* h, TF1* gaus, float* data, int lazyMan){
 }
 
 ///////////Franceso's class to pull the appropriate data from the tree (what a champ) //////////////////////////
-/* these are chase's chagnes */
-/* fran chagnes */
 class DiffADC
 {
 public:
@@ -173,7 +171,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	maintree->SetBranchAddress("peak",&mypeak);
 	maintree->SetBranchAddress("pedestal",&mypedestal);
 	maintree->SetBranchAddress("runnumber",&runnumber);
-	TH1F* ht = new TH1F("temp","",250,200,10000);
+	TH1F* ht = new TH1F("temp","",500,200,10000);
 	queue<float> veto[4];
 	queue<float> hHodo[8];
 	queue<float> vHodo[8];
@@ -184,8 +182,10 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	{
 		maintree->GetEntry(i);
 		DiffADC myPs(&mypeak[0],&mypedestal[0]);
-		/* get the veto only use this segment if you need to know more than the PbGl */
-		/*for (int j = 0; j < VETOSIZE; ++j)
+		/* get the veto only use this segment if you need to know more than the PbGl 
+		From CHASE - For some reason the code would not run with this commented out */
+
+		for (int j = 0; j < VETOSIZE; ++j)
 		{
 			veto[j].push(myPs.getVeto(j));
 		}
@@ -196,7 +196,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 		}
 		cerenkov.push(myPs.getCerenkov());
 		tempglass = myPs.getGoodPbGl();
-		*/
+		
 		if(tempglass>0){
 			goodPbGl.push(tempglass);
 			ht->Fill(tempglass);
@@ -230,8 +230,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	int lazyMan = 0;
 	recursiveGaus(ht, gaus, mygaus, lazyMan);
 
-	ht->GetXaxis()->SetRangeUser(mygaus[0]-(5*mygaus[1]),mygaus[0]+5*mygaus[1]);
-	//ht->GetXaxis()->SetRangeUser(0,10000);
+	ht->GetXaxis()->SetRangeUser(mygaus[0]-(5*mygaus[1]),mygaus[0]+5*mygaus[1]);\
 
 	tl->AddEntry((TObject*)0,Form("Mean: %0.2f", mygaus[0]),"l");
 	tl->AddEntry((TObject*)0,Form("Sigma: %0.2f", mygaus[1]),"l");
