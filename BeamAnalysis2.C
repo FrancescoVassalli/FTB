@@ -1,0 +1,42 @@
+
+
+using namespace std;
+
+int BeamAnalysis2(){
+	const int nMeanBins = 5;
+	float meanBins[nMeanBins+1] = {0,2,4,6,8,12};
+	float adc12[nMeanBins] = {1392,2830,4145,5445,7517};
+	float sigma[nMeanBins] = {87,123,149,172,194};
+	TCanvas *canvas1 = new TCanvas();
+	TH1F* mean = new TH1F("mean","",nMeanBins,meanBins);
+	for (int i = 1; i <= nMeanBins; ++i)
+	{
+		meanBins->SetBinContent(i,adc12[i-1]);
+		meanBins->SetBinError(i,sigma[i-1]);
+	}
+	TF1* lin = new TF1("lin","[1]*x+[0]",0,12);
+	TF1* poly = new TF1("poly","[2]*x*x+[1]*x+[0]",0,12);
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
+	mean->Fit(poly);
+	float nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
+	float nonLinearError = poly-GetParError(2);
+	mean->Fit(lin);
+	float chi = lin->GetChisquare();
+	ht->Draw("p");
+	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
+	myText(.43,.27,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
+
+	TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
+	for (int i = 1; i <= nMeanBins; ++i)
+	{
+		ehist->SetBinContent(i,adc12[i-1]/sigma[i-1]);
+	}
+	ehist->Fit(eF);
+	float eA = eF->GetParameter(0);
+	float eB = eF->GetParameter(1);
+	TCanvas *canvas2= new TCanvas();
+	ehist->Draw();
+	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
+	myText(.43,.27,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
+
+}
