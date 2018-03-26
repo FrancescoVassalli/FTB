@@ -36,7 +36,7 @@ void BeamAnalysis2(){
 	myText(.43,.19,kRed,Form("#Chi^2/NDF: %0.2f",chi/ndf),.05);
 	myText(.43,.34,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
 	myText(.43,.29,kRed,Form("C2/C1: %0.4f",nonLinearFactor),.05);
-	/*TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
+	TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
 	for (int i = 1; i <= nMeanBins; ++i)
 	{
 		ehist->SetBinContent(i,sigma[i-1]/adc12[i-1]);
@@ -46,10 +46,15 @@ void BeamAnalysis2(){
 	ehist->Fit(eF);
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
+	float errors[2];
+	errors[0] = eF->GetParError(0);
+	errors[1] = eF->GetParError(1);
 	ehist->Draw("p");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	chi = eF->GetChisquare();
-	myText(.5,.4,kRed,Form("Chi: %0.2f",chi),.05);
-	myText(.5,.45,kRed,Form("Stochastic: %0.2f Constant: %0.2f",eA,eB),.05);
-*/
+	ndf = eF->GetNDF();
+	myText(.3,.75,kRed,Form("#Chi^2:%0.2f NDF:%i",chi,ndf),.05);
+	myText(.3,.7,kRed,Form("#Chi^2/NDF:%0.2f",chi/ndf),.05);
+	myText(.3,.8,kRed,Form("Stochastic: %0.2f#pm%0.3f Constant: %0.2f#pm%0.3f",eA,errors[0],eB,errors[1]),.05);
+
 }
