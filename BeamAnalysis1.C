@@ -272,9 +272,9 @@ void BeamAnalysis1()
 	const unsigned int SIZE = someRuns.size();
 
 	float mygaus2[3]; //temp array to contain sigma and mean
-	int whichRuns[SIZE-1]; //array of run rumbers
-	float allmeans[SIZE-1]; //array of means
-	float allsigma[SIZE-1]; //array of sigma 
+	int whichRuns[SIZE]; //array of run rumbers
+	float allmeans[SIZE]; //array of means
+	float allsigma[SIZE]; //array of sigma 
 	int looptemp=0;
 	while(!someRuns.empty())
 	{
@@ -296,19 +296,19 @@ void BeamAnalysis1()
 		cout<<"File Opened!"<<endl;
 
 		outFile << "RunNumber";
-		for(int i = 1; i < SIZE; i++) //enter all run numbers into txt file
+		for(int i = 0; i < SIZE; i++) //enter all run numbers into txt file
 		{
 			outFile << ","<< whichRuns[i];
 		}
 		outFile << "\n";
 		outFile << "Mean";
-		for(int i = 1; i < SIZE; i++) //enter all mean values into txt file
+		for(int i = 0; i < SIZE; i++) //enter all mean values into txt file
 		{
 			outFile << ","<< allmeans[i];
 		}
 		outFile << "\n";
 		outFile << "Sigma";
-		for(int i = 1; i < SIZE; i++) //enter all signma values into txt file
+		for(int i = 0; i < SIZE; i++) //enter all signma values into txt file
 		{
 			outFile << ","<< allsigma[i];
 		}
