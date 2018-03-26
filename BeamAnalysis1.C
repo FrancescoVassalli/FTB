@@ -20,6 +20,7 @@ using namespace std;
 
 
 /////////////////////Franceso's included functions (for asthetic) //////////////////////////////////////////////
+namespace fhist{
 short colors[7]={kRed,kBlue,kGreen+2,kMagenta+3,kOrange+4,kCyan+1,kMagenta-7};
 short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar,kOpenFourTrianglesX};
 void makeBins(float* bins, int min, int nBins, float width){
@@ -74,6 +75,8 @@ void axisLabelSize(TH1F* h,float s){
 	h->GetYaxis()->SetLabelSize(s);
 	h->GetXaxis()->SetLabelSize(s);
 }
+}
+namespace atlasStyle{
 void myMarkerText(Double_t x,Double_t y,Int_t color,Int_t mstyle, const char *text,Float_t msize,Double_t tsize)
 {
 	//  Double_t tsize=0.032;
@@ -86,6 +89,7 @@ void myMarkerText(Double_t x,Double_t y,Int_t color,Int_t mstyle, const char *te
 	TLatex l; l.SetTextAlign(12); l.SetTextSize(tsize);
 	l.SetNDC();
 	l.DrawLatex(x,y,text);
+}
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -252,33 +256,37 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 /////////////////////Implementing BeamAnalysis on an arbitrary number of root files///////////////////////////
 void BeamAnalysis1()
 {
-	int runcount = 6;
 	int counter = 0;
 	ifstream inFile ("PbGl_Runs.txt"); //txt file containing the beam files
 
-	string someRuns[runcount];
+	string intemp;
+	queue<std::string> someRuns;
 
-	while(inFile>>someRuns[counter])
+	while(inFile>>intemp)
 	{
-		cout<<"Run: "<<someRuns[counter]<<endl;
+		someRuns.push(intemp);
+		cout<<"Run: "<<intemp<<endl;
 		counter++;
 	}
 	inFile.close();
+	const unsigned int SIZE = someRuns.size();
 
 	float mygaus2[3]; //temp array to contain sigma and mean
-	int whichRuns[runcount-1]; //array of run rumbers
-	float allmeans[runcount-1]; //array of means
-	float allsigma[runcount-1]; //array of sigma 
-
-	for(int i = 1; i < runcount; i++)
+	int whichRuns[SIZE-1]; //array of run rumbers
+	float allmeans[SIZE-1]; //array of means
+	float allsigma[SIZE-1]; //array of sigma 
+	int looptemp=0;
+	while(!someRuns.empty())
 	{
-		TFile *input = new TFile(someRuns[i].c_str()); //read in tree so it can be passed to BeamAnalysis1
+		TFile *input = new TFile(someRuns.front().c_str()); //read in tree so it can be passed to BeamAnalysis1
+		someRuns.pop();
 		TTree *maintree = (TTree*) input->Get("W");
 
 		BeamAnalysis(maintree, mygaus2); //BeamAnalysis modifies array to contain run number, mean, and sigma
-		allmeans[i] = mygaus2[0];
-		allsigma[i] = mygaus2[1];
-		whichRuns[i] = mygaus2[2];
+		allmeans[looptemp] = mygaus2[0];
+		allsigma[looptemp] = mygaus2[1];
+		whichRuns[looptemp] = mygaus2[2];
+		looptemp++;
 	}
 
 	ofstream outFile;
@@ -288,19 +296,19 @@ void BeamAnalysis1()
 		cout<<"File Opened!"<<endl;
 
 		outFile << "RunNumber";
-		for(int i = 1; i < runcount; i++) //enter all run numbers into txt file
+		for(int i = 1; i < SIZE; i++) //enter all run numbers into txt file
 		{
 			outFile << ","<< whichRuns[i];
 		}
 		outFile << "\n";
 		outFile << "Mean";
-		for(int i = 1; i < runcount; i++) //enter all mean values into txt file
+		for(int i = 1; i < SIZE; i++) //enter all mean values into txt file
 		{
 			outFile << ","<< allmeans[i];
 		}
 		outFile << "\n";
 		outFile << "Sigma";
-		for(int i = 1; i < runcount; i++) //enter all signma values into txt file
+		for(int i = 1; i < SIZE; i++) //enter all signma values into txt file
 		{
 			outFile << ","<< allsigma[i];
 		}
