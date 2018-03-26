@@ -12,8 +12,6 @@ void BeamAnalysis2(){
 	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[1]*x+[0]",0,12);
 	TF1* poly = new TF1("poly","[2]*x*x+[1]*x+[0]",0,12);
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
-	eF->SetLineColor(kRed);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
 	gNice();
 	mean->Fit(poly);
@@ -29,6 +27,8 @@ void BeamAnalysis2(){
 	cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->SetMarkerStyle(kOpenCircle);
 	mean->Draw("AP");
+	poly->SetLineColor(kBlue);
+	poly->Draw("same");
 	myText(.43,.24,kRed,Form("Linear #Chi^2: %0.2f NDF: %i",chi,ndf),.05);
 	myText(.43,.19,kRed,Form("#Chi^2/NDF: %0.2f",chi/ndf),.05);
 	myText(.43,.34,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
