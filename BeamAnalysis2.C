@@ -2,7 +2,7 @@
 
 using namespace std;
 
-int BeamAnalysis2(){
+void BeamAnalysis2(){
 	const int nMeanBins = 5;
 	float meanBins[nMeanBins+1] = {0,2,4,6,8,12};
 	float adc12[nMeanBins] = {1392,2830,4145,5445,7517};
@@ -11,21 +11,26 @@ int BeamAnalysis2(){
 	TH1F* mean = new TH1F("mean","",nMeanBins,meanBins);
 	for (int i = 1; i <= nMeanBins; ++i)
 	{
-		meanBins->SetBinContent(i,adc12[i-1]);
-		meanBins->SetBinError(i,sigma[i-1]);
+		mean->SetBinContent(i,adc12[i-1]);
+		mean->SetBinError(i,sigma[i-1]);
 	}
 	TF1* lin = new TF1("lin","[1]*x+[0]",0,12);
 	TF1* poly = new TF1("poly","[2]*x*x+[1]*x+[0]",0,12);
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
+	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
+	gNice();
 	mean->Fit(poly);
-	float nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
-	float nonLinearError = poly-GetParError(2);
+	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
 	mean->Fit(lin);
+	lin->SetLineColor(kRed);
+	float linearFactor = lin->GetParameter(1);
+	float linearError = lin->GetParError(1);
 	float chi = lin->GetChisquare();
-	ht->Draw("p");
+	mean->Draw("pe");
 	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
-	myText(.43,.27,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
-
+	myText(.43,.32,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
+	myText(.43,.27,kRed,Form("C2/C1: %0.4f",nonLinearFactor),.05);
+/*
 	TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
 	for (int i = 1; i <= nMeanBins; ++i)
 	{
@@ -38,5 +43,5 @@ int BeamAnalysis2(){
 	ehist->Draw();
 	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
 	myText(.43,.27,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
-
+*/
 }
