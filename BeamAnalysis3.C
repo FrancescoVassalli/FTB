@@ -30,5 +30,6 @@ void BeamAnalysis3(){
 	int ndf = eF->GetNDF();
 	myText(.3,.75,kRed,Form("#Chi^2:%0.2f NDF:%i",chi,ndf),.05);
 	myText(.3,.7,kRed,Form("#Chi^2/NDF:%0.2f",chi/ndf),.05);
-	myText(.3,.8,kRed,Form("Stochastic: %0.2f#pm%0.3f Constant: %0.2f#pm%0.3f",eA,errors[0],eB,errors[1]),.05);
+	myText(.24,.85,kRed,Form("Stochastic: %0.6f#pm%0.6f ",eA,errors[0]),.05);
+	myText(.24,.8,kRed,Form("Constant: %0.6f#pm%0.6f",eB,errors[1]),.05);
 }
