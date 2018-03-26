@@ -17,6 +17,7 @@ void BeamAnalysis2(){
 	TF1* lin = new TF1("lin","[1]*x+[0]",0,12);
 	TF1* poly = new TF1("poly","[2]*x*x+[1]*x+[0]",0,12);
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
+	eF->SetLineColor(kRed);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
 	gNice();
 	mean->Fit(poly);
@@ -27,24 +28,25 @@ void BeamAnalysis2(){
 	float linearFactor = lin->GetParameter(1);
 	float linearError = lin->GetParError(1);
 	float chi = lin->GetChisquare();
-	double ratiouncertainty = propogateErrorDivde(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
 	cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->Draw("pe");
 	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
 	myText(.43,.32,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
 	myText(.43,.27,kRed,Form("C2/C1: %0.4f",nonLinearFactor),.05);
-/*
 	TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
 	for (int i = 1; i <= nMeanBins; ++i)
 	{
-		ehist->SetBinContent(i,adc12[i-1]/sigma[i-1]);
+		ehist->SetBinContent(i,sigma[i-1]/adc12[i-1]);
 	}
+	//canvas1->Clear("D");
 	ehist->Fit(eF);
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
-	TCanvas *canvas2= new TCanvas();
-	ehist->Draw();
-	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
-	myText(.43,.27,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
-*/
+	ehist->Draw("p");
+	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
+	chi = eF->GetChisquare();
+	myText(.5,.4,kRed,Form("Chi: %0.2f",chi),.05);
+	//myText(.5,.45,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
+
 }
