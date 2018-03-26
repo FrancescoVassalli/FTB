@@ -48,6 +48,6 @@ void BeamAnalysis2(){
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	chi = eF->GetChisquare();
 	myText(.5,.4,kRed,Form("Chi: %0.2f",chi),.05);
-	//myText(.5,.45,kRed,Form("C2/C1: %0.2f C2 Error: %0.2f",nonLinearFactor,nonLinearError),.05);
+	myText(.5,.45,kRed,Form("A: %0.2f B: %0.2f",eA,eB),.05);
 
 }
