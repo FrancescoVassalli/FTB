@@ -17,9 +17,11 @@ void BeamAnalysis2(){
 	mean->Fit(poly);
 	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(2);
+	float chi2 = poly->GetChisquare();
 	mean->Fit(lin);
 	lin->SetLineColor(kRed);
 	float linearFactor = lin->GetParameter(1);
+	cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
 	float linearError = lin->GetParError(1);
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
@@ -29,9 +31,10 @@ void BeamAnalysis2(){
 	mean->Draw("AP");
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
-	myText(.43,.24,kRed,Form("Linear #Chi^2: %0.2f NDF: %i",chi,ndf),.05);
-	myText(.43,.19,kRed,Form("#Chi^2/NDF: %0.2f",chi/ndf),.05);
-	myText(.43,.34,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
-	myText(.43,.29,kRed,Form("C2/C1: %0.3f#pm %0.3f",nonLinearFactor/linearFactor,ratiouncertainty),.05);
+	myText(.5,.27,kRed,Form("Linear #Chi^2: %0.2f NDF: %i",chi,ndf),.05);
+	myText(.5,.22,kRed,Form("Linear #Chi^2/NDF: %0.2f",chi/ndf),.05);
+	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
+	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
+	myText(.5,.17,kRed,Form("Quad #Chi^2/NDF: %0.2f",chi2/ndf),.05);
 
 }
