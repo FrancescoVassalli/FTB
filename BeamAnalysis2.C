@@ -28,13 +28,15 @@ void BeamAnalysis2(){
 	float linearFactor = lin->GetParameter(1);
 	float linearError = lin->GetParError(1);
 	float chi = lin->GetChisquare();
+	int ndf = lin->GetNDF();
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
 	cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->Draw("pe");
-	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
-	myText(.43,.32,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
-	myText(.43,.27,kRed,Form("C2/C1: %0.4f",nonLinearFactor),.05);
-	TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
+	myText(.43,.24,kRed,Form("Linear #Chi^2: %0.2f NDF: %i",chi,ndf),.05);
+	myText(.43,.19,kRed,Form("#Chi^2/NDF: %0.2f",chi/ndf),.05);
+	myText(.43,.34,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
+	myText(.43,.29,kRed,Form("C2/C1: %0.4f",nonLinearFactor),.05);
+	/*TH1F* ehist = new TH1F("ehist","",nMeanBins,meanBins);
 	for (int i = 1; i <= nMeanBins; ++i)
 	{
 		ehist->SetBinContent(i,sigma[i-1]/adc12[i-1]);
@@ -48,6 +50,6 @@ void BeamAnalysis2(){
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	chi = eF->GetChisquare();
 	myText(.5,.4,kRed,Form("Chi: %0.2f",chi),.05);
-	myText(.5,.45,kRed,Form("A: %0.2f B: %0.2f",eA,eB),.05);
-
+	myText(.5,.45,kRed,Form("Stochastic: %0.2f Constant: %0.2f",eA,eB),.05);
+*/
 }
