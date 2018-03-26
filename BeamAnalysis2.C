@@ -38,6 +38,7 @@ void BeamAnalysis2(){
 	for (int i = 1; i <= nMeanBins; ++i)
 	{
 		ehist->SetBinContent(i,sigma[i-1]/adc12[i-1]);
+		ehist->SetBinError(i,errorDivide(sigma[i-1],0,adc12[i-1],sigma[i-1]));
 	}
 	//canvas1->Clear("D");
 	ehist->Fit(eF);
