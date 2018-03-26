@@ -21,11 +21,14 @@ void BeamAnalysis2(){
 	gNice();
 	mean->Fit(poly);
 	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(2);
 	mean->Fit(lin);
 	lin->SetLineColor(kRed);
 	float linearFactor = lin->GetParameter(1);
 	float linearError = lin->GetParError(1);
 	float chi = lin->GetChisquare();
+	double ratiouncertainty = propogateErrorDivde(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->Draw("pe");
 	myText(.43,.2,kRed,Form("Linear Chi: %0.2f",chi),.05);
 	myText(.43,.32,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
