@@ -46,6 +46,47 @@ float* runToEnergy(queue<float> runs){
 	return energies;
 }
 
+void trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
+	float ex[nMeanBins];
+	for (int i = 0; i < nMeanBins; ++i)
+	{
+		ex[i] = 0;
+		cout<<meanBins[i]<<endl;
+	}
+	TCanvas *canvas1 = new TCanvas();
+	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
+	TF1* lin = new TF1("lin","[0]*x",0,12);
+	TF1* poly = new TF1("poly","[2]*x*x+[1]*x+[0]",0,12);
+	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
+	gNice();
+	mean->Fit(poly);
+	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(2);
+	float chi2 = poly->GetChisquare();
+	mean->Fit(lin,"0");
+	lin->SetLineColor(kRed);
+	float linearFactor = lin->GetParameter(0);
+	cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
+	float linearError = lin->GetParError(0);
+	float chi = lin->GetChisquare();
+	int ndf = lin->GetNDF();
+	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	cout<<"Ratio: "<<ratiouncertainty<<endl;
+	mean->SetMarkerStyle(kOpenCircle);
+	doubleZero(mean,adc12[nMeanBins-1]+1000,meanBins[nMeanBins-1]+1);
+	mean->Draw("AP");
+	mean->GetXaxis()->SetLimits(0,meanBins[nMeanBins-1]+1);
+	poly->SetLineColor(kBlue);
+	poly->Draw("same");
+	lin->Draw("same");
+	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
+	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
+	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
+	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
+	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+
+}
+
 void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
 	float ex[nMeanBins];
 	for (int i = 0; i < nMeanBins; ++i)
@@ -63,7 +104,7 @@ void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float
 	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(2);
 	float chi2 = poly->GetChisquare();
-	mean->Fit(lin);
+	mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
 	float linearFactor = lin->GetParameter(1);
 	cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
@@ -75,8 +116,10 @@ void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float
 	mean->SetMarkerStyle(kOpenCircle);
 	doubleZero(mean,adc12[nMeanBins-1]+1000,meanBins[nMeanBins-1]+1);
 	mean->Draw("AP");
+	mean->GetXaxis()->SetLimits(0,meanBins[nMeanBins-1]+1);
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
+	lin->Draw("same");
 	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
 	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
@@ -138,6 +181,6 @@ void BeamAnalysis2(){
 		}
 		ss.clear();
 	}
-	trend(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
+	trendForced(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
 	//resolution(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
 }
