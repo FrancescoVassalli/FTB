@@ -4,9 +4,9 @@ using namespace std;
 
 void BeamAnalysis2(){
 	const int nMeanBins = 5;
-	float meanBins[nMeanBins] = {2,4,6,8,12};
-	float adc12[nMeanBins] = {1392,2830,4145,5445,7517};
-	float sigma[nMeanBins] = {87,123,149,172,194};
+	float meanBins[nMeanBins] = {2, 4, 6, 8, 12};
+	float adc12[nMeanBins] = {1399, 2834, 4147, 5441, 7563};
+	float sigma[nMeanBins] = {78, 114, 133, 157, 176};
 	float ex[nMeanBins]= {0,0,0,0,0};
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
