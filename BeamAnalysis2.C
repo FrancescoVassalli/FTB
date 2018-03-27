@@ -56,12 +56,12 @@ void trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma,
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,12);
-	TF1* poly = new TF1("poly","[2]*x*x+[1]*x+[0]",0,12);
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,12);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
 	gNice();
 	mean->Fit(poly);
-	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
-	double nonLinearError = poly->GetParError(2);
+	double nonLinearFactor = poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(1);
 	float chi2 = poly->GetChisquare();
 	mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
@@ -101,11 +101,12 @@ void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
 	gNice();
 	mean->Fit(poly);
-	double nonLinearFactor = poly->GetParameter(2)/poly->GetParameter(1);
+	double nonLinearFactor = poly->GetParameter(2);
 	double nonLinearError = poly->GetParError(2);
 	float chi2 = poly->GetChisquare();
 	mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
+	float linearConstant = lin->GetParameter(0);
 	float linearFactor = lin->GetParameter(1);
 	cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
 	float linearError = lin->GetParError(1);
@@ -125,6 +126,7 @@ void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float
 	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	myText(.55,.42,kRed,Form("Linear Constant: %0.2f",linearConstant),.05);
 
 }
 
