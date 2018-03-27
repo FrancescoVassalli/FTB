@@ -1,5 +1,3 @@
-
-
 //Here are a bunch of 1200 V PbGl runs: (edited)
 //sphenix/user/dvp/testbeam/beam_00000558-0000.root (6 GeV Beam, 1200V) Tested - Chase/Franceso
 //sphenix/user/dvp/testbeam/beam_00000551-0000.root (4 GeV beam),    Tested - Chase    (Imported)
@@ -10,8 +8,19 @@
 //This is a 1100V Run
 //sphenix/user/dvp/testbeam/beam_00000544-0000.root (8 GeV beam),    Tested - Chase	   (Imported)
 
+//Additional Runs
+/*
+	/sphenix/user/dvp/testbeam/beam_00000631-0000.root -  8 GeV -bad run?
+	/sphenix/user/dvp/testbeam/beam_00000632-0000.root - 12 GeV -bad run?
+	/sphenix/user/dvp/testbeam/beam_00000652-0000.root - 16 GeV - 1100V
+	/sphenix/user/dvp/testbeam/beam_00000653-0000.root - 16 GeV - 1000V
+	/sphenix/user/dvp/testbeam/beam_00000654-0000.root - 24 GeV - 1000V
+	/sphenix/user/dvp/testbeam/beam_00000655-0000.root - 24 GeV - 1100V
+	/sphenix/user/dvp/testbeam/beam_00000687-0000.root - 28 GeV - no record
+*/
 
 using namespace std;
+
 #include "TLegend.h"
 #include "TH1F.h"
 #include <iostream>
@@ -248,7 +257,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	mygaus[0] = gaus->GetParameter(1); //mean
 	mygaus[1] = gaus->GetParameter(2); //sigma
 	mygaus2[0] = mygaus[0];
-	mygaus2[1] = mygaus2[1];
+	mygaus2[1] = mygaus[1];
 	mygaus2[2] = runnumber[0];
 }
 
@@ -257,7 +266,8 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 void BeamAnalysis1()
 {
 	int counter = 0;
-	ifstream inFile ("PbGl_Runs.txt"); //txt file containing the beam files
+	//ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
+	ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
 
 	string intemp;
 	queue<std::string> someRuns;
@@ -319,9 +329,4 @@ void BeamAnalysis1()
 	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
 
 }
-
-
-
-
-
 
