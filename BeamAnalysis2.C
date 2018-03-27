@@ -183,6 +183,6 @@ void BeamAnalysis2(){
 		}
 		ss.clear();
 	}
-	trend(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
+	trendForced(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
 	//resolution(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
 }
