@@ -6,7 +6,7 @@
 //sphenix/user/dvp/testbeam/beam_00000567-0000.root (8 Gev Beam),    Tested - Chase    (Imported)
 
 //This is a 1100V Run
-//sphenix/user/dvp/testbeam/beam_00000544-0000.root (8 GeV beam),    Tested - Chase	   (Imported)
+//sphenix/user/dvp/testbeam/beam_00000544-0000.root (8 GeV beam)
 
 //Additional Runs
 /*
@@ -15,9 +15,22 @@
 	/sphenix/user/dvp/testbeam/beam_00000652-0000.root - 16 GeV - 1100V
 	/sphenix/user/dvp/testbeam/beam_00000653-0000.root - 16 GeV - 1000V
 	/sphenix/user/dvp/testbeam/beam_00000654-0000.root - 24 GeV - 1000V
-	/sphenix/user/dvp/testbeam/beam_00000655-0000.root - 24 GeV - 1100V
+	/sphenix/user/dvp/testbeam/beam_00000655-0000.root - 24 GeV - 1100V - bad run
 	/sphenix/user/dvp/testbeam/beam_00000687-0000.root - 28 GeV - no record
+	
+	/sphenix/user/dvp/testbeam/beam_00000776-0000.root - 2 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000777-0000.root - 2 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000809-0000.root - 6 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000810-0000.root - 4 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000816-0000.root - 2 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000829-0000.root - 6 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000830-0000.root - 2 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000849-0000.root - 2 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000859-0000.root - 5 GeV - 1200V
+	/sphenix/user/dvp/testbeam/beam_00000900-0000.root - 1 GeV - 1200V
+
 */
+
 
 using namespace std;
 
@@ -118,6 +131,92 @@ void recursiveGaus(TH1F* h, TF1* gaus, float* data, int lazyMan){
     }
 }
 
+float runToEnergy(float run){
+    int r;
+    int s = (int) run;
+    switch (s){
+        case 558:
+            r=6;
+            break;
+        case 551:
+            r= 4;
+            break;
+        case 563:
+            r= 2;
+            break;
+        case 573:
+            r= 12;
+            break;
+        case 567:
+            r= 8;
+            break;
+        case 544:
+            r= 8;
+            break;
+        case 776:
+        	r=2;
+        	break;
+    	case 777:
+    		r=2;
+    		break;
+		case 809:
+			r=6;
+			break;
+		case 810:
+			r=4;
+			break;
+		case 816:
+			r=2;
+			break;
+		case 829:
+			r=6;
+			break;
+		case 830:
+			r=2;
+			break;
+		case 849:
+			r=2;
+			break;
+		case 859:
+			r=5;
+			break;
+		case 900:
+			r=1;
+
+        default:
+            r=-1;
+            break;
+    }
+    return r;
+}
+
+void oleSwitcheroo(float* xp, float* yp)
+{
+    float temp = *xp;
+    *xp = *yp;
+    *yp = temp;
+}
+
+void superArraySorter9000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,int SIZE)
+{
+	int i, j;
+
+	for (i = 0; i < SIZE-1; i++) 
+	{  
+	   for (j = 0; j < SIZE-i-1; j++) 
+	   {
+	       if (energies[j] > energies[j+1])
+	       {
+	          oleSwitcheroo(&energies[j],&energies[j+1]);
+	          oleSwitcheroo(&mean[j],&mean[j+1]);
+	          oleSwitcheroo(&meanError[j],&meanError[j+1]);
+	          oleSwitcheroo(&sigma[j],&sigma[j+1]);
+	          oleSwitcheroo(&sigmaError[j],&sigmaError[j+1]);
+	       }
+	   }
+	}
+}
+
 ///////////Franceso's class to pull the appropriate data from the tree (what a champ) //////////////////////////
 class DiffADC
 {
@@ -168,6 +267,8 @@ private:
 	
 };
 
+using namespace fhist;
+using namespace atlasStyle;
 
 ///////////Analysis of delta ADC peak-pedestal data, Note that I changed this to work with the function below//////////////
 void BeamAnalysis(TTree *maintree, float* mygaus2){
@@ -221,7 +322,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	TCanvas *tc = new TCanvas();
 	gStyle->SetOptStat(0);
 	TLegend *tl = new TLegend(.15,.7,.4,.85);
-	tl->AddEntry(ht,"PbGl 8 Gev Beam","l");
+	tl->AddEntry(ht,"PbGl","l");
 
 	makeNiceHist(ht);
 	axisTitles(ht,"#Delta ADC","Count");
@@ -245,7 +346,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	int lazyMan = 0;
 	recursiveGaus(ht, gaus, mygaus, lazyMan);
 
-	ht->GetXaxis()->SetRangeUser(mygaus[0]-(5*mygaus[1]),mygaus[0]+5*mygaus[1]);\
+	ht->GetXaxis()->SetRangeUser(mygaus[0]-(5*mygaus[1]),mygaus[0]+5*mygaus[1]);
 
 	tl->AddEntry((TObject*)0,Form("Mean: %0.2f", mygaus[0]),"l");
 	tl->AddEntry((TObject*)0,Form("Sigma: %0.2f", mygaus[1]),"l");
@@ -259,6 +360,8 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	mygaus2[0] = mygaus[0];
 	mygaus2[1] = mygaus[1];
 	mygaus2[2] = runnumber[0];
+	mygaus2[3] = gaus->GetParError(1);
+	mygaus2[4] = gaus->GetParError(2);
 }
 
 
@@ -266,8 +369,8 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 void BeamAnalysis1()
 {
 	int counter = 0;
-	ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
-	//ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
+	//ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
+	ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
 
 	string intemp;
 	queue<std::string> someRuns;
@@ -282,7 +385,7 @@ void BeamAnalysis1()
 	const unsigned int SIZE = someRuns.size();
 
 	float mygaus2[5]; //temp array to contain sigma and mean
-	int whichRuns[SIZE]; //array of run rumbers
+	float whichRuns[SIZE]; //array of run rumbers
 	float allmeans[SIZE]; //array of means
 	float meanError[SIZE];
 	float allsigma[SIZE]; //array of sigma 
@@ -297,11 +400,14 @@ void BeamAnalysis1()
 		BeamAnalysis(maintree, mygaus2); //BeamAnalysis modifies array to contain run number, mean, and sigma
 		allmeans[looptemp] = mygaus2[0];
 		allsigma[looptemp] = mygaus2[1];
-		whichRuns[looptemp] = mygaus2[2];
+		whichRuns[looptemp] = runToEnergy(mygaus2[2]);
 		meanError[looptemp] = mygaus2[3];
 		sigmaError[looptemp] = mygaus2[4];
 		looptemp++;
 	}
+
+	superArraySorter9000(whichRuns,allmeans,meanError,allsigma,sigmaError,SIZE);
+
 
 	ofstream outFile;
 	outFile.open("PbGl_data1.txt");
@@ -345,4 +451,5 @@ void BeamAnalysis1()
 	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
 
 }
+
 
