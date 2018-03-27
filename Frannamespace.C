@@ -11,6 +11,15 @@
 	double quadrature(double d1, double d2){
 		return TMath::Sqrt(d1*d1+d2*d2);
 	}
+	void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize, double angle) {
+
+  	TLatex l; //l.SetTextAlign(12); 
+  	l.SetTextSize(tsize); 
+  	l.SetNDC();
+ 	 l.SetTextColor(color);
+  	if (angle > 0) l.SetTextAngle(angle);
+  	l.DrawLatex(x,y,text);
+	}	
 	double errorDivide(double d1, double e1, double d2, double e2){
 		double r = d1/d2;
 		return r * quadrature(e1/d1,e2/d2);
