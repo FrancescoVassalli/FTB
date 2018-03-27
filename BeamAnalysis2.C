@@ -7,6 +7,7 @@ mean
 meanerror
 sigma 
 sigmaerror*/
+
 float runToEnergy(float run){
 	int r;
 	int s = (int) run;
@@ -50,6 +51,7 @@ void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		ex[i] = 0;
+		cout<<meanBins[i]<<endl;
 	}
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
@@ -71,6 +73,7 @@ void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
 	cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->SetMarkerStyle(kOpenCircle);
+	doubleZero(mean,adc12[nMeanBins-1]+1000,meanBins[nMeanBins-1]+1);
 	mean->Draw("AP");
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
@@ -128,6 +131,7 @@ void BeamAnalysis2(){
 		inFile>>intemp;
 		ss<<intemp;
 		getline(ss,intemp,',');
+		cout<<intemp<<":\n";
 		while(getline(ss,intemp,',')){
 			input[i].push(stof(intemp));
 			cout<<intemp<<endl;
@@ -135,5 +139,5 @@ void BeamAnalysis2(){
 		ss.clear();
 	}
 	trend(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
-	resolution(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
+	//resolution(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
 }
