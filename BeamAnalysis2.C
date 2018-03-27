@@ -31,10 +31,10 @@ void BeamAnalysis2(){
 	mean->Draw("AP");
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
-	myText(.5,.27,kRed,Form("Linear #Chi^2: %0.2f NDF: %i",chi,ndf),.05);
-	myText(.5,.22,kRed,Form("Linear #Chi^2/NDF: %0.2f",chi/ndf),.05);
+	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
+	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
-	myText(.5,.17,kRed,Form("Quad #Chi^2/NDF: %0.2f",chi2/ndf),.05);
+	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 
 }
