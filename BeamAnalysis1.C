@@ -184,7 +184,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	maintree->SetBranchAddress("peak",&mypeak);
 	maintree->SetBranchAddress("pedestal",&mypedestal);
 	maintree->SetBranchAddress("runnumber",&runnumber);
-	TH1F* ht = new TH1F("temp","",500,200,10000);
+	TH1F* ht = new TH1F("temp","",800,200,16400);
 	queue<float> veto[4];
 	queue<float> hHodo[8];
 	queue<float> vHodo[8];
@@ -266,8 +266,8 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 void BeamAnalysis1()
 {
 	int counter = 0;
-	//ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
-	ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
+	ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
+	//ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
 
 	string intemp;
 	queue<std::string> someRuns;
@@ -281,10 +281,12 @@ void BeamAnalysis1()
 	inFile.close();
 	const unsigned int SIZE = someRuns.size();
 
-	float mygaus2[3]; //temp array to contain sigma and mean
+	float mygaus2[5]; //temp array to contain sigma and mean
 	int whichRuns[SIZE]; //array of run rumbers
 	float allmeans[SIZE]; //array of means
+	float meanError[SIZE];
 	float allsigma[SIZE]; //array of sigma 
+	float sigmaError[SIZE];
 	int looptemp=0;
 	while(!someRuns.empty())
 	{
@@ -296,6 +298,8 @@ void BeamAnalysis1()
 		allmeans[looptemp] = mygaus2[0];
 		allsigma[looptemp] = mygaus2[1];
 		whichRuns[looptemp] = mygaus2[2];
+		meanError[looptemp] = mygaus2[3];
+		sigmaError[looptemp] = mygaus2[4];
 		looptemp++;
 	}
 
@@ -317,10 +321,22 @@ void BeamAnalysis1()
 			outFile << ","<< allmeans[i];
 		}
 		outFile << "\n";
+		outFile << "MeanError";
+		for(int i = 0; i < SIZE; i++) //enter all mean values into txt file
+		{
+			outFile << ","<< meanError[i];
+		}
+		outFile << "\n";
 		outFile << "Sigma";
 		for(int i = 0; i < SIZE; i++) //enter all signma values into txt file
 		{
 			outFile << ","<< allsigma[i];
+		}
+		outFile << "\n";
+		outFile << "SigmaError";
+		for(int i = 0; i < SIZE; i++) //enter all signma values into txt file
+		{
+			outFile << ","<< sigmaError[i];
 		}
 		outFile << "\n";
 
