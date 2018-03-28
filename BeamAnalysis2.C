@@ -46,7 +46,7 @@ float* runToEnergy(queue<float> runs){
 	return energies;
 }
 
-void trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
+float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
 	float ex[nMeanBins];
 	for (int i = 0; i < nMeanBins; ++i)
 	{
@@ -84,7 +84,10 @@ void trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma,
 	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
-
+	float *r = new float[2];
+	r[0] = linearFactor;
+	r[1] = linearError;
+	return r;
 }
 
 void trend(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
@@ -183,7 +186,21 @@ void BeamAnalysis2(){
 		}
 		ss.clear();
 	}
-	//change
-	trend(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
-	//resolution(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
+	float *r = trendForced(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
+	ofstream outFile;
+	outFile.open("PbGl_data2.txt");
+	if(outFile.is_open()) //read info out to txt file if it opens
+	{	
+		outFile<<r[0]<<","<<r[1]<<"\n";
+		for (int i = 0; i < LINES; ++i)
+		{
+			while(!input[i].empty()){
+				outFile<<input[i].front()<<",";
+				input[i].pop();
+			}
+			outFile<<"\n";
+		}
+	}
+	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
+
 }
