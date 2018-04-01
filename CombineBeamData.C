@@ -1,10 +1,14 @@
 /* macro for managing the output of the BeamAnalysis files*/
 
-void CombineBeamData(int argc, char* argv[]){
-	const int LINES = 5;
+void CombineBeamData(){
+	cout<<"Enter a file: ";
+	bool run = true;
+	const int LINES = 6;
 	queue<float> input[LINES];
-	while(argc>1){
-		ifstream inFile (argv[argc-1]); //txt file containing the data from BeamAnalysis1
+	while(run){
+		string filename;
+		cin>>filename;
+		ifstream inFile (filename.c_str()); //txt file containing the data from BeamAnalysis1
 		string intemp;
 		stringstream ss;
 		for (int i = 0; i < LINES; ++i)
@@ -19,13 +23,19 @@ void CombineBeamData(int argc, char* argv[]){
 			}
 			ss.clear();
 		}
-		argc--;
+		cout<<"Continue? [Y/N]"<<std::endl;
+		cin.clear();
+		cin>>filename;
+		std::transform(filename.begin(), filename.end(), filename.begin(), ::tolower);
+		if(filename[0]!='y'){
+			run=false;
+		}
+		cin.clear();
 	}
 	ofstream outFile;
 	outFile.open("PbGl_dataC.txt");
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{	
-		outFile<<r[0]<<","<<r[1]<<"\n";
 		for (int i = 0; i < LINES; ++i)
 		{
 			while(!input[i].empty()){
