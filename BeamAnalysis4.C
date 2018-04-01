@@ -1,8 +1,7 @@
 
 using namespace std;
 
-void adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* means, float* inputEnergy, float* sigma){
-	errorDivideArray(SIZE,means,sigma,linearFactor,linearFactorError);
+void plotByEnergy(int SIZE, float* mean, float* sigma, float* inputEnergy){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
 	for (int i = 0; i < SIZE; ++i)
@@ -24,34 +23,67 @@ void adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* m
 	myText(.5,.22,kRed,Form("#chi^{2}/NDF: %0.2f",chi/ndf),.05);
 }
 
+queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* means, float* inputEnergy, float* sigma){
+	errorDivideArray(SIZE,means,sigma,linearFactor,linearFactorError);
+	queue<float> *r = new queue<float>[3];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		r[0].push(means[i]);
+		r[1].push(sigma[i]);
+		r[2].push(inputEnergy[i]);
+	}
+	return r;
+}
+
 
 void BeamAnalysis4(){
-	ifstream inFile ("PbGl_data2.txt"); //txt file containing the data from BeamAnalysis2
-	const int LINES =5;
-	queue<float> input[LINES];
+	ifstream inFile ("PbGl_dataC.txt"); //txt file containing the names of files to process
+	queue<string> files;
 	string intemp;
-	stringstream ss;
-	inFile>>intemp;
-	ss<<intemp;
-	float linearFactor;
-	getline(ss,intemp,',');
-	//cout<<intemp<<endl;
-	linearFactor= stof(intemp);
-	float linearFactorError;
-	getline(ss,intemp,',');
-	//cout<<intemp<<endl;
-	linearFactorError = stof(intemp);
-	ss.clear();
-	for (int i = 0; i < LINES; ++i)
-	{
+	while(getline(inFile,intemp)){
+		files.push(intemp);
+	}
+	inFile.close();
+	const int LINES =5;
+	float *linearFactor[files.size()];
+	float *linearFactorError[files.size()];
+	int count=0;
+	queue<float> totalinput[3];
+	while(!files.empty()){
+		queue<float> input[LINES];
+		queue<float> *tempenergy;
+		inFile.open(files.front().c_str());
+		files.pop();
+		stringstream ss;
+		intemp="";
 		inFile>>intemp;
 		ss<<intemp;
-		while(getline(ss,intemp,',')){
-			input[i].push(stof(intemp));
-			//cout<<intemp<<endl;
-		}
+		getline(ss,intemp,',');
+		linearFactor[count]= stof(intemp);
+		getline(ss,intemp,',');
+		linearFactorError[count] = stof(intemp);
 		ss.clear();
+		for (int i = 0; i < LINES; ++i)
+		{
+			inFile>>intemp;
+			ss<<intemp;
+			while(getline(ss,intemp,',')){
+				input[i].push(stof(intemp));
+				//cout<<intemp<<endl;
+			}
+			ss.clear();
+		}
+		inFile.close();
+		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[3]));
+		while(!tempenergy[0].empty()){
+			totalinput[0].push(tempenergy[0].front());
+			totalinput[1].push(tempenergy[1].front());
+			totalinput[2].push(tempenergy[2].front());
+			tempenergy[0].pop();
+			tempenergy[1].pop();
+			tempenergy[2].pop();
+		}
+		count++;
 	}
-	adcToEnergy(linearFactor, linearFactorError, input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[3]));
-	
+	plotByEnergy(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[2]));
 }
