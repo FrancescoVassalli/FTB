@@ -91,7 +91,6 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 }
 
 void BeamAnalysis2(){
-	int counter = 0;
 	ifstream inFile ("PbGl_data1.txt"); //txt file containing the data from BeamAnalysis1
 	const int LINES = 5;
 	queue<float> input[LINES];
