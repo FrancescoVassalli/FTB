@@ -1,7 +1,7 @@
 
 using namespace std;
 
-void plotByEnergy(int SIZE, float* mean, float* sigma, float* inputEnergy){
+void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
 	for (int i = 0; i < SIZE; ++i)
@@ -45,8 +45,8 @@ void BeamAnalysis4(){
 	}
 	inFile.close();
 	const int LINES =5;
-	float *linearFactor[files.size()];
-	float *linearFactorError[files.size()];
+	float linearFactor[files.size()];
+	float linearFactorError[files.size()];
 	int count=0;
 	queue<float> totalinput[3];
 	while(!files.empty()){
@@ -57,6 +57,7 @@ void BeamAnalysis4(){
 		stringstream ss;
 		intemp="";
 		inFile>>intemp;
+		cout<<intemp<<std::endl;
 		ss<<intemp;
 		getline(ss,intemp,',');
 		linearFactor[count]= stof(intemp);
