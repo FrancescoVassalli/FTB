@@ -367,6 +367,7 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	float gausLowBound = ht->GetBinLowEdge(maxbin);
 	float temp = gausLowBound*.7;
 	float gausUpbound = gausLowBound +temp;
+	if(gausUpbound >16400){gausUpbound=16400;} //so that fit doesn't exceed range of histogram
 	gausLowBound -= temp; 
 	TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
 
