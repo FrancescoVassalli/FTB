@@ -15,7 +15,7 @@
 	  	TLatex l; //l.SetTextAlign(12); 
 	  	l.SetTextSize(tsize); 
 	  	l.SetNDC();
-	 	 l.SetTextColor(color);
+	 	l.SetTextColor(color);
 	  	if (angle > 0) l.SetTextAngle(angle);
 	  	l.DrawLatex(x,y,text);
 	}	
