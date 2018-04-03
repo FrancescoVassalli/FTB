@@ -150,9 +150,6 @@ float runToEnergy(float run){
         case 567:
             r= 8;
             break;
-        case 544:
-            r= 8;
-            break;
         case 776:
         	r=2;
         	break;
