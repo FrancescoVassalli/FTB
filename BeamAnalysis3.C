@@ -1,4 +1,4 @@
-#include "Frannamespace.C"
+//#include "Frannamespace.C"
 using namespace std;
 
 void resolution(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
@@ -16,7 +16,7 @@ void resolution(const int nMeanBins,float*meanBins, float* adc12, float* sigma, 
 		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],adc12[i],meanerror[i]);
 		cout<<relativeU[i]<<endl;
 	}
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,meanBins[nMeanBins-1]);
 	eF->SetLineColor(kRed);
 	TGraphErrors* ehist = new TGraphErrors(nMeanBins,meanBins,relativeE,ex,relativeU);
 	ehist->Fit(eF);
@@ -43,7 +43,7 @@ void resolution(const int nMeanBins,float*meanBins, float* adc12, float* sigma, 
 void BeamAnalysis3()
 {
 	int counter = 0;
-	ifstream inFile ("PbGl_data1.txt"); //txt file containing the data from BeamAnalysis1
+	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/Pb_Gldata1uc1200.txt"); //txt file containing the data from BeamAnalysis1
 	const int LINES = 5;
 	queue<float> input[LINES];
 	string intemp;
