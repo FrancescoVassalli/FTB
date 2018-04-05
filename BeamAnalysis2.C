@@ -66,12 +66,12 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 	mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
 	float linearFactor = lin->GetParameter(0);
-	cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
+	//cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
 	float linearError = lin->GetParError(0);
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
-	cout<<"Ratio: "<<ratiouncertainty<<endl;
+	//cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->SetMarkerStyle(kOpenCircle);
 	doubleZero(mean,adc12[nMeanBins-1]+1000,meanBins[nMeanBins-1]+1);
 	mean->Draw("AP");
