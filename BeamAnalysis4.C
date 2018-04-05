@@ -1,17 +1,26 @@
 
 using namespace std;
 
-void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy){
+void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const unsigned int nFiles){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
 	int peakInput=0;
+	int tempenergy=inputEnergy[0];
+	int fileBeginIndex[nFiles+1];
+	int fileBeginIndexCounter=1;
+	fileBeginIndex[0]=0;
 	for (int i = 0; i < SIZE; ++i)
 	{
 		ex[i] = 0;
 		if(peakInput<inputEnergy[i]){
 			peakInput=inputEnergy[i];
 		}
+		if(tempenergy>inputEnergy[i]){
+			fileBeginIndex[fileBeginIndexCounter++]=i;
+		}
+		tempenergy=inputEnergy[i];
 	}
+	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,sigma);
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
@@ -27,8 +36,23 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy){
 	int ndf = lin->GetNDF();
 	lin->SetLineColor(kRed);
 	measure->SetMarkerStyle(kOpenCircle);
-	doubleZero(measure,peakInput,peakInput);
-	measure->Draw("AP");
+	
+	TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
+	for (unsigned i = 0; i < nFiles; ++i)
+	{
+		
+		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(means,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(sigma,fileBeginIndex[i],fileBeginIndex[i+1]));
+	}
+	doubleZero(plotgraphs[0],peakInput,peakInput);
+	plotgraphs[0]->SetMarkerSize(2);
+	plotgraphs[0]->SetMarkerStyle(kOpenCircle);
+	plotgraphs[0]->Draw("AP");
+	plotgraphs[1]->SetMarkerStyle(kOpenTriangleDown);
+	for (unsigned i = 1; i < nFiles; ++i)
+	{
+		plotgraphs[i]->SetMarkerSize(2);
+		plotgraphs[i]->Draw("P");
+	}
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
 	lin->Draw("same");
@@ -59,6 +83,7 @@ void BeamAnalysis4(){
 		files.push(intemp);
 	}
 	inFile.close();
+	const unsigned int nFiles = files.size();
 	const int LINES =5;
 	float linearFactor[files.size()];
 	float linearFactorError[files.size()];
@@ -101,5 +126,5 @@ void BeamAnalysis4(){
 		}
 		count++;
 	}
-	plotByEnergy(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[2]));
+	plotByEnergy(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[2]),nFiles);
 }
