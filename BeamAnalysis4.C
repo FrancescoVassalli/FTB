@@ -4,23 +4,38 @@ using namespace std;
 void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
+	int peakInput=0;
 	for (int i = 0; i < SIZE; ++i)
 	{
 		ex[i] = 0;
+		if(peakInput<inputEnergy[i]){
+			peakInput=inputEnergy[i];
+		}
 	}
+	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,sigma);
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
-	TF1* lin = new TF1("lin","[0]*x",0,12);
+	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
+	measure->Fit(poly);
+	double nonLinearFactor = poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(1);
+	float chi2 = poly->GetChisquare();
 	measure->Fit(lin);
 	gNice();
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
 	lin->SetLineColor(kRed);
 	measure->SetMarkerStyle(kOpenCircle);
-	doubleZero(measure,means[SIZE-1]+2,inputEnergy[SIZE-1]+1);
+	doubleZero(measure,peakInput,peakInput);
 	measure->Draw("AP");
-	measure->GetXaxis()->SetLimits(0,inputEnergy[SIZE-1]+1);
-	myText(.5,.22,kRed,Form("#chi^{2}/NDF: %0.2f",chi/ndf),.05);
+	poly->SetLineColor(kBlue);
+	poly->Draw("same");
+	lin->Draw("same");
+	measure->GetXaxis()->SetLimits(0,peakInput);
+	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
+	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
+	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 }
 
 queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* means, float* inputEnergy, float* sigma){
