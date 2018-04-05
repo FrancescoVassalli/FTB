@@ -15,12 +15,26 @@ queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE,
 	return r;
 }
 
-void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror){
+void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror,const unsigned int nFiles){
 	float ex[nMeanBins];
+	int peakInput=0;
+	int tempenergy=inputEnergy[0];
+	int fileBeginIndex[nFiles+1];
+	int fileBeginIndexCounter=1;
+	fileBeginIndex[0]=0;
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		ex[i] = 0;
+		if(peakInput<inputEnergy[i]){
+			peakInput=inputEnergy[i];
+		}
+		if(tempenergy>inputEnergy[i]){
+			fileBeginIndex[fileBeginIndexCounter++]=i;
+		}
+		tempenergy=inputEnergy[i];
 	}
+	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
+	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
 	float relativeE[nMeanBins];
 	float relativeU[nMeanBins];
@@ -32,7 +46,9 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],outEnergy[i],meanerror[i]);
 		//cout<<relativeU[i]<<'\n';
 	}
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
+	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
+	old->SetLineColor(kBlue);
 	eF->SetLineColor(kRed);
 	TGraphErrors* ehist = new TGraphErrors(nMeanBins,inputEnergy,relativeE,ex,relativeU);
 	ehist->Fit(eF);
@@ -41,19 +57,35 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	float errors[2];
 	errors[0] = eF->GetParError(0);
 	errors[1] = eF->GetParError(1);
-	ehist->SetMarkerSize(2);
-	ehist->SetMinimum(0);
-	ehist->SetMaximum(0.1);
-	ehist->GetXaxis()->SetLimits(0,13);
-	ehist->Draw("AP");
-	ehist->SetMarkerStyle(3);
+
+	TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
+	for (unsigned i = 0; i < nFiles; ++i)
+	{
+		
+		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(relativeE,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(relativeU,fileBeginIndex[i],fileBeginIndex[i+1]));
+	}
+	plotgraphs[0]->SetMarkerSize(2);
+	plotgraphs[0]->SetMinimum(0);
+	plotgraphs[0]->SetMaximum(0.1);
+	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
+	plotgraphs[0]->SetMarkerStyle(kOpenCircle);
+	plotgraphs[0]->Draw("AP");
+	plotgraphs[1]->SetMarkerStyle(kOpenTriangleDown);
+	for (unsigned i = 1; i < nFiles; ++i)
+	{
+		plotgraphs[i]->SetMarkerSize(2);
+		plotgraphs[i]->Draw("P");
+	}
+	old->Draw("same");
+	eF->Draw("same");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
 	myText(.3,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05,0);
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
-	myText(.24,.85,kRed,Form("Stochastic: %0.6f#pm%0.6f ",eA,errors[0]),.05,0);
-	myText(.24,.8,kRed,Form("Constant: %0.6f#pm%0.6f",eB,errors[1]),.05,0);
+	myText(.24,.85,kRed,Form("Stochastic: %0.5f#pm%0.5f ",eA,errors[0]),.05,0);
+	myText(.24,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
+	myText(.2,.2,kBlue,"2017",.05,0);
 }
 
 
@@ -65,6 +97,7 @@ void BeamAnalysis5(){
 		files.push(intemp);
 	}
 	inFile.close();
+	const unsigned int filecount = files.size();
 	const int LINES =5;
 	float linearFactor[files.size()];
 	float linearFactorError[files.size()];
@@ -111,5 +144,5 @@ void BeamAnalysis5(){
 		}
 		count++;
 	}
-	resolution(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[3]),queueToArray(totalinput[2]),queueToArray(totalinput[4]));
+	resolution(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[3]),queueToArray(totalinput[2]),queueToArray(totalinput[4]),filecount);
 }

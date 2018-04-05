@@ -55,8 +55,8 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 	}
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
-	TF1* lin = new TF1("lin","[0]*x",0,12);
-	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,12);
+	TF1* lin = new TF1("lin","[0]*x",0,meanBins[nMeanBins-1]);
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,meanBins[nMeanBins-1]);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
 	gNice();
 	mean->Fit(poly);
@@ -66,12 +66,12 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 	mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
 	float linearFactor = lin->GetParameter(0);
-	cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
+	//cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
 	float linearError = lin->GetParError(0);
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
-	cout<<"Ratio: "<<ratiouncertainty<<endl;
+	//cout<<"Ratio: "<<ratiouncertainty<<endl;
 	mean->SetMarkerStyle(kOpenCircle);
 	doubleZero(mean,adc12[nMeanBins-1]+1000,meanBins[nMeanBins-1]+1);
 	mean->Draw("AP");
@@ -91,7 +91,7 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 }
 
 void BeamAnalysis2(){
-	ifstream inFile ("PbGl_data1.txt"); //txt file containing the data from BeamAnalysis1
+	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/Pb_Gldata1uc1200.txt"); //txt file containing the data from BeamAnalysis1
 	const int LINES = 5;
 	queue<float> input[LINES];
 	string intemp;
