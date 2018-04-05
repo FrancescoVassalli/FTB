@@ -55,8 +55,8 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 	}
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
-	TF1* lin = new TF1("lin","[0]*x",0,12);
-	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,12);
+	TF1* lin = new TF1("lin","[0]*x",0,16);
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,16);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
 	gNice();
 	mean->Fit(poly);
@@ -91,7 +91,7 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 }
 
 void BeamAnalysis2(){
-	ifstream inFile ("PbGl_data1.txt"); //txt file containing the data from BeamAnalysis1
+	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/Pb_Gldata1uc1100.txt"); //txt file containing the data from BeamAnalysis1
 	const int LINES = 5;
 	queue<float> input[LINES];
 	string intemp;
