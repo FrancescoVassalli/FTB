@@ -6,7 +6,7 @@ PbGl_data1.txt - data ouput from BeamAnalysis1
 PbGl_data2.txt - out put from BeamAnalysis 2 should be the same as the data1.txt but with the linear trend and its error added on top rename these files after creating them and add their names to the PbGl_dataC.txt
 PbGl_dataC.txt - contains the filenames of the outputs from BeamAnalysis2
 CombineShell.sh - run with bash to move the data2.txt into data3.txt and move data3.txt to data4.txt and so on. The filenames for the Beam2 outputs are then saved to dataC
-
+Combination.C - removed because the shell script is a better way to do this imo
 
 
 vassalli@rssh.rcf.bnl.gov
