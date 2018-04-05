@@ -1,0 +1,5 @@
+RunNumber,2
+Mean,473.193
+MeanError,1.09367
+Sigma,32.2809
+SigmaError,1.00796
