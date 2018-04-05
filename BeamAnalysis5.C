@@ -17,10 +17,15 @@ queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE,
 
 void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror){
 	float ex[nMeanBins];
+	int peakInput=0;
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		ex[i] = 0;
+		if(peakInput<inputEnergy[i]){
+			peakInput=inputEnergy[i];
+		}
 	}
+	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
 	float relativeE[nMeanBins];
 	float relativeU[nMeanBins];
@@ -32,7 +37,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],outEnergy[i],meanerror[i]);
 		//cout<<relativeU[i]<<'\n';
 	}
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,12);
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	eF->SetLineColor(kRed);
 	TGraphErrors* ehist = new TGraphErrors(nMeanBins,inputEnergy,relativeE,ex,relativeU);
 	ehist->Fit(eF);
@@ -44,7 +49,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	ehist->SetMarkerSize(2);
 	ehist->SetMinimum(0);
 	ehist->SetMaximum(0.1);
-	ehist->GetXaxis()->SetLimits(0,13);
+	ehist->GetXaxis()->SetLimits(0,peakInput);
 	ehist->Draw("AP");
 	ehist->SetMarkerStyle(3);
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
