@@ -59,10 +59,6 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	errors[1] = eF->GetParError(1);
 
 	TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
-	/*plotgraphs[0] = new TGraphErrors(fileEndIndex[0]+1,partialArray(inputEnergy,0,fileEndIndex[0]),partialArray(relativeE,0,fileEndIndex[0]),partialArray(ex,0,fileEndIndex[0]),partialArray(relativeU,0,fileEndIndex[0]));
-	plotgraphs[1] = new TGraphErrors(fileEndIndex[1]-fileEndIndex[0],partialArray(inputEnergy,fileEndIndex[1],fileEndIndex[0]),partialArray(relativeE,fileEndIndex[1],fileEndIndex[0]),partialArray(ex,fileEndIndex[1],fileEndIndex[0]),partialArray(relativeU,fileEndIndex[1],fileEndIndex[0]));
-//cout<<"here"<<std::endl;
-*/
 	for (unsigned i = 0; i < nFiles; ++i)
 	{
 		
