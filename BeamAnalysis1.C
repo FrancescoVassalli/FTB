@@ -43,48 +43,48 @@ using namespace std;
 
 /////////////////////Franceso's included functions (for asthetic) //////////////////////////////////////////////
 namespace fhist{
-short colors[7]={kRed,kBlue,kGreen+2,kMagenta+3,kOrange+4,kCyan+1,kMagenta-7};
-short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar,kOpenFourTrianglesX};
-void makeBins(float* bins, int min, int nBins, float width){
-	for(int i=0; i<=nBins;++i){
-		bins[i] = min + width*i;
+	short colors[7]={kRed,kBlue,kGreen+2,kMagenta+3,kOrange+4,kCyan+1,kMagenta-7};
+	short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar,kOpenFourTrianglesX};
+	void makeBins(float* bins, int min, int nBins, float width){
+		for(int i=0; i<=nBins;++i){
+			bins[i] = min + width*i;
+		}
 	}
-}
 
-void makeMarkerNice(TH1F** h, int n){
-	for (int i = 1; i < n; ++i)
-	{
-		(*h)->SetMarkerStyle(styles[i-1]);
-		(*h)->SetMarkerColor(colors[i-1]);
-		h++;
+	void makeMarkerNice(TH1F** h, int n){
+		for (int i = 1; i < n; ++i)
+		{
+			(*h)->SetMarkerStyle(styles[i-1]);
+			(*h)->SetMarkerColor(colors[i-1]);
+			h++;
+		}
+	}	
+	void makeLineColors(TH1F** h, int n){
+		for (int i = 1; i < n; ++i)
+		{
+			(*h)->SetLineColor(colors[i-1]);
+			h++;
+		}	
 	}
-}
-void makeLineColors(TH1F** h, int n){
-	for (int i = 1; i < n; ++i)
-	{
-		(*h)->SetLineColor(colors[i-1]);
-		h++;
+	void makeLegendPoint(TLegend* tl, TH1F** h, int n, std::string *titles){
+		for (int i = 0; i < n; ++i)
+		{
+			tl->AddEntry((*h++),titles++->c_str(),"p");
+		}
 	}
-}
-void makeLegendPoint(TLegend* tl, TH1F** h, int n, std::string *titles){
-	for (int i = 0; i < n; ++i)
-	{
-		tl->AddEntry((*h++),titles++->c_str(),"p");
+	void makeLegendLine(TLegend* tl, TH1F** h, int n, std::string *titles){
+		for (int i = 0; i < n; ++i)
+		{
+			tl->AddEntry((*h++),titles++->c_str(),"l");
+		}
 	}
-}
-void makeLegendLine(TLegend* tl, TH1F** h, int n, std::string *titles){
-	for (int i = 0; i < n; ++i)
-	{
-		tl->AddEntry((*h++),titles++->c_str(),"l");
+	void makeNiceHist(TH1* h){
+		h->SetMarkerStyle(kFullCircle);
 	}
-}
-void makeNiceHist(TH1* h){
-	h->SetMarkerStyle(kFullCircle);
-}
-void axisTitles(TH1F* h,std::string x, std::string y){
-	h->GetYaxis()->SetTitle(y.c_str());
-	h->GetXaxis()->SetTitle(x.c_str());
-}
+	void axisTitles(TH1F* h,std::string x, std::string y){
+		h->GetYaxis()->SetTitle(y.c_str());
+		h->GetXaxis()->SetTitle(x.c_str());
+	}	
 void smallBorders(){
 	gPad->SetBottomMargin(.1);
 	gPad->SetTopMargin(.1);
@@ -357,11 +357,11 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	TLegend *tl = new TLegend(.15,.7,.4,.85);
 	tl->AddEntry(ht,"PbGl","l");
 
-	makeNiceHist(ht);
+	fhist::makeNiceHist(ht);
 	axisTitles(ht,"#Delta ADC","Count");
-	axisTitleSize(ht,.03);
-	axisLabelSize(ht,.03);
-	smallBorders();
+	fhist::axisTitleSize(ht,.03);
+	fhist::axisLabelSize(ht,.03);
+	fhist::smallBorders();
 
 	int maxbin = ht->GetMaximumBin();
 	float gausLowBound = ht->GetBinLowEdge(maxbin);
