@@ -97,7 +97,7 @@ void BeamAnalysis4(){
 		stringstream ss;
 		intemp="";
 		inFile>>intemp;
-		cout<<intemp<<std::endl;
+		//cout<<intemp<<std::endl;
 		ss<<intemp;
 		getline(ss,intemp,',');
 		linearFactor[count]= stof(intemp);
@@ -110,12 +110,13 @@ void BeamAnalysis4(){
 			ss<<intemp;
 			while(getline(ss,intemp,',')){
 				input[i].push(stof(intemp));
-				//cout<<intemp<<endl;
+				if(i==3)
+				cout<<intemp<<endl;
 			}
 			ss.clear();
 		}
 		inFile.close();
-		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[3]));
+		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[2]));
 		while(!tempenergy[0].empty()){
 			totalinput[0].push(tempenergy[0].front());
 			totalinput[1].push(tempenergy[1].front());
