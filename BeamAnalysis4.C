@@ -30,7 +30,7 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	double nonLinearFactor = poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(1);
 	float chi2 = poly->GetChisquare();
-	measure->Fit(lin);
+	measure->Fit(lin,"0");
 	gNice();
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
@@ -56,7 +56,7 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
 	lin->Draw("same");
-	measure->GetXaxis()->SetLimits(0,peakInput);
+	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
