@@ -43,48 +43,48 @@ using namespace std;
 
 /////////////////////Franceso's included functions (for asthetic) //////////////////////////////////////////////
 namespace fhist{
-	short colors[7]={kRed,kBlue,kGreen+2,kMagenta+3,kOrange+4,kCyan+1,kMagenta-7};
-	short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar,kOpenFourTrianglesX};
-	void makeBins(float* bins, int min, int nBins, float width){
-		for(int i=0; i<=nBins;++i){
-			bins[i] = min + width*i;
-		}
+short colors[7]={kRed,kBlue,kGreen+2,kMagenta+3,kOrange+4,kCyan+1,kMagenta-7};
+short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar,kOpenFourTrianglesX};
+void makeBins(float* bins, int min, int nBins, float width){
+	for(int i=0; i<=nBins;++i){
+		bins[i] = min + width*i;
 	}
+}
 
-	void makeMarkerNice(TH1F** h, int n){
-		for (int i = 1; i < n; ++i)
-		{
-			(*h)->SetMarkerStyle(styles[i-1]);
-			(*h)->SetMarkerColor(colors[i-1]);
-			h++;
-		}
-	}	
-	void makeLineColors(TH1F** h, int n){
-		for (int i = 1; i < n; ++i)
-		{
-			(*h)->SetLineColor(colors[i-1]);
-			h++;
-		}	
+void makeMarkerNice(TH1F** h, int n){
+	for (int i = 1; i < n; ++i)
+	{
+		(*h)->SetMarkerStyle(styles[i-1]);
+		(*h)->SetMarkerColor(colors[i-1]);
+		h++;
 	}
-	void makeLegendPoint(TLegend* tl, TH1F** h, int n, std::string *titles){
-		for (int i = 0; i < n; ++i)
-		{
-			tl->AddEntry((*h++),titles++->c_str(),"p");
-		}
+}
+void makeLineColors(TH1F** h, int n){
+	for (int i = 1; i < n; ++i)
+	{
+		(*h)->SetLineColor(colors[i-1]);
+		h++;
 	}
-	void makeLegendLine(TLegend* tl, TH1F** h, int n, std::string *titles){
-		for (int i = 0; i < n; ++i)
-		{
-			tl->AddEntry((*h++),titles++->c_str(),"l");
-		}
+}
+void makeLegendPoint(TLegend* tl, TH1F** h, int n, std::string *titles){
+	for (int i = 0; i < n; ++i)
+	{
+		tl->AddEntry((*h++),titles++->c_str(),"p");
 	}
-	void makeNiceHist(TH1* h){
-		h->SetMarkerStyle(kFullCircle);
+}
+void makeLegendLine(TLegend* tl, TH1F** h, int n, std::string *titles){
+	for (int i = 0; i < n; ++i)
+	{
+		tl->AddEntry((*h++),titles++->c_str(),"l");
 	}
-	void axisTitles(TH1F* h,std::string x, std::string y){
-		h->GetYaxis()->SetTitle(y.c_str());
-		h->GetXaxis()->SetTitle(x.c_str());
-	}	
+}
+void makeNiceHist(TH1* h){
+	h->SetMarkerStyle(kFullCircle);
+}
+void axisTitles(TH1F* h,std::string x, std::string y){
+	h->GetYaxis()->SetTitle(y.c_str());
+	h->GetXaxis()->SetTitle(x.c_str());
+}
 void smallBorders(){
 	gPad->SetBottomMargin(.1);
 	gPad->SetTopMargin(.1);
@@ -230,7 +230,7 @@ void oleSwitcheroo(float* xp, float* yp)
     *yp = temp;
 }
 
-void superArraySorter9000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,int SIZE)
+void superArraySorter9000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,float* numEntries,int SIZE)
 {
 	int i, j;
 
@@ -245,6 +245,7 @@ void superArraySorter9000(float* energies, float* mean, float* meanError, float*
 	          oleSwitcheroo(&meanError[j],&meanError[j+1]);
 	          oleSwitcheroo(&sigma[j],&sigma[j+1]);
 	          oleSwitcheroo(&sigmaError[j],&sigmaError[j+1]);
+	          oleSwitcheroo(&numEntries[j],&numEntries[j+1]);
 	       }
 	   }
 	}
@@ -357,11 +358,11 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	TLegend *tl = new TLegend(.15,.7,.4,.85);
 	tl->AddEntry(ht,"PbGl","l");
 
-	fhist::makeNiceHist(ht);
+	makeNiceHist(ht);
 	axisTitles(ht,"#Delta ADC","Count");
-	fhist::axisTitleSize(ht,.03);
-	fhist::axisLabelSize(ht,.03);
-	fhist::smallBorders();
+	axisTitleSize(ht,.03);
+	axisLabelSize(ht,.03);
+	smallBorders();
 
 	int maxbin = ht->GetMaximumBin();
 	float gausLowBound = ht->GetBinLowEdge(maxbin);
@@ -396,15 +397,16 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	mygaus2[2] = runnumber[0];
 	mygaus2[3] = gaus->GetParError(1);
 	mygaus2[4] = gaus->GetParError(2);
+	mygaus2[5] = LENGTH;
 }
-
 
 /////////////////////Implementing BeamAnalysis on an arbitrary number of root files///////////////////////////
 void BeamAnalysis1()
 {
 	int counter = 0;
 	//ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
-	ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
+	//ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
+	ifstream inFile ("PbGl_Runs3.txt"); //combined runs
 
 	string intemp;
 	queue<std::string> someRuns;
@@ -418,12 +420,13 @@ void BeamAnalysis1()
 	inFile.close();
 	const unsigned int SIZE = someRuns.size();
 
-	float mygaus2[5]; //temp array to contain sigma and mean
+	float mygaus2[6]; //temp array to contain sigma and mean
 	float whichRuns[SIZE]; //array of run rumbers
 	float allmeans[SIZE]; //array of means
 	float meanError[SIZE];
 	float allsigma[SIZE]; //array of sigma 
 	float sigmaError[SIZE];
+	float numEntries[SIZE]; 
 	int looptemp=0;
 	while(!someRuns.empty())
 	{
@@ -437,14 +440,15 @@ void BeamAnalysis1()
 		whichRuns[looptemp] = runToEnergy(mygaus2[2]);
 		meanError[looptemp] = mygaus2[3];
 		sigmaError[looptemp] = mygaus2[4];
-		looptemp++;
+		numEntries[looptemp] = mygaus2[5];
+ 		looptemp++;
 	}
 
-	superArraySorter9000(whichRuns,allmeans,meanError,allsigma,sigmaError,SIZE);
+	superArraySorter9000(whichRuns,allmeans,meanError,allsigma,sigmaError,numEntries,SIZE);
 
 
 	ofstream outFile;
-	outFile.open("PbGl_data1.txt");
+	outFile.open("PbGl_data1_1100.txt");
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
 		cout<<"File Opened!"<<endl;
@@ -479,11 +483,16 @@ void BeamAnalysis1()
 			outFile << ","<< sigmaError[i];
 		}
 		outFile << "\n";
+		outFile << "NumEntires";
+		for(int i = 0; i < SIZE; i++) //enter all signma values into txt file
+		{
+			outFile << ","<< numEntries[i];
+		}
+		outFile << "\n";
 
 		outFile.close();
 	}
 	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
 
 }
-
 

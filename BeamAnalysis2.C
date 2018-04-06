@@ -46,15 +46,16 @@ float* runToEnergy(queue<float> runs){
 	return energies;
 }
 
-float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror){
+float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror, float* counts){
 	float ex[nMeanBins];
+	float *uncertainty = sigmaNtoUncertainty(nMeanBins, sigma, counts, sigmaerror);
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		ex[i] = 0;
-		cout<<meanBins[i]<<endl;
+		cout<<sigma[i]<<" : "<<counts[i]<<" = "<<uncertainty[i]<<'\n';
 	}
 	TCanvas *canvas1 = new TCanvas();
-	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,sigma); // how to set the uncertainty
+	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,uncertainty); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,meanBins[nMeanBins-1]);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,meanBins[nMeanBins-1]);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
@@ -65,9 +66,9 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 	float chi2 = poly->GetChisquare();
 	mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
-	float linearFactor = lin->GetParameter(0);
+	double linearFactor = lin->GetParameter(0);
 	//cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
-	float linearError = lin->GetParError(0);
+	double linearError = lin->GetParError(0);
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
@@ -91,8 +92,8 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 }
 
 void BeamAnalysis2(){
-	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/Pb_Gldata1uc1200.txt"); //txt file containing the data from BeamAnalysis1
-	const int LINES = 5;
+	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/PbGl_data1_1200.txt"); //txt file containing the data from BeamAnalysis1
+	const int LINES = 6;
 	queue<float> input[LINES];
 	string intemp;
 	stringstream ss;
@@ -101,14 +102,14 @@ void BeamAnalysis2(){
 		inFile>>intemp;
 		ss<<intemp;
 		getline(ss,intemp,',');
-		cout<<intemp<<":\n";
+		//cout<<intemp<<":\n";
 		while(getline(ss,intemp,',')){
 			input[i].push(stof(intemp));
-			cout<<intemp<<endl;
+			//cout<<intemp<<endl;
 		}
 		ss.clear();
 	}
-	float *r = trendForced(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
+	float *r = trendForced(input[1].size(),queueToArray(input[0]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]),queueToArray(input[5]));
 	ofstream outFile;
 	outFile.open("PbGl_data2.txt");
 	if(outFile.is_open()) //read info out to txt file if it opens
