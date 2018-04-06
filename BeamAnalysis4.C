@@ -115,7 +115,7 @@ void BeamAnalysis4(){
 			ss.clear();
 		}
 		inFile.close();
-		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[3]));
+		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[2]));
 		while(!tempenergy[0].empty()){
 			totalinput[0].push(tempenergy[0].front());
 			totalinput[1].push(tempenergy[1].front());
