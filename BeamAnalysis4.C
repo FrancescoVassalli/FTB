@@ -1,7 +1,7 @@
 
 using namespace std;
 
-void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const unsigned int nFiles){
+void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const unsigned int nFiles, float* sigmaerror, float* counts){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
 	int peakInput=0;
@@ -22,6 +22,7 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	}
 	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
 	peakInput++;
+	float *uncertainty = sigmaNtoUncertainty(SIZE, sigma, counts, sigmaerror);
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,sigma);
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
@@ -116,6 +117,7 @@ void BeamAnalysis4(){
 			ss.clear();
 		}
 		inFile.close();
+		//need to calculate unceratinty before here
 		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[2]));
 		while(!tempenergy[0].empty()){
 			totalinput[0].push(tempenergy[0].front());
