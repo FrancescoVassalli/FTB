@@ -266,6 +266,7 @@ public:
 		return peak[i] - pedestal[i];
 	}
 	bool pass(){
+		//try running with different values here and show some example gaussian fits
 		return pmp(172)<100&&pmp(173)<100&&pmp(174)<150&&pmp(175)<200&&pmp(160)>1000&&pmp(171)>100;
 	}
 	float getGoodPbGl(){
