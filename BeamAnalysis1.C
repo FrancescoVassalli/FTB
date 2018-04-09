@@ -301,8 +301,8 @@ private:
 	
 };
 
-using namespace fhist;
-using namespace atlasStyle;
+//using namespace fhist;
+//using namespace atlasStyle;
 
 ///////////Analysis of delta ADC peak-pedestal data, Note that I changed this to work with the function below//////////////
 void BeamAnalysis(TTree *maintree, float* mygaus2){
@@ -404,9 +404,9 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 void BeamAnalysis1()
 {
 	int counter = 0;
-	//ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
+	ifstream inFile ("PbGl_Runs.txt"); //1200V beam files
 	//ifstream inFile ("PbGl_Runs2.txt"); //1100V beam files
-	ifstream inFile ("PbGl_Runs3.txt"); //combined runs
+	//ifstream inFile ("PbGl_Runs3.txt"); //combined runs
 
 	string intemp;
 	queue<std::string> someRuns;
