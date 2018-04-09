@@ -359,11 +359,11 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	TLegend *tl = new TLegend(.15,.7,.4,.85);
 	tl->AddEntry(ht,"PbGl","l");
 
-	makeNiceHist(ht);
-	axisTitles(ht,"#Delta ADC","Count");
-	axisTitleSize(ht,.03);
-	axisLabelSize(ht,.03);
-	smallBorders();
+	fhist::makeNiceHist(ht);
+	fhist::axisTitles(ht,"#Delta ADC","Count");
+	fhist::axisTitleSize(ht,.03);
+	fhist::axisLabelSize(ht,.03);
+	fhist::smallBorders();
 
 	int maxbin = ht->GetMaximumBin();
 	float gausLowBound = ht->GetBinLowEdge(maxbin);
@@ -398,7 +398,10 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	mygaus2[2] = runnumber[0];
 	mygaus2[3] = gaus->GetParError(1);
 	mygaus2[4] = gaus->GetParError(2);
-	mygaus2[5] = LENGTH;
+
+	int rangeLowBin = ht->FindFixBin(gaus->GetParameter(1)-gaus->GetParameter(2));
+	int rangeHighBin = ht->FindFixBin(gaus->GetParameter(1)+gaus->GetParameter(2));
+	mygaus2[5] = ht->Integral(rangeLowBin,rangeHighBin);
 }
 
 /////////////////////Implementing BeamAnalysis on an arbitrary number of root files///////////////////////////
