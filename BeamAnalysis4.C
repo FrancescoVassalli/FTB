@@ -85,11 +85,11 @@ void BeamAnalysis4(){
 	}
 	inFile.close();
 	const unsigned int nFiles = files.size();
-	const int LINES =5;
+	const int LINES =6;
 	float linearFactor[files.size()];
 	float linearFactorError[files.size()];
 	int count=0;
-	queue<float> totalinput[3];
+	queue<float> totalinput[4];
 	while(!files.empty()){
 		queue<float> input[LINES];
 		queue<float> *tempenergy;
@@ -120,14 +120,16 @@ void BeamAnalysis4(){
 		//need to calculate unceratinty before here
 		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[0]),queueToArray(input[2]));
 		while(!tempenergy[0].empty()){
-			totalinput[0].push(tempenergy[0].front());
-			totalinput[1].push(tempenergy[1].front());
-			totalinput[2].push(tempenergy[2].front());
+			totalinput[0].push(tempenergy[0].front()); //means 
+			totalinput[1].push(tempenergy[1].front()); //sigma
+			totalinput[2].push(tempenergy[2].front()); //input energy
+			totalinput[3].push(input[5].front());//counts
 			tempenergy[0].pop();
 			tempenergy[1].pop();
 			tempenergy[2].pop();
+			input[5].pop();
 		}
 		count++;
 	}
-	plotByEnergy(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[2]),nFiles);
+	plotByEnergy(totalinput[0].size(),queueToArray(totalinput[0]),queueToArray(totalinput[1]),queueToArray(totalinput[2]),nFiles,SIGMAERROR,queueToArray(totalinput[3]));
 }
