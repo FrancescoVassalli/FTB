@@ -85,7 +85,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
 	myText(.24,.85,kRed,Form("Stochastic: %0.5f#pm%0.5f ",eA,errors[0]),.05,0);
 	myText(.24,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
-	myText(.2,.2,kBlue,"2017",.05,0);
+	myText(.2,.2,kBlue,"2016",.05,0);
 }
 
 
@@ -98,11 +98,11 @@ void BeamAnalysis5(){
 	}
 	inFile.close();
 	const unsigned int filecount = files.size();
-	const int LINES =5;
+	const int LINES =6;
 	float linearFactor[files.size()];
 	float linearFactorError[files.size()];
 	int count=0;
-	queue<float> totalinput[5];
+	queue<float> totalinput[6];
 	while(!files.empty()){
 		queue<float> input[LINES];
 		queue<float> *tempenergy;
@@ -129,13 +129,15 @@ void BeamAnalysis5(){
 			ss.clear();
 		}
 		inFile.close();
+		//figure out uncertainty here
 		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[0]),queueToArray(input[3]),queueToArray(input[4]));
 		while(!tempenergy[0].empty()){
-			totalinput[0].push(tempenergy[0].front());
-			totalinput[1].push(tempenergy[1].front());
-			totalinput[2].push(tempenergy[2].front());
-			totalinput[3].push(tempenergy[3].front());
-			totalinput[4].push(tempenergy[4].front());
+			totalinput[0].push(tempenergy[0].front()); //input energy
+			totalinput[1].push(tempenergy[1].front()); //mean
+			totalinput[2].push(tempenergy[2].front()); //meanerror
+			totalinput[3].push(tempenergy[3].front()); //sigma
+			totalinput[4].push(tempenergy[4].front()); //sigmaerror
+			totalinput[5].push(input[5].front()); //n
 			tempenergy[0].pop();
 			tempenergy[1].pop();
 			tempenergy[2].pop();
