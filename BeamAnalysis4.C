@@ -1,7 +1,7 @@
 
 using namespace std;
 
-void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const unsigned int nFiles){
+void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,const unsigned int nFiles){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
 	int peakInput=0;
@@ -22,7 +22,7 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	}
 	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
 	peakInput++;
-	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,sigma);
+	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
@@ -41,7 +41,7 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	for (unsigned i = 0; i < nFiles; ++i)
 	{
 		
-		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(means,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(sigma,fileBeginIndex[i],fileBeginIndex[i+1]));
+		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(means,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(meanerror,fileBeginIndex[i],fileBeginIndex[i+1]));
 	}
 	doubleZero(plotgraphs[0],peakInput,peakInput);
 	plotgraphs[0]->SetMarkerSize(2);
@@ -62,13 +62,13 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 }
 
-queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* means, float* inputEnergy, float* sigma){
-	errorDivideArray(SIZE,means,sigma,linearFactor,linearFactorError);
+queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* means, float* inputEnergy, float* meanerror){
+	errorDivideArray(SIZE,means,meanerror,linearFactor,linearFactorError);
 	queue<float> *r = new queue<float>[3];
 	for (int i = 0; i < SIZE; ++i)
 	{
 		r[0].push(means[i]);
-		r[1].push(sigma[i]);
+		r[1].push(meanerror[i]);
 		r[2].push(inputEnergy[i]);
 	}
 	return r;
@@ -110,7 +110,8 @@ void BeamAnalysis4(){
 			ss<<intemp;
 			while(getline(ss,intemp,',')){
 				input[i].push(stof(intemp));
-				//cout<<intemp<<endl;
+				/*if(i==2)
+					cout<<intemp<<endl;*/
 			}
 			ss.clear();
 		}
