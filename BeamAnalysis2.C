@@ -48,14 +48,14 @@ float* runToEnergy(queue<float> runs){
 
 float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigma, float* meanerror, float* sigmaerror, float* counts){
 	float ex[nMeanBins];
-	float *uncertainty = sigmaNtoUncertainty(nMeanBins, sigma, counts, sigmaerror);
+	//float *uncertainty = sigmaNtoUncertainty(nMeanBins, sigma, counts, sigmaerror);
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		ex[i] = 0;
-		cout<<sigma[i]<<" : "<<counts[i]<<" = "<<uncertainty[i]<<'\n';
+		//cout<<sigma[i]<<" : "<<counts[i]<<" = "<<uncertainty[i]<<'\n';
 	}
 	TCanvas *canvas1 = new TCanvas();
-	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,uncertainty); // how to set the uncertainty
+	TGraphErrors* mean = new TGraphErrors(nMeanBins,meanBins,adc12,ex,meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,meanBins[nMeanBins-1]);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,meanBins[nMeanBins-1]);
 	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
@@ -92,7 +92,7 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 }
 
 void BeamAnalysis2(){
-	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/PbGl_data1_1200.txt"); //txt file containing the data from BeamAnalysis1
+	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/PbGl_data1_1100.txt"); //txt file containing the data from BeamAnalysis1
 	const int LINES = 6;
 	queue<float> input[LINES];
 	string intemp;
