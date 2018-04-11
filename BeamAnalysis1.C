@@ -398,9 +398,10 @@ void BeamAnalysis(TTree *maintree, float* mygaus2){
 	mygaus2[3] = gaus->GetParError(1);
 	mygaus2[4] = gaus->GetParError(2);
 
-	int rangeLowBin = ht->FindFixBin(gaus->GetParameter(1)-gaus->GetParameter(2));
-	int rangeHighBin = ht->FindFixBin(gaus->GetParameter(1)+gaus->GetParameter(2));
+	int rangeLowBin = ht->FindFixBin(gaus->GetParameter(1)-2*gaus->GetParameter(2));
+	int rangeHighBin = ht->FindFixBin(gaus->GetParameter(1)+2*gaus->GetParameter(2));
 	mygaus2[5] = ht->Integral(rangeLowBin,rangeHighBin);
+	cout<<
 }
 
 /////////////////////Implementing BeamAnalysis on an arbitrary number of root files///////////////////////////
