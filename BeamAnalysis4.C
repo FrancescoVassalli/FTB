@@ -57,12 +57,13 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	}
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
-	lin->Draw("same");
 	old->Draw("same");
+	lin->Draw("same");
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	myText(.25,.7,kBlue,"2016",.05);
 	myMarkerText(.25,.9,kBlack,kOpenTriangleDown,"1100V",2,.05);
 	myMarkerText(.25,.8,kBlack,kOpenCircle,"1200V",2,.05);
 }
