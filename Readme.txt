@@ -3,6 +3,7 @@ BeamAnalysis2 - reads PbGl_data1.txt to produce a trendline
 BeamAnalysis3 - reads PbGl_data1.txt to produce a resolution \
 BeamAnalysis4 - reads PbGl_dataC.txt to produce a trendline that is independent of voltage
 BeamAnalysis5 - reads PbGl_dataC.txt to produce a resolution that is independent of voltage
+BeamAnalysis6 - calculation of the systematic uncertainty on the trend
 PbGl_data1.txt - data ouput from BeamAnalysis1
 PbGl_data2.txt - out put from BeamAnalysis 2 should be the same as the data1.txt but with the linear trend and its error added on top rename these files after creating them and add their names to the PbGl_dataC.txt
 PbGl_dataC.txt - contains the filenames of the outputs from BeamAnalysis2
