@@ -81,11 +81,13 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
-	myText(.3,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05,0);
-	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
-	myText(.24,.85,kRed,Form("Stochastic: %0.5f#pm%0.5f ",eA,errors[0]),.05,0);
-	myText(.24,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
-	myText(.2,.2,kBlue,"2017",.05,0);
+	myText(.5,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05,0);
+	myText(.5,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
+	myText(.5,.85,kRed,Form("Stochastic: %0.5f#pm%0.5f ",eA,errors[0]),.05,0);
+	myText(.5,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
+	myText(.2,.2,kBlue,"2016",.05,0);
+	myMarkerText(.7,.25,kBlack,kOpenTriangleDown,"1100V",2,.05);
+	myMarkerText(.7,.2,kBlack,kOpenCircle,"1200V",2,.05);
 }
 
 
@@ -131,11 +133,11 @@ void BeamAnalysis5(){
 		inFile.close();
 		tempenergy=adcToEnergy(linearFactor[count], linearFactorError[count], input[1].size(),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[0]),queueToArray(input[3]),queueToArray(input[4]));
 		while(!tempenergy[0].empty()){
-			totalinput[0].push(tempenergy[0].front());
-			totalinput[1].push(tempenergy[1].front());
-			totalinput[2].push(tempenergy[2].front());
-			totalinput[3].push(tempenergy[3].front());
-			totalinput[4].push(tempenergy[4].front());
+			totalinput[0].push(tempenergy[0].front()); //input energy
+			totalinput[1].push(tempenergy[1].front()); //mean
+			totalinput[2].push(tempenergy[2].front()); //meanerror
+			totalinput[3].push(tempenergy[3].front()); //sigma
+			totalinput[4].push(tempenergy[4].front()); //sigmaerror
 			tempenergy[0].pop();
 			tempenergy[1].pop();
 			tempenergy[2].pop();
