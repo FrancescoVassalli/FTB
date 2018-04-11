@@ -27,7 +27,9 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
+	TF1* old = new TF1("lin"," x*(1-0.00058)",0,peakInput);
 	measure->Fit(poly);
+	old->SetLineColor(kBlue);
 	double nonLinearFactor = poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(1);
 	float chi2 = poly->GetChisquare();
@@ -57,10 +59,12 @@ void plotByEnergy(int SIZE, float* means, float* sigma, float* inputEnergy,const
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
 	lin->Draw("same");
+	old->Draw("same");
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	myText(.8,.24,kBlue,"2016",.05);
 }
 
 queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE, float* means, float* inputEnergy, float* sigma){
