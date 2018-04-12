@@ -9,8 +9,12 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	int fileBeginIndex[nFiles+1];
 	int fileBeginIndexCounter=1;
 	fileBeginIndex[0]=0;
+	//std::vector<int> *breaks =;
+	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
+	float systematics[groups.size()];
 	for (int i = 0; i < SIZE; ++i)
 	{
+		cout<<"I= "<<i<<" S= "<<SIZE<<endl;
 		ex[i] = 0;
 		if(peakInput<inputEnergy[i]){
 			peakInput=inputEnergy[i];
@@ -20,10 +24,17 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		}
 		tempenergy=inputEnergy[i];
 	}
-	float** speads = maxBrokenArray<float>(SIZE,means);
+	int fghfker=0;
+	while(!groups.empty()){
+		systematics[fghfker] = systematicError<float>(groups.front());
+		cout<<systematics[fghfker++]<<'\n';
+		groups.pop();
+	}
 	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
 	peakInput++;
+	cout<<"here"<<std::endl;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
+
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
@@ -82,7 +93,7 @@ queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE,
 }
 
 
-void BeamAnalysis4(){
+void BeamAnalysis6(){
 	ifstream inFile ("PbGl_dataC.txt"); //txt file containing the names of files to process
 	queue<string> files;
 	string intemp;
@@ -104,7 +115,7 @@ void BeamAnalysis4(){
 		stringstream ss;
 		intemp="";
 		inFile>>intemp;
-		cout<<intemp<<std::endl;
+		//cout<<intemp<<std::endl;
 		ss<<intemp;
 		getline(ss,intemp,',');
 		linearFactor[count]= stof(intemp);
