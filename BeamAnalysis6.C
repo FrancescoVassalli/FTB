@@ -20,6 +20,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		}
 		tempenergy=inputEnergy[i];
 	}
+	float** speads = maxBrokenArray<float>(SIZE,means);
 	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
@@ -78,10 +79,6 @@ queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE,
 		r[2].push(inputEnergy[i]);
 	}
 	return r;
-}
-
-float systematicError(const int SIZE, float* means, float* meanerror){
-	
 }
 
 
