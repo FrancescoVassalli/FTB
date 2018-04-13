@@ -3,11 +3,9 @@ using namespace std;
 
 void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
 {
-	int i, j;
-
-	for (i = 0; i < SIZE-1; i++) 
+	for (int i = 0; i < SIZE-1; i++) 
 	{  
-	   for (j = 0; j < SIZE-i-1; j++) 
+	   for (int j = 0; j < SIZE-i-1; j++) 
 	   {
 	       if (energies[j] > energies[j+1])
 	       {
@@ -28,10 +26,6 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	int fileBeginIndex[nFiles+1];
 	int fileBeginIndexCounter=1;
 	fileBeginIndex[0]=0;
-	//std::vector<int> *breaks =;
-	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
-	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
-	float systematics[groups.size()];
 	for (int i = 0; i < SIZE; ++i)
 	{
 		cout<<"I= "<<i<<" S= "<<SIZE<<endl;
@@ -44,13 +38,17 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		}
 		tempenergy=inputEnergy[i];
 	}
+
 	int fghfker=0;
+	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
+	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
+	float systematics[groups.size()];
 	while(!groups.empty()){
 		systematics[fghfker] = systematicError<float>(groups.front());
 		cout<<systematics[fghfker++]<<'\n';
 		groups.pop();
 	}
-	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
+	fileBeginIndex[fileBeginIndexCounter]=SIZE;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
 
@@ -86,14 +84,14 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		plotgraphs[i]->SetMarkerSize(2);
 		plotgraphs[i]->Draw("P");
 	}
-	poly->SetLineColor(kBlue);
+	poly->SetLineColor(kPink-7);
 	poly->Draw("same");
 	old->Draw("same");
 	lin->Draw("same");
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05);
-	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	myText(.5,.24,kPink-7,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 	myText(.25,.7,kBlue,"2016",.05);
 	myMarkerText(.25,.9,kBlack,kOpenTriangleDown,"1100V",2,.05);
 	myMarkerText(.25,.8,kBlack,kOpenCircle,"1200V",2,.05);
