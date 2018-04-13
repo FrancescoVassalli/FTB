@@ -1,6 +1,27 @@
 
 using namespace std;
 
+void superArraySorter9000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,float* numEntries,int SIZE)
+{
+	int i, j;
+
+	for (i = 0; i < SIZE-1; i++) 
+	{  
+	   for (j = 0; j < SIZE-i-1; j++) 
+	   {
+	       if (energies[j] > energies[j+1])
+	       {
+	          oleSwitcheroo(&energies[j],&energies[j+1]);
+	          oleSwitcheroo(&mean[j],&mean[j+1]);
+	          oleSwitcheroo(&meanError[j],&meanError[j+1]);
+	          oleSwitcheroo(&sigma[j],&sigma[j+1]);
+	          oleSwitcheroo(&sigmaError[j],&sigmaError[j+1]);
+	          oleSwitcheroo(&numEntries[j],&numEntries[j+1]);
+	       }
+	   }
+	}
+}
+
 void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,const unsigned int nFiles){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
