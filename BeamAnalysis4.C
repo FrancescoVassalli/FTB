@@ -20,7 +20,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		}
 		tempenergy=inputEnergy[i];
 	}
-	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
+	fileBeginIndex[fileBeginIndexCounter]=SIZE;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
@@ -45,7 +45,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		
 		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(means,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(meanerror,fileBeginIndex[i],fileBeginIndex[i+1]));
 	}
-	doubleZero(plotgraphs[0],peakInput,peakInput);
+	doubleZero(plotgraphs[0],peakInput+1,peakInput+1);
 	plotgraphs[0]->SetMarkerSize(2);
 	plotgraphs[0]->SetMarkerStyle(kOpenCircle);
 	plotgraphs[0]->Draw("AP");
@@ -55,14 +55,14 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		plotgraphs[i]->SetMarkerSize(2);
 		plotgraphs[i]->Draw("P");
 	}
-	poly->SetLineColor(kBlue);
+	poly->SetLineColor(kPink-7);
 	poly->Draw("same");
 	old->Draw("same");
 	lin->Draw("same");
-	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
+	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput+1);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05);
-	myText(.5,.24,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	myText(.5,.24,kPink-7,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 	myText(.25,.7,kBlue,"2016",.05);
 	myMarkerText(.25,.9,kBlack,kOpenTriangleDown,"1100V",2,.05);
 	myMarkerText(.25,.8,kBlack,kOpenCircle,"1200V",2,.05);
