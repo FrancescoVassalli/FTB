@@ -31,6 +31,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	int fileBeginIndexCounter=1;
 	fileBeginIndex[0]=0;
 	//std::vector<int> *breaks =;
+	////////////////////SUPER SORTER MEANS///////
 	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
 	float systematics[groups.size()];
 	for (int i = 0; i < SIZE; ++i)
@@ -53,7 +54,6 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	}
 	fileBeginIndex[fileBeginIndexCounter]=SIZE-1;
 	peakInput++;
-	cout<<"here"<<std::endl;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
 
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
