@@ -29,7 +29,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	int fileBeginIndexCounter=1;
 	fileBeginIndex[0]=0;
 	//std::vector<int> *breaks =;
-	superArraySorter9000(inputEnergy,means,meanerror,SIZE);
+	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
 	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
 	float systematics[groups.size()];
 	for (int i = 0; i < SIZE; ++i)
