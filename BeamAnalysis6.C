@@ -1,7 +1,7 @@
 
 using namespace std;
 
-void superArraySorter9000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,float* numEntries,int SIZE)
+void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
 {
 	int i, j;
 
@@ -14,9 +14,7 @@ void superArraySorter9000(float* energies, float* mean, float* meanError, float*
 	          oleSwitcheroo(&energies[j],&energies[j+1]);
 	          oleSwitcheroo(&mean[j],&mean[j+1]);
 	          oleSwitcheroo(&meanError[j],&meanError[j+1]);
-	          oleSwitcheroo(&sigma[j],&sigma[j+1]);
-	          oleSwitcheroo(&sigmaError[j],&sigmaError[j+1]);
-	          oleSwitcheroo(&numEntries[j],&numEntries[j+1]);
+	         
 	       }
 	   }
 	}
@@ -31,7 +29,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	int fileBeginIndexCounter=1;
 	fileBeginIndex[0]=0;
 	//std::vector<int> *breaks =;
-	////////////////////SUPER SORTER MEANS///////
+	superArraySorter9000(inputEnergy,means,meanerror,SIZE);
 	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
 	float systematics[groups.size()];
 	for (int i = 0; i < SIZE; ++i)
