@@ -43,6 +43,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
 	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
 	float systematics[groups.size()];
+	cout<<"Systematics: "<<'\n';
 	while(!groups.empty()){
 		systematics[fghfker] = systematicError<float>(groups.front());
 		cout<<systematics[fghfker++]<<'\n';
