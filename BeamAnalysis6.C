@@ -1,6 +1,11 @@
 
 using namespace std;
 
+struct Point
+{
+	float x,y;
+};
+
 void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
 {
 	for (int i = 0; i < SIZE-1; i++) 
@@ -42,17 +47,31 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	int fghfker=0;
 	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
 	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
-	float systematics[groups.size()];
+	queue<float> averagevalues = averageList(groups);
+	const unsigned int nGroups = groups.size();
+	float *groupX = valuesAt(inputEnergy,*sameValueIndices(SIZE,inputEnergy));
+	float systematics[nGroups];
+	//cout<<"SIZE: "<<SIZE<<" Groups size: "<<groups.size()<<'\n';
 	cout<<"Systematics: "<<'\n';
 	while(!groups.empty()){
 		systematics[fghfker] = systematicError<float>(groups.front());
 		cout<<systematics[fghfker++]<<'\n';
 		groups.pop();
 	}
+	queue<int> goodBoxes = arrayNonZero(systematics,nGroups);
+	//cout<<"here"<<endl;
+	fghfker=0;
 	fileBeginIndex[fileBeginIndexCounter]=SIZE;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
-
+	TBox **boxes = new TBox*[nGroups];
+	while(!averagevalues.empty()){
+		cout<<"X: "<<inputEnergy[fghfker]<<'\n';
+		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
+		averagevalues.pop();
+		boxes[fghfker]->SetLineColor(kBlack);
+		boxes[fghfker++]->SetFillColor(kBlack);
+	}
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
@@ -89,6 +108,10 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	poly->Draw("same");
 	old->Draw("same");
 	lin->Draw("same");
+	while(!goodBoxes.empty()){
+		boxes[goodBoxes.front()]->Draw("same");
+		goodBoxes.pop();
+	}
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
 	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05);
