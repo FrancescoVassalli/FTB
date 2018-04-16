@@ -15,6 +15,57 @@ queue<float>* adcToEnergy(float linearFactor, float linearFactorError, int SIZE,
 	return r;
 }
 
+void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
+{
+	for (int i = 0; i < SIZE-1; i++) 
+	{  
+	   for (int j = 0; j < SIZE-i-1; j++) 
+	   {
+	       if (energies[j] > energies[j+1])
+	       {
+	          oleSwitcheroo(&energies[j],&energies[j+1]);
+	          oleSwitcheroo(&mean[j],&mean[j+1]);
+	          oleSwitcheroo(&meanError[j],&meanError[j+1]);
+	         
+	       }
+	   }
+	}
+}
+
+queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float* inputEnergy){
+	int fghfker=0;
+	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
+	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
+	queue<float> averagevalues = averageList(groups);
+	const unsigned int nGroups = groups.size();
+	float *groupX = valuesAt(inputEnergy,*sameValueIndices(SIZE,inputEnergy));
+	float systematics[nGroups];
+	cout<<"Systematics: "<<'\n';
+	while(!groups.empty()){
+		systematics[fghfker] = systematicError<float>(groups.front());
+		cout<<systematics[fghfker++]<<'\n';
+		groups.pop();
+	}
+	queue<int> goodBoxes = arrayNonZero(systematics,nGroups);
+	TBox **boxes = new TBox*[nGroups];
+	fghfker=0;
+	while(!averagevalues.empty()){
+		cout<<"X: "<<groupX[fghfker]<<'\n';
+		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
+		averagevalues.pop();
+		boxes[fghfker]->SetLineColor(kAzure+3);
+		boxes[fghfker++]->SetFillColor(kAzure+3);
+	}
+	queue<TBox*> *r = new queue<TBox*>();
+	//cout<<"Length: "<<nGroups<<'\n';
+	while(!goodBoxes.empty()){
+		//cout<<goodBoxes.front()<<'\n';
+		r->push(boxes[goodBoxes.front()]);
+		goodBoxes.pop();
+	}
+	return r;
+}
+
 void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror,const unsigned int nFiles){
 	float ex[nMeanBins];
 	int peakInput=0;
@@ -41,10 +92,8 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		relativeE[i] = sigma[i]/outEnergy[i];
-		//cout<<relativeE[i]<< ": ";
 		cout<<sigma[i]<<": "<<sigmaerror[i]<<", "<<outEnergy[i]<<" : "<<meanerror[i]<<'\n';
 		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],outEnergy[i],meanerror[i]);
-		//cout<<relativeU[i]<<'\n';
 	}
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
@@ -57,7 +106,10 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	float errors[2];
 	errors[0] = eF->GetParError(0);
 	errors[1] = eF->GetParError(1);
-
+	/*TGraphErrors* base = new TGraphErrors();
+	base->GetXaxis()->SetLimits(0,peakInput);
+	base->GetYaxis()->SetLimits(0,peakInput);
+	base->Draw("AP");*/
 	TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
 	for (unsigned i = 0; i < nFiles; ++i)
 	{
@@ -78,6 +130,11 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	}
 	old->Draw("same");
 	eF->Draw("same");
+	queue<TBox*> *boxes = getSystematicBoxes(nMeanBins,relativeE,relativeU,inputEnergy);
+	while(!boxes->empty()){
+		boxes->front()->Draw("same");
+		boxes->pop();
+	}
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
