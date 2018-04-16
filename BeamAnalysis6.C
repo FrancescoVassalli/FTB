@@ -69,8 +69,8 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		cout<<"X: "<<inputEnergy[fghfker]<<'\n';
 		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
 		averagevalues.pop();
-		boxes[fghfker]->SetLineColor(kBlack);
-		boxes[fghfker++]->SetFillColor(kBlack);
+		boxes[fghfker]->SetLineColor(kAzure+3);
+		boxes[fghfker++]->SetFillColor(kAzure+3);
 	}
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
@@ -99,6 +99,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	plotgraphs[0]->SetMarkerStyle(kOpenCircle);
 	plotgraphs[0]->Draw("AP");
 	plotgraphs[1]->SetMarkerStyle(kOpenTriangleDown);
+	axisTitles(plotgraphs[0],"Beam Energy GeV","Measured Energy #pm #sigma/#sqrt{3}");
 	for (unsigned i = 1; i < nFiles; ++i)
 	{
 		plotgraphs[i]->SetMarkerSize(2);
