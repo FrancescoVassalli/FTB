@@ -1,10 +1,4 @@
-
 using namespace std;
-
-struct Point
-{
-	float x,y;
-};
 
 void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
 {
@@ -23,6 +17,40 @@ void superArraySorter4000(float* energies, float* mean, float* meanError, int SI
 	}
 }
 
+queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float* inputEnergy){
+	int fghfker=0;
+	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
+	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
+	queue<float> averagevalues = averageList(groups);
+	const unsigned int nGroups = groups.size();
+	float *groupX = valuesAt(inputEnergy,*sameValueIndices(SIZE,inputEnergy));
+	float systematics[nGroups];
+	cout<<"Systematics: "<<'\n';
+	while(!groups.empty()){
+		systematics[fghfker] = systematicError<float>(groups.front());
+		cout<<systematics[fghfker++]<<'\n';
+		groups.pop();
+	}
+	queue<int> goodBoxes = arrayNonZero(systematics,nGroups);
+	TBox **boxes = new TBox*[nGroups];
+	fghfker=0;
+	while(!averagevalues.empty()){
+		cout<<"X: "<<groupX[fghfker]<<'\n';
+		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
+		averagevalues.pop();
+		boxes[fghfker]->SetLineColor(kAzure+3);
+		boxes[fghfker++]->SetFillColor(kAzure+3);
+	}
+	queue<TBox*> *r = new queue<TBox*>();
+	//cout<<"Length: "<<nGroups<<'\n';
+	while(!goodBoxes.empty()){
+		//cout<<goodBoxes.front()<<'\n';
+		r->push(boxes[goodBoxes.front()]);
+		goodBoxes.pop();
+	}
+	return r;
+}
+
 void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,const unsigned int nFiles){
 	TCanvas *tc = new TCanvas();
 	float ex[SIZE];
@@ -33,7 +61,6 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	fileBeginIndex[0]=0;
 	for (int i = 0; i < SIZE; ++i)
 	{
-		cout<<"I= "<<i<<" S= "<<SIZE<<endl;
 		ex[i] = 0;
 		if(peakInput<inputEnergy[i]){
 			peakInput=inputEnergy[i];
@@ -43,35 +70,9 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		}
 		tempenergy=inputEnergy[i];
 	}
-
-	int fghfker=0;
-	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
-	queue<queue<float>> groups = breakArray(means,*sameValueIndices(SIZE, inputEnergy));
-	queue<float> averagevalues = averageList(groups);
-	const unsigned int nGroups = groups.size();
-	float *groupX = valuesAt(inputEnergy,*sameValueIndices(SIZE,inputEnergy));
-	float systematics[nGroups];
-	//cout<<"SIZE: "<<SIZE<<" Groups size: "<<groups.size()<<'\n';
-	cout<<"Systematics: "<<'\n';
-	while(!groups.empty()){
-		systematics[fghfker] = systematicError<float>(groups.front());
-		cout<<systematics[fghfker++]<<'\n';
-		groups.pop();
-	}
-	queue<int> goodBoxes = arrayNonZero(systematics,nGroups);
-	//cout<<"here"<<endl;
-	fghfker=0;
 	fileBeginIndex[fileBeginIndexCounter]=SIZE;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
-	TBox **boxes = new TBox*[nGroups];
-	while(!averagevalues.empty()){
-		cout<<"X: "<<inputEnergy[fghfker]<<'\n';
-		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
-		averagevalues.pop();
-		boxes[fghfker]->SetLineColor(kAzure+3);
-		boxes[fghfker++]->SetFillColor(kAzure+3);
-	}
 	axisTitles(measure,"Beam Energy GeV","Measured Energy");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
@@ -109,9 +110,12 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	poly->Draw("same");
 	old->Draw("same");
 	lin->Draw("same");
-	while(!goodBoxes.empty()){
-		boxes[goodBoxes.front()]->Draw("same");
-		goodBoxes.pop();
+	queue<TBox*>*boxes = getSystematicBoxes(SIZE, means, meanerror, inputEnergy);
+	cout<<&boxes->front()<<endl;
+	while (!boxes->empty())
+	{
+		boxes->front()->Draw("same");
+		boxes->pop();
 	}
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
 	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
