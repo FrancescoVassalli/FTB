@@ -1,7 +1,7 @@
 #include "Frannamespace.C"
 
 using namespace std;
-//using namespace Frannamespace;
+using namespace Frannamespace;
 
 
 void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
@@ -159,7 +159,13 @@ void BeamAnalysis6(){
 	while(!files.empty()){
 		queue<float> input[LINES];
 		queue<float> *tempenergy;
+		//cout<<"FILE NAME: "<<files.front().c_str()<<endl; 
 		inFile.open(files.front().c_str());
+		//if(!inFile.is_open())
+		//{
+		//	cout<<"FILE NOT OPEN"<<endl;
+		//}
+
 		files.pop();
 		stringstream ss;
 		intemp="";
@@ -168,6 +174,7 @@ void BeamAnalysis6(){
 		ss<<intemp;
 		getline(ss,intemp,',');
 		linearFactor[count]= stof(intemp);
+		//cout<<"YAAAALLLLLLLLLLPPPPPPPPPPPP"<<endl;
 		getline(ss,intemp,',');
 		linearFactorError[count] = stof(intemp);
 		ss.clear();
