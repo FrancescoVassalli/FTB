@@ -1,4 +1,8 @@
+#include "Frannamespace.C"
+
 using namespace std;
+//using namespace Frannamespace;
+
 
 void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
 {
@@ -94,7 +98,6 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
 	for (unsigned i = 0; i < nFiles; ++i)
 	{
-		
 		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(means,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(meanerror,fileBeginIndex[i],fileBeginIndex[i+1]));
 	}
 	doubleZero(plotgraphs[0],peakInput,peakInput);
@@ -120,10 +123,10 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		boxes->pop();
 	}
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
-	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
-	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05);
-	myText(.5,.24,kPink-7,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
-	myText(.25,.7,kBlue,"2016",.05);
+	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05,0);
+	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05,0);
+	myText(.5,.24,kPink-7,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05,0);
+	myText(.25,.7,kBlue,"2016",.05,0);
 	myMarkerText(.25,.9,kBlack,kOpenTriangleDown,"1100V",2,.05);
 	myMarkerText(.25,.8,kBlack,kOpenCircle,"1200V",2,.05);
 }
