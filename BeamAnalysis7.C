@@ -87,18 +87,19 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 		tempenergy=inputEnergy[i];
 	}
 	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
-	float* EnoUnder = partialArray(outEnergy,fileBeginIndex[0],fileBeginIndex[1]);
-	float* SenoUnder = partialArray(sigmaerror,fileBeginIndex[0],fileBeginIndex[1]);
-	float* SnoUnder = partialArray(sigma,fileBeginIndex[0],fileBeginIndex[1]);
+	float* EnoUnder = removeFromArray(outEnergy,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
+	float* SenoUnder = removeFromArray(sigmaerror,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
+	float* MenoUnder = removeFromArray(meanerror,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
+	float* SnoUnder = removeFromArray(sigma,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
 	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
 	float relativeE[nMeanBins];
 	float relativeU[nMeanBins];
 	for (int i = 0; i < nMeanBins; ++i)
 	{
-		relativeE[i] = S[i]/outEnergy[i];
-		cout<<sigma[i]<<": "<<sigmaerror[i]<<", "<<outEnergy[i]<<" : "<<meanerror[i]<<'\n';
-		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],outEnergy[i],meanerror[i]);
+		relativeE[i] = SnoUnder[i]/EnoUnder[i];
+		//cout<<sigma[i]<<": "<<sigmaerror[i]<<", "<<outEnergy[i]<<" : "<<meanerror[i]<<'\n';
+		relativeU[i]= errorDivide(SnoUnder[i],SenoUnder[i],EnoUnder[i],MenoUnder[i]);
 	}
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
