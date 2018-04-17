@@ -54,7 +54,9 @@ queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float*
 		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
 		averagevalues.pop();
 		boxes[fghfker]->SetLineColor(kAzure+3);
-		boxes[fghfker++]->SetFillColor(kAzure+3);
+		boxes[fghfker]->SetFillColor(kAzure+3);
+		boxes[fghfker]->SetFillStyle(0);
+		fghfker++;
 	}
 	queue<TBox*> *r = new queue<TBox*>();
 	//cout<<"Length: "<<nGroups<<'\n';
@@ -85,6 +87,8 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 		tempenergy=inputEnergy[i];
 	}
 	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
+	float* EnoUnder = partialArray(outEnergy,fileBeginIndex[0],fileBeginIndex[1]);
+	float* SnoUnder = partialArray(sigma,fileBeginIndex[0],fileBeginIndex[1]);
 	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
 	float relativeE[nMeanBins];

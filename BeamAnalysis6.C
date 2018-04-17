@@ -39,7 +39,9 @@ queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float*
 		boxes[fghfker] = new TBox(groupX[fghfker]-.5,averagevalues.front()-systematics[fghfker],groupX[fghfker]+.5,averagevalues.front()+systematics[fghfker]);
 		averagevalues.pop();
 		boxes[fghfker]->SetLineColor(kAzure+3);
-		boxes[fghfker++]->SetFillColor(kAzure+3);
+		boxes[fghfker]->SetFillColor(kAzure+3);
+		boxes[fghfker]->SetFillStyle(3944);
+		fghfker++;
 	}
 	queue<TBox*> *r = new queue<TBox*>();
 	//cout<<"Length: "<<nGroups<<'\n';
