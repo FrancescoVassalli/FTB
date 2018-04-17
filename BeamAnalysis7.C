@@ -68,8 +68,34 @@ queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float*
 	return r;
 }
 
+Point* averageGroups(queue<queue<Point>> groupedPoints,int nAverage){
+	Point* r = new Point[groupedPoints.size()];
+	int count=0;
+	while(!groupedPoints.empty()){
+		Scalar* temp = yArray(groupedPoints.front());
+		r[count].x = groupedPoints.front().front().x;
+		r[count].y = average(groupedPoints.front().size(),temp);
+		groupedPoints.pop();
+		count++;
+	}
+	return r;
+}
+
 void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror,const unsigned int nFiles){
-	float ex[nMeanBins];
+	Point points[nMeanBins];
+	Scalar sigma1[nMeanBins];
+	Scalar energ1[nMeanBins];
+	for (int i = 0; i < nMeanBins; ++i)
+	{
+		sigma1[i].value=sigma[i];
+		sigma1[i].uncertainty=sigmaerror[i];
+		energ1[i].value=outEnergy[i];
+		energ1[i].uncertainty=meanerror[i];
+		points[i].x.value = inputEnergy[i];
+		points[i].x.uncertainty=0;
+		points[i].y= sigma1[i]/energ1[i];
+	}
+	Scalar ex[nMeanBins];
 	int peakInput=0;
 	int tempenergy=inputEnergy[0];
 	int fileBeginIndex[nFiles+1];
@@ -77,7 +103,8 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	fileBeginIndex[0]=0;
 	for (int i = 0; i < nMeanBins; ++i)
 	{
-		ex[i] = 0;
+		ex[i].value = 0;
+		ex[i].uncertainty=0;
 		if(peakInput<inputEnergy[i]){
 			peakInput=inputEnergy[i];
 		}
@@ -85,27 +112,23 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 			fileBeginIndex[fileBeginIndexCounter++]=i;
 		}
 		tempenergy=inputEnergy[i];
+		//cout<<inputEnergy[i]<<'\n';
 	}
 	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
-	float* EnoUnder = removeFromArray(outEnergy,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
-	float* SenoUnder = removeFromArray(sigmaerror,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
-	float* MenoUnder = removeFromArray(meanerror,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
-	float* SnoUnder = removeFromArray(sigma,fileBeginIndex[1],fileBeginIndex[1]+4,nMeanBins);
 	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
-	float relativeE[nMeanBins];
-	float relativeU[nMeanBins];
-	for (int i = 0; i < nMeanBins; ++i)
-	{
-		relativeE[i] = SnoUnder[i]/EnoUnder[i];
-		//cout<<sigma[i]<<": "<<sigmaerror[i]<<", "<<outEnergy[i]<<" : "<<meanerror[i]<<'\n';
-		relativeU[i]= errorDivide(SnoUnder[i],SenoUnder[i],EnoUnder[i],MenoUnder[i]);
-	}
+	int nAverage=nMeanBins;
+	cout<<"after"<<'\n';
+	queue<queue<Point>> groupedPoints = groupPointsByX(points,&nAverage);
+	cout<<"here"<<endl;
+	Point* averagePoints = averageGroups(groupedPoints,nAverage);
+	
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
 	old->SetLineColor(kBlue);
 	eF->SetLineColor(kRed);
-	TGraphErrors* ehist = new TGraphErrors(nMeanBins,inputEnergy,relativeE,ex,relativeU);
+	
+	TGraphErrors* ehist = new TGraphErrors(nAverage,valueArray(xArray(averagePoints,nAverage),nAverage),valueArray(yArray(averagePoints,nAverage),nAverage),uncertaintyArray(xArray(averagePoints,nAverage),nAverage),uncertaintyArray(yArray(averagePoints,nAverage),nAverage));
 	ehist->Fit(eF);
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
@@ -116,12 +139,9 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	base->GetXaxis()->SetLimits(0,peakInput);
 	base->GetYaxis()->SetLimits(0,peakInput);
 	base->Draw("AP");*/
-	TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
-	for (unsigned i = 0; i < nFiles; ++i)
-	{
-		
-		plotgraphs[i] = new TGraphErrors(fileBeginIndex[i+1]-fileBeginIndex[i],partialArray(inputEnergy,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(relativeE,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(ex,fileBeginIndex[i],fileBeginIndex[i+1]),partialArray(relativeU,fileBeginIndex[i],fileBeginIndex[i+1]));
-	}
+	/*TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
+	plotgraphs[0] = new TGraphErrors(fileBeginIndex[1]-fileBeginIndex[0],partialArray(InnoUnder,fileBeginIndex[0],fileBeginIndex[1]),partialArray(relativeE,fileBeginIndex[0],fileBeginIndex[1]),partialArray(ex,fileBeginIndex[0],fileBeginIndex[1]),partialArray(relativeU,fileBeginIndex[0],fileBeginIndex[1]));
+	plotgraphs[1] = new TGraphErrors(fileBeginIndex[2]-fileBeginIndex[0]+3,partialArray(InnoUnder,fileBeginIndex[1]+3,fileBeginIndex[2]),partialArray(relativeE,fileBeginIndex[1]+3,fileBeginIndex[2]),partialArray(ex,fileBeginIndex[1]+3,fileBeginIndex[2]),partialArray(relativeU,fileBeginIndex[1]+3,fileBeginIndex[2]));
 	plotgraphs[0]->SetMarkerSize(2);
 	plotgraphs[0]->SetMinimum(0);
 	plotgraphs[0]->SetMaximum(0.1);
@@ -140,7 +160,8 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	while(!boxes->empty()){
 		boxes->front()->Draw("same");
 		boxes->pop();
-	}
+	}*/
+	ehist->Draw("AP");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
