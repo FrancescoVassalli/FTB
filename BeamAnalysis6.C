@@ -1,7 +1,8 @@
 #include "Frannamespace.C"
+#include "TLine.h"
 
 using namespace std;
-using namespace Frannamespace;
+//using namespace Frannamespace;
 
 
 void superArraySorter4000(float* energies, float* mean, float* meanError, int SIZE)
@@ -44,7 +45,7 @@ queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float*
 		averagevalues.pop();
 		boxes[fghfker]->SetLineColor(kAzure+3);
 		boxes[fghfker]->SetFillColor(kAzure+3);
-		boxes[fghfker]->SetFillStyle(3944);
+		boxes[fghfker]->SetFillStyle(1);
 		fghfker++;
 	}
 	queue<TBox*> *r = new queue<TBox*>();
@@ -79,7 +80,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	fileBeginIndex[fileBeginIndexCounter]=SIZE;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
-	axisTitles(measure,"Beam Energy GeV","Measured Energy");
+	axisTitles(measure,"Beam Energy (GeV)","Measured Energy(GeV)");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
 	TF1* old = new TF1("lin"," x*(1-0.00058)",0,peakInput);
@@ -105,14 +106,14 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	plotgraphs[0]->SetMarkerStyle(kOpenCircle);
 	plotgraphs[0]->Draw("AP");
 	plotgraphs[1]->SetMarkerStyle(kOpenTriangleDown);
-	axisTitles(plotgraphs[0],"Beam Energy GeV","Measured Energy #pm #sigma/#sqrt{3}");
+	axisTitles(plotgraphs[0],"Beam Energy (GeV)","Measured Energy #pm #sigma/#sqrt{3}  (GeV)");
 	for (unsigned i = 1; i < nFiles; ++i)
 	{
 		plotgraphs[i]->SetMarkerSize(2);
 		plotgraphs[i]->Draw("P");
 	}
 	poly->SetLineColor(kPink-7);
-	poly->Draw("same");
+	//poly->Draw("same");        //quadratic fit removed
 	old->Draw("same");
 	lin->Draw("same");
 	queue<TBox*>*boxes = getSystematicBoxes(SIZE, means, meanerror, inputEnergy);
@@ -123,11 +124,23 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 		boxes->pop();
 	}
 	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
-	myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05,0);
-	myText(.5,.18,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05,0);
-	myText(.5,.24,kPink-7,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05,0);
-	myText(.25,.7,kBlue,"2016",.05,0);
-	myMarkerText(.25,.9,kBlack,kOpenTriangleDown,"1100V",2,.05);
+	//myText(.5,.30,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05,0);
+	//myText(.5,.24,kRed,Form("C2: %0.3f#pm %0.5f",nonLinearFactor,nonLinearError),.05,0);
+	//myText(.5,.24,kPink-7,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05,0); //quadratic chi^2 removed
+
+	myText(.25,.73,kBlack,"2016",.05,0);
+	TF1 *oldData = new TF1("oldData","13.75",2,3); //key line for the old 2016 data 
+	oldData->SetLineColor(kBlue);
+	oldData->Draw("same");
+
+	myText(.25,.68,kBlack,"2018",.05,0);
+	//cout<<"slopey shit"<<fabs(1-(lin->GetParameter(0)))<<endl;
+	myText(.5,.30,kBlack,"E_{measured} = E_{in}*1.0205013 ",.05,0);
+	TF1 *newData = new TF1("newData","12.75",2,3); //key line for the our data 
+	newData->SetLineColor(kRed);
+	newData->Draw("same");
+
+	myMarkerText(.25,.85,kBlack,kOpenTriangleDown,"1100V",2,.05);
 	myMarkerText(.25,.8,kBlack,kOpenCircle,"1200V",2,.05);
 }
 
@@ -161,13 +174,7 @@ void BeamAnalysis6(){
 	while(!files.empty()){
 		queue<float> input[LINES];
 		queue<float> *tempenergy;
-		//cout<<"FILE NAME: "<<files.front().c_str()<<endl; 
 		inFile.open(files.front().c_str());
-		//if(!inFile.is_open())
-		//{
-		//	cout<<"FILE NOT OPEN"<<endl;
-		//}
-
 		files.pop();
 		stringstream ss;
 		intemp="";
@@ -176,7 +183,6 @@ void BeamAnalysis6(){
 		ss<<intemp;
 		getline(ss,intemp,',');
 		linearFactor[count]= stof(intemp);
-		//cout<<"YAAAALLLLLLLLLLPPPPPPPPPPPP"<<endl;
 		getline(ss,intemp,',');
 		linearFactorError[count] = stof(intemp);
 		ss.clear();
