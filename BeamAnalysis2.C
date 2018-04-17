@@ -92,7 +92,7 @@ float* trendForced(const int nMeanBins,float*meanBins, float* adc12, float* sigm
 }
 
 void BeamAnalysis2(){
-	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/PbGl_data1_1100.txt"); //txt file containing the data from BeamAnalysis1
+	ifstream inFile ("/home/user/Dropbox/Nagel/FLTBAnalysis/PbGl_data1_1200.txt"); //txt file containing the data from BeamAnalysis1
 	const int LINES = 6;
 	queue<float> input[LINES];
 	string intemp;
