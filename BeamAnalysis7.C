@@ -88,6 +88,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	}
 	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
 	float* EnoUnder = partialArray(outEnergy,fileBeginIndex[0],fileBeginIndex[1]);
+	float* SenoUnder = partialArray(sigmaerror,fileBeginIndex[0],fileBeginIndex[1]);
 	float* SnoUnder = partialArray(sigma,fileBeginIndex[0],fileBeginIndex[1]);
 	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
@@ -95,7 +96,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	float relativeU[nMeanBins];
 	for (int i = 0; i < nMeanBins; ++i)
 	{
-		relativeE[i] = sigma[i]/outEnergy[i];
+		relativeE[i] = S[i]/outEnergy[i];
 		cout<<sigma[i]<<": "<<sigmaerror[i]<<", "<<outEnergy[i]<<" : "<<meanerror[i]<<'\n';
 		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],outEnergy[i],meanerror[i]);
 	}
