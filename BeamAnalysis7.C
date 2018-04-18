@@ -71,10 +71,12 @@ queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float*
 Point* averageGroups(queue<queue<Point>> groupedPoints,int nAverage){
 	Point* r = new Point[groupedPoints.size()];
 	int count=0;
+	cout<<"averages:"<<'\n';
 	while(!groupedPoints.empty()){
 		Scalar* temp = yArray(groupedPoints.front());
 		r[count].x = groupedPoints.front().front().x;
 		r[count].y = average(groupedPoints.front().size(),temp);
+		cout<<r[count].y.value<<'\n';
 		groupedPoints.pop();
 		count++;
 	}
@@ -83,17 +85,17 @@ Point* averageGroups(queue<queue<Point>> groupedPoints,int nAverage){
 
 void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror,const unsigned int nFiles){
 	Point points[nMeanBins];
-	Scalar sigma1[nMeanBins];
-	Scalar energ1[nMeanBins];
 	for (int i = 0; i < nMeanBins; ++i)
 	{
-		sigma1[i].value=sigma[i];
-		sigma1[i].uncertainty=sigmaerror[i];
-		energ1[i].value=outEnergy[i];
-		energ1[i].uncertainty=meanerror[i];
+		Scalar sig= Scalar(sigma[i],sigmaerror[i]);
+		Scalar eng= Scalar(outEnergy[i],meanerror[i]);
+		//cout<<"Sig: "<<sig.value<<'\n';
 		points[i].x.value = inputEnergy[i];
+		//cout<<"first: "<<(sig/eng).value;
 		points[i].x.uncertainty=0;
-		points[i].y= sigma1[i]/energ1[i];
+		points[i].y= sig;
+		points[i].y/=eng;
+		//cout<<" second: "<<points[i].y.value<<'\n';
 	}
 	Scalar ex[nMeanBins];
 	int peakInput=0;
@@ -122,7 +124,6 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	queue<queue<Point>> groupedPoints = groupPointsByX(points,&nAverage);
 	cout<<"here"<<endl;
 	Point* averagePoints = averageGroups(groupedPoints,nAverage);
-	
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
 	old->SetLineColor(kBlue);
