@@ -80,7 +80,7 @@ void plotByEnergy(int SIZE, float* means, float* meanerror, float* inputEnergy,c
 	fileBeginIndex[fileBeginIndexCounter]=SIZE;
 	peakInput++;
 	TGraphErrors *measure = new TGraphErrors(SIZE,inputEnergy,means,ex,meanerror);
-	axisTitles(measure,"Beam Energy (GeV)","Measured Energy(GeV)");
+	axisTitles(measure,"Beam Energy (GeV)","Measured Energy[GeV]");
 	TF1* lin = new TF1("lin","[0]*x",0,peakInput);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,peakInput);
 	TF1* old = new TF1("lin"," x*(1-0.00058)",0,peakInput);
