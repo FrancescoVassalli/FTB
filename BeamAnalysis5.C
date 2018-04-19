@@ -33,7 +33,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 		}
 		tempenergy=inputEnergy[i];
 	}
-	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
+	fileBeginIndex[fileBeginIndexCounter]=nMeanBins;
 	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
 	float relativeE[nMeanBins];
