@@ -71,7 +71,7 @@ queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float*
 Point* averageGroups(queue<queue<Point>> groupedPoints,int nAverage){
 	Point* r = new Point[groupedPoints.size()];
 	int count=0;
-	cout<<"averages:"<<'\n';
+	//cout<<"averages:"<<'\n';
 	while(!groupedPoints.empty()){
 		Scalar* temp = yArray(groupedPoints.front());
 		r[count].x = groupedPoints.front().front().x;
@@ -85,17 +85,18 @@ Point* averageGroups(queue<queue<Point>> groupedPoints,int nAverage){
 
 void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* sigma, float* meanerror, float* sigmaerror,const unsigned int nFiles){
 	Point points[nMeanBins];
+	//cout<<"Energy"<<'\n';
 	for (int i = 0; i < nMeanBins; ++i)
 	{
 		Scalar sig= Scalar(sigma[i],sigmaerror[i]);
 		Scalar eng= Scalar(outEnergy[i],meanerror[i]);
 		//cout<<"Sig: "<<sig.value<<'\n';
 		points[i].x.value = inputEnergy[i];
+		//cout<<inputEnergy[i]<<'\n';
 		//cout<<"first: "<<(sig/eng).value;
 		points[i].x.uncertainty=0;
-		points[i].y= sig;
-		points[i].y/=eng;
-		//cout<<" second: "<<points[i].y.value<<'\n';
+		points[i].y= sig/eng;
+		cout<<"X: "<<points[i].x.value<<" Y: "<<points[i].y.value<<'\n';
 	}
 	Scalar ex[nMeanBins];
 	int peakInput=0;
@@ -114,16 +115,23 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 			fileBeginIndex[fileBeginIndexCounter++]=i;
 		}
 		tempenergy=inputEnergy[i];
-		//cout<<inputEnergy[i]<<'\n';
+		
 	}
-	fileBeginIndex[fileBeginIndexCounter]=nMeanBins-1;
+	fileBeginIndex[fileBeginIndexCounter]=nMeanBins;
+	//cout<<"Peak: "<<peakInput<<'\n';
 	peakInput++;
 	TCanvas *canvas1 = new TCanvas();
 	int nAverage=nMeanBins;
-	cout<<"after"<<'\n';
 	queue<queue<Point>> groupedPoints = groupPointsByX(points,&nAverage);
-	cout<<"here"<<endl;
+	groupedPoints = removeIndex(groupedPoints,5,5);
+	nAverage--;
+	groupedPoints=mergeQueues(groupedPoints,4,5);
+	nAverage--;
 	Point* averagePoints = averageGroups(groupedPoints,nAverage);
+	for (int i = 0; i < nAverage; ++i)
+	{
+		cout<<averagePoints[i].x.value<<": "<<averagePoints[i].y.value<<'\n';
+	}
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
 	old->SetLineColor(kBlue);
@@ -133,46 +141,31 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	ehist->Fit(eF);
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
+	eA*=100;
+	eB*=100;
 	float errors[2];
 	errors[0] = eF->GetParError(0);
 	errors[1] = eF->GetParError(1);
-	/*TGraphErrors* base = new TGraphErrors();
-	base->GetXaxis()->SetLimits(0,peakInput);
-	base->GetYaxis()->SetLimits(0,peakInput);
-	base->Draw("AP");*/
-	/*TGraphErrors** plotgraphs = new TGraphErrors*[nFiles];
-	plotgraphs[0] = new TGraphErrors(fileBeginIndex[1]-fileBeginIndex[0],partialArray(InnoUnder,fileBeginIndex[0],fileBeginIndex[1]),partialArray(relativeE,fileBeginIndex[0],fileBeginIndex[1]),partialArray(ex,fileBeginIndex[0],fileBeginIndex[1]),partialArray(relativeU,fileBeginIndex[0],fileBeginIndex[1]));
-	plotgraphs[1] = new TGraphErrors(fileBeginIndex[2]-fileBeginIndex[0]+3,partialArray(InnoUnder,fileBeginIndex[1]+3,fileBeginIndex[2]),partialArray(relativeE,fileBeginIndex[1]+3,fileBeginIndex[2]),partialArray(ex,fileBeginIndex[1]+3,fileBeginIndex[2]),partialArray(relativeU,fileBeginIndex[1]+3,fileBeginIndex[2]));
-	plotgraphs[0]->SetMarkerSize(2);
-	plotgraphs[0]->SetMinimum(0);
-	plotgraphs[0]->SetMaximum(0.1);
-	plotgraphs[0]->GetXaxis()->SetLimits(0,peakInput);
-	plotgraphs[0]->SetMarkerStyle(kOpenCircle);
-	plotgraphs[0]->Draw("AP");
-	plotgraphs[1]->SetMarkerStyle(kOpenTriangleDown);
-	for (unsigned i = 1; i < nFiles; ++i)
-	{
-		plotgraphs[i]->SetMarkerSize(2);
-		plotgraphs[i]->Draw("P");
-	}
-	old->Draw("same");
-	eF->Draw("same");
-	queue<TBox*> *boxes = getSystematicBoxes(nMeanBins,relativeE,relativeU,inputEnergy);
+
+	/*queue<TBox*> *boxes = getSystematicBoxes(nMeanBins,relativeE,relativeU,inputEnergy);
 	while(!boxes->empty()){
 		boxes->front()->Draw("same");
 		boxes->pop();
 	}*/
+	doubleZero(ehist,.07,peakInput);
+	ehist->GetXaxis()->SetLimits(0,peakInput);
+	ehist->SetMarkerSize(2);
 	ehist->Draw("AP");
+	old->Draw("same");
+	eF->Draw("same");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
-	myText(.5,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05,0);
-	myText(.5,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
-	myText(.5,.85,kRed,Form("Stochastic: %0.5f#pm%0.5f ",eA,errors[0]),.05,0);
-	myText(.5,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
+	//myText(.5,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05,0);
+	//myText(.5,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
+	myText(.5,.85,kRed,Form("#DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",eA,eB),.05,0);
+	//myText(.5,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
 	myText(.2,.2,kBlue,"2016",.05,0);
-	myMarkerText(.7,.25,kBlack,kOpenTriangleDown,"1100V",2,.05);
-	myMarkerText(.7,.2,kBlack,kOpenCircle,"1200V",2,.05);
 }
 
 
