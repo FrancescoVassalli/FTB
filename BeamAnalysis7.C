@@ -32,6 +32,64 @@ void superArraySorter4000(float* energies, float* mean, float* meanError, int SI
 	}
 }
 
+queue<Point> getSystematic(queue<queue<Point>> groups){
+	queue<Scalar> yTemp;
+	queue<Point> out;
+	cout<<"Systematics: ";
+	while(!groups.empty()){
+		Point temp;
+		yTemp = yQueue(groups.front());
+		temp.x = groups.front().front().x;
+		groups.pop();
+		temp.y = systematicError(yTemp);
+		out.push(temp);
+		cout<<temp.y.value<<'\n';
+	}
+	return out;
+}
+
+queue<Point> nonZero(queue<Point> in){
+	queue<Point> out;
+	while(!in.empty()){
+		if (in.front().y!=0)
+		{
+			out.push(in.front());
+		}
+		in.pop();
+	}
+	return out;
+}
+
+queue<TBox*> nonZero(queue<TBox*> in){
+	queue<TBox*> out;
+	while(!in.empty()){
+		if (in.front()->GetY1()!=in.front()->GetY2())
+		{
+			out.push(in.front());
+		}
+		in.pop();
+	}
+	return out;
+}
+
+queue<TBox*> getSystematicBoxes(queue<queue<Point>> groups, queue<Point> averages){
+	queue<Point> systematics = getSystematic(groups);
+	//systematics=nonZero(systematics);
+	queue<TBox*> r;
+	cout<<"sizes: "<<systematics.size()<<": "<<averages.size()<<'\n';
+	while(!systematics.empty()){
+		cout<<"X: "<<averages.front().x.value<<" Y: "<<averages.front().y.value<<'\n';
+		TBox *tempBox = new TBox(systematics.front().x.value-.5,averages.front().y.value-systematics.front().y.value,systematics.front().x.value+.5,averages.front().y.value+systematics.front().y.value);
+		averages.pop();
+		systematics.pop();
+		tempBox->SetLineColor(kAzure+3);
+		tempBox->SetFillStyle(0);
+		r.push(tempBox);
+	}
+	r=nonZero(r);
+	return r;
+}
+
 queue<TBox*>* getSystematicBoxes(int SIZE,float* means, float* meanerror, float* inputEnergy){
 	int fghfker=0;
 	superArraySorter4000(inputEnergy,means,meanerror,SIZE);
@@ -128,10 +186,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	groupedPoints=mergeQueues(groupedPoints,4,5);
 	nAverage--;
 	Point* averagePoints = averageGroups(groupedPoints,nAverage);
-	for (int i = 0; i < nAverage; ++i)
-	{
-		cout<<averagePoints[i].x.value<<": "<<averagePoints[i].y.value<<'\n';
-	}
+	queue<TBox*> systematicBoxes=getSystematicBoxes(groupedPoints,arrayToQueue(nAverage,averagePoints));
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,peakInput);
 	TF1* old = new TF1("old","TMath::Sqrt(.02*.02+.014*.014+(.05*.05)/x)",0, peakInput);
 	old->SetLineColor(kBlue);
@@ -146,18 +201,17 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	float errors[2];
 	errors[0] = eF->GetParError(0);
 	errors[1] = eF->GetParError(1);
-
-	/*queue<TBox*> *boxes = getSystematicBoxes(nMeanBins,relativeE,relativeU,inputEnergy);
-	while(!boxes->empty()){
-		boxes->front()->Draw("same");
-		boxes->pop();
-	}*/
 	doubleZero(ehist,.07,peakInput);
 	ehist->GetXaxis()->SetLimits(0,peakInput);
 	ehist->SetMarkerSize(2);
+	ehist->SetMarkerStyle(kOpenCircle);
 	ehist->Draw("AP");
 	old->Draw("same");
 	eF->Draw("same");
+	while(!systematicBoxes.empty()){
+		systematicBoxes.front()->Draw("same");
+		systematicBoxes.pop();
+	}
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
