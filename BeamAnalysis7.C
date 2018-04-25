@@ -82,8 +82,8 @@ queue<TBox*> getSystematicBoxes(queue<queue<Point>> groups, queue<Point> average
 		TBox *tempBox = new TBox(systematics.front().x.value-.5,averages.front().y.value-systematics.front().y.value,systematics.front().x.value+.5,averages.front().y.value+systematics.front().y.value);
 		averages.pop();
 		systematics.pop();
-		tempBox->SetLineColor(kAzure+3);
-		tempBox->SetFillStyle(0);
+		tempBox->SetFillColorAlpha(kRed,.2);
+		//tempBox->SetFillStyle(0);
 		r.push(tempBox);
 	}
 	r=nonZero(r);
@@ -177,7 +177,7 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	}
 	fileBeginIndex[fileBeginIndexCounter]=nMeanBins;
 	//cout<<"Peak: "<<peakInput<<'\n';
-	peakInput++;
+	peakInput+=2;
 	TCanvas *canvas1 = new TCanvas();
 	int nAverage=nMeanBins;
 	queue<queue<Point>> groupedPoints = groupPointsByX(points,&nAverage);
@@ -204,22 +204,37 @@ void resolution(const int nMeanBins,float*inputEnergy, float* outEnergy, float* 
 	doubleZero(ehist,.07,peakInput);
 	ehist->GetXaxis()->SetLimits(0,peakInput);
 	ehist->SetMarkerSize(2);
-	ehist->SetMarkerStyle(kOpenCircle);
-	ehist->Draw("AP");
+	ehist->SetMarkerColor(kRed+2);
+	ehist->SetMarkerStyle(kFullCircle);
+	TH1F *back = new TH1F("back","",1,0,peakInput);
+	doubleZero(back,.1,peakInput);
+	back->Draw();
 	old->Draw("same");
 	eF->Draw("same");
 	while(!systematicBoxes.empty()){
 		systematicBoxes.front()->Draw("same");
 		systematicBoxes.pop();
 	}
-	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
+	ehist->Draw("P same");
+	axisTitles(ehist,"Beam Energy [GeV]","#mu");
+	axisTitles(back,"Beam Energy [GeV]","#mu");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
 	//myText(.5,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05,0);
 	//myText(.5,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05,0);
-	myText(.5,.85,kRed,Form("#DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",eA,eB),.05,0);
+	//myText(.5,.85,kRed,Form("#DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",eA,eB),.05,0);
 	//myText(.5,.8,kRed,Form("Constant: %0.5f#pm%0.5f",eB,errors[1]),.05,0);
-	myText(.2,.2,kBlue,"2016",.05,0);
+	float oldA = 5;
+	float oldB=2.4;
+	//myText(.2,.2,kBlue,"2016",.05,0);
+	TLegend *tl = new TLegend(.5,.67,.8,.95);
+	tl->AddEntry(eF,Form("2018 Fit: #DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",eA,eB),"l");
+	tl->AddEntry(old,Form("2016 Fit: #DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",oldA,oldB),"l");
+	tl->AddEntry(ehist,"2018 Data","p");
+	//myMarkerText(.53,.64,kBlack,kOpenCircle,"2018 Data",2,.05);
+	//myMarkerText(.5,.85,kRed,kFullCircle,Form("2018 Fit: #DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",eA,eB),2,.05);
+	//myMarkerText(.5,.75,kBlue,kFullCircle,Form("2016 Fit: #DeltaE/E= #frac{%0.1f\%}{#sqrt{E}} #oplus%0.1f\% ",oldA,oldB),2,.05);
+	tl->Draw();
 }
 
 
