@@ -2,7 +2,7 @@
 //sphenix/user/dvp/testbeam/beam_00000558-0000.root (6 GeV Beam, 1200V) Tested - Chase/Franceso
 //sphenix/user/dvp/testbeam/beam_00000551-0000.root (4 GeV beam),    Tested - Chase    (Imported)
 //sphenix/user/dvp/testbeam/beam_00000563-0000.root (2 GeV beam),    Tested - Chase	   (Imported)
-//sphenix/user/dvp/testbeam/beam_00000573-0000.root (12 GeV beam),   Tested - Fracesco (Imported)
+//sphenix/user/dvp/testbeam/beam_00000573-0000.root (12 GeV beam),   Tested - Francesco (Imported)
 //sphenix/user/dvp/testbeam/beam_00000567-0000.root (8 Gev Beam),    Tested - Chase    (Imported)
 
 //This is a 1100V Run
