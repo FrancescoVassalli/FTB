@@ -1,6 +1,6 @@
 
 
-float runToEnergy(float run){
+int runToEnergy(int run){
     int r;
     int s = (int) run;
     switch (s){
@@ -90,6 +90,15 @@ float runToEnergy(float run){
             break;
     }
     return r;
+}
+
+int* runToEnergy(int* runs, int SIZE){
+	int *voltages = new int[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		voltages[i] = runToEnergy(runs[i]);
+	}
+	return voltages;
 }
 
 #ifndef OfficalBeamData_h
