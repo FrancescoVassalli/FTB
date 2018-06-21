@@ -159,9 +159,9 @@ private:
 #endif
 
 void Part2A(){
-	string fileLocation = "/home/user/Droptemp/G4OutInitial/";
-	string filename = "XjPhi1_pT5_output_";
-	string extension = ".root";
+	string fileLocation = "";
+	string filename = "beam_00000";
+	string extension = "-0000.root";
 	filename = fileLocation+filename;
 	const int NUMSIZE;
 	int numbers[NUMSIZE] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
