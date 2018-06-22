@@ -2,7 +2,6 @@
 #include <iostream>
 
 using namespace std;
-/*
 
 int runToEnergy(int run){
     int r;
@@ -101,10 +100,12 @@ int* runToEnergy(int* runs, int SIZE){
 	for (int i = 0; i < SIZE; ++i)
 	{
 		voltages[i] = runToEnergy(runs[i]);
+		cout<<voltages[i]<<'\n';
 	}
+	cout<<"Exiting runToEnergy"<<'\n';
 	return voltages;
 }
-
+/*
 #ifndef OfficalBeamData_h
 #define OfficalBeamData_h 
 class OfficalBeamData
@@ -169,12 +170,13 @@ void Part2A(){
 	filename = fileLocation+filename;
 	const int NUMSIZE=18;
 	int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
-	//int voltages = runToEnergy(numbers,NUMSIZE);
+	int voltages = runToEnergy(numbers,NUMSIZE);
 	TChain *all = new TChain("T1");
 	stringstream ss;
 	for (int i = 0; i < NUMSIZE; ++i)
 	{
 		ss<<numbers[i];
+		cout<<voltages[i]<<'\n';
 		fileLocation = filename+ss.str()+extension;
 		all->Add(fileLocation.c_str());
 		ss.clear();
