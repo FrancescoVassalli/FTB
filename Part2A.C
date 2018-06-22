@@ -95,15 +95,113 @@ int runToEnergy(int run){
     return r;
 }
 
+int runToVoltage(int run){
+    int r;
+    int s = (int) run;
+    switch (s){
+        case 558:
+            r=1100;
+            break;
+        case 551:
+            r= 1100;
+            break;
+        case 563:
+            r= 1100;
+            break;
+        case 573:
+            r= 1100;
+            break;
+        case 567:
+            r= 1100;
+            break;
+        case 776:
+        	r=1200;
+        	break;
+    	case 777:
+    		r=1200;
+    		break;
+		case 809:
+			r=1200;
+			break;
+		case 810:
+			r=1200;
+			break;
+		case 816:
+			r=1200;
+			break;
+		case 829:
+			r=1200;
+			break;
+		case 830:
+			r=1200;
+			break;
+		case 849:
+			r=1200;
+			break;
+		case 859:
+			r=1200;
+			break;
+		case 900:
+			r=1200;
+			break;
+		case 631:
+			r=1100;
+			break;
+		case 544:
+			r= 1100;
+			break;
+		case 652:
+			r= 1100;
+			break;
+		case 653:
+			r= 1100;
+			break;
+		case 654:
+			r= 1100;
+			break;
+		case 687:
+			r= 1100;
+			break;
+		case 572:
+			r= 1100;
+			break;
+		case 574:
+			r= 1100;
+			break;
+		case 577:
+			r= 1100;
+			break;
+		case 578:
+			r= 1100;
+			break;
+		case 579:
+			r= 1100;
+			break;	
+		case 580:
+			r=1100;
+			break;
+        default:
+            r=-1;
+            break;
+    }
+    return r;
+}
+
 int* runToEnergy(int* runs, int SIZE){
+	int *energies = new int[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		energies[i] = runToEnergy(runs[i]);
+	}
+	return energies;
+}
+int* runToVoltage(int* runs, int SIZE){
 	int *voltages = new int[SIZE];
 	for (int i = 0; i < SIZE; ++i)
 	{
-		voltages[i] = runToEnergy(runs[i]);
-		cout<<voltages[i]<<'\n';
+		voltages[i] = runToVoltage(runs[i]);
 	}
-	cout<<"Exiting runToEnergy"<<'\n';
-	return voltages;
+	return &voltages[0];
 }
 /*
 #ifndef OfficalBeamData_h
@@ -170,16 +268,15 @@ void Part2A(){
 	filename = fileLocation+filename;
 	const int NUMSIZE=18;
 	int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
-	int voltages = runToEnergy(numbers,NUMSIZE);
+	int* voltages = runToVoltage(numbers,NUMSIZE); //double check that these are right
 	TChain *all = new TChain("T1");
 	stringstream ss;
 	for (int i = 0; i < NUMSIZE; ++i)
 	{
 		ss<<numbers[i];
-		cout<<voltages[i]<<'\n';
 		fileLocation = filename+ss.str()+extension;
 		all->Add(fileLocation.c_str());
 		ss.clear();
 	}
-	//OfficalBeamData data(all,voltages);
+	OfficalBeamData data(all,voltages);
 }
