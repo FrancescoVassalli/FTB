@@ -1,3 +1,6 @@
+#include <sstream>
+#include <iostream>
+
 using namespace std;
 /*
 
@@ -168,10 +171,13 @@ void Part2A(){
 	int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
 	//int voltages = runToEnergy(numbers,NUMSIZE);
 	TChain *all = new TChain("T1");
+	stringstream ss;
 	for (int i = 0; i < NUMSIZE; ++i)
 	{
-		fileLocation = filename+to_string(numbers[i])+extension;
+		ss<<numbers[i];
+		fileLocation = filename+ss.str()+extension;
 		all->Add(fileLocation.c_str());
+		ss.clear();
 	}
 	//OfficalBeamData data(all,voltages);
 }
