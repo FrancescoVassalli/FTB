@@ -203,7 +203,7 @@ int* runToVoltage(int* runs, int SIZE){
 	}
 	return &voltages[0];
 }
-/*
+
 #ifndef OfficalBeamData_h
 #define OfficalBeamData_h 
 class OfficalBeamData
@@ -260,7 +260,7 @@ private:
 	queue<int> beamVoltage;
 };
 #endif
-*/
+
 void Part2A(){
 	string fileLocation = "";
 	string filename = "beam_00000";
@@ -278,5 +278,5 @@ void Part2A(){
 		all->Add(fileLocation.c_str());
 		ss.clear();
 	}
-	OfficalBeamData data(all,voltages);
+//	OfficalBeamData data(all,voltages);
 }
