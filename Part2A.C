@@ -3,6 +3,7 @@
 #include "TH1F.h"
 #include "TChain.h"
 #include <iostream>
+#include "TF1.h"
 //#include "NiceHists.C"
 using namespace std;
 
@@ -238,11 +239,13 @@ public:
 			orange->SetBranchAddress("TOWER_CALIB_PbGL.energy", &pbglTemp);
 			for (int i = 0; i < SIZE; ++i)
 			{
+				if(i%1000==0) cout<<i<<" events processed"<<'\n';
 				orange->GetEntry(i);
 				if (passCuts(cerenkovEnergies[1],vetoEnergy,hodoVerticalEnergy,hodoHorizontalEnergy))
 				{
 					pbglEnergy.push(pbglTemp);
 					pbglPlot->Fill(pbglTemp);
+					cout<<pbglTemp<<'\n';
 				}	
 			}
 			pbglPlot->Sumw2();
@@ -250,13 +253,14 @@ public:
 	}
 	~OfficalBeamData(){}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
-		return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
+	//	return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
+		return true;
 	}
 	inline bool noVeto(double* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
 	}
 	inline bool passHodo(double* hodo){
-		return hodo[0]<HODOcut && hodo[1]<HODOcut && hodo[2]<HODOcut && hodo[3]<HODOcut && hodo[4]<HODOcut && hodo[5]<HODOcut && hodo[6]<HODOcut && hodo[7]<HODOcut;
+		return hodo[0]>HODOcut && hodo[1]>HODOcut && hodo[2]>HODOcut && hodo[3]>HODOcut && hodo[4]>HODOcut && hodo[5]>HODOcut && hodo[6]>HODOcut && hodo[7]>HODOcut;
 	}
 	OfficalBeamData& operator=(OfficalBeamData other){
 		pbglEnergy=other.pbglEnergy;
@@ -294,8 +298,8 @@ private:
 
 	//we will need to play with these values
 	const double CERENKOVcut = 1000;
-	const float VETOcut = .3;
-	const float HODOcut = .4;
+	const float VETOcut = .25;
+	const float HODOcut = .45;
 
 	queue<double> pbglEnergy;
 	int beamVoltage;
