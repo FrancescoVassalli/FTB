@@ -1,4 +1,5 @@
-
+using namespace std;
+/*
 
 int runToEnergy(int run){
     int r;
@@ -148,7 +149,7 @@ public:
 private:
 	const int SIZE;
 
-	/*we will need to play with these values*/
+	//we will need to play with these values
 	const double CERENKOVcut = 1000;
 	const float VETOcut = .3;
 	const float HODOcut = .4;
@@ -157,20 +158,20 @@ private:
 	queue<int> beamVoltage;
 };
 #endif
-
+*/
 void Part2A(){
-	string fileLocation = "/home/user/Droptemp/G4OutInitial/";
-	string filename = "XjPhi1_pT5_output_";
-	string extension = ".root";
+	string fileLocation = "";
+	string filename = "beam_00000";
+	string extension = "-0000.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE;
-	int numbers[NUMSIZE] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
-	int voltages = runToEnergy(numbers,NUMSIZE);
+	const int NUMSIZE=18;
+	int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
+	//int voltages = runToEnergy(numbers,NUMSIZE);
 	TChain *all = new TChain("T1");
 	for (int i = 0; i < NUMSIZE; ++i)
 	{
 		fileLocation = filename+to_string(numbers[i])+extension;
 		all->Add(fileLocation.c_str());
 	}
-	OfficalBeamData data(all,voltages);
+	//OfficalBeamData data(all,voltages);
 }
