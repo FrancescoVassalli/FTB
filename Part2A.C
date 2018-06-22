@@ -218,7 +218,7 @@ class OfficalBeamData
 {
 public:
 	OfficalBeamData(){}
-	OfficalBeamData(TChain *orange, int beamVoltage, string name) : SIZE(orange->GetEntries()), beamVoltage(beamVoltage){ 
+	OfficalBeamData(TChain *orange, int beamVoltage, int beamEnergy,string name) : SIZE(orange->GetEntries()), beamVoltage(beamVoltage), beamEnergy(beamEnergy){ 
 		if (SIZE==0)
 		{
 			cout<<"Error Data Size is 0"<<endl;
@@ -264,9 +264,31 @@ public:
 		pbglPlot=other.pbglPlot;
 		return *this;
 	}
-	void makeGaus(){
+	double makeGaus(){
+		int maxbin = pbglPlot->GetMaximumBin();
+		double gausLowBound = pbglPlot->GetBinLowEdge(maxbin);
+		double temp = gausLowBound*.7;
+		double gausUpbound = gausLowBound +temp;
+		if(gausUpbound >16400){gausUpbound=16400;} //so that fit doesn't exceed range of histogram
+		gausLowBound -= temp; 
+		TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
 
+		pbglPlot->Fit(gaus,"R");       //“R” Use the range specified in the function range
+		double mygaus[2];
+		mygaus[0] = gaus->GetParameter(1); //mean
+		mygaus[1] = gaus->GetParameter(2); //sigma
+		int lazyMan = 0;
+		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,lazyMan);
+		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(5*mygaus[1]),mygaus[0]+5*mygaus[1]);
+		mean = mygaus[0];
+		sigma = mygaus[1];
 	}	
+	double getResolution(){
+		return sigma/mean;
+	}
+	double getMean(){
+		return mean;
+	}
 private:
 	int SIZE;
 
@@ -277,8 +299,27 @@ private:
 
 	queue<double> pbglEnergy;
 	int beamVoltage;
+	int beamEnergy;
 	double gaus;
 	TH1F *pbglPlot;
+	double mean;
+	double sigma;
+
+	void recursiveGaus(TH1* h, TF1* gaus, double* data, float sigmadistance,int lazyMan=0){
+	    h->Fit(gaus,"","",data[0]-sigmadistance*data[1],data[0]+sigmadistance*data[1]);
+	    if(data[0]!=gaus->GetParameter(1)){
+	    	if(lazyMan == 100){return;}
+	        data[0] = gaus->GetParameter(1);
+	        data[1] = gaus->GetParameter(2);
+	        lazyMan++;
+	        recursiveGaus(h,gaus,data,sigmadistance,lazyMan);
+	    }
+	    else{
+	        data[0] = gaus->GetParameter(1);
+	        data[1] = gaus->GetParameter(2);
+	        return;
+	    }
+	}
 };
 #endif
 
@@ -293,6 +334,7 @@ void Part2A(){
 	const int NUMSIZE=1;
 	int numbers[] = {551};
 	int* voltages = runToVoltage(numbers,NUMSIZE); //double check that these are right
+	int* energies = runToEnergy(numbers,NUMSIZE);
 	OfficalBeamData *data= new OfficalBeamData[NUMSIZE];
 	TChain *all; 
 	stringstream ss;
@@ -304,7 +346,8 @@ void Part2A(){
 		all->Add(fileLocation.c_str());
 		ss.clear();
 		ss<<"beamdata"<<numbers[i];
-		data[i] = OfficalBeamData(all,voltages[i],ss.str());
+		data[i] = OfficalBeamData(all,voltages[i],energies[i],ss.str());
+		cout<<data[i].getMean()<<endl;
 		ss.clear();
 		delete all;
 	}
