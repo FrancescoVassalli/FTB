@@ -3,6 +3,10 @@
 
 using namespace std;
 
+namespace {
+	int plotcount=0;
+}
+
 int runToEnergy(int run){
     int r;
     int s = (int) run;
@@ -209,12 +213,14 @@ int* runToVoltage(int* runs, int SIZE){
 class OfficalBeamData
 {
 public:
-	OfficalBeamData(TChain *orange, int* beamVoltage) : SIZE(orange->GetEntries()){ 
+	OfficalBeamData(TChain *orange, int beamVoltage) : SIZE(orange->GetEntries()), beamVoltage(beamVoltage){ 
 		if (SIZE==0)
 		{
 			cout<<"Error Data Size is 0"<<endl;
 		}
 		else{
+			TH1F *pbglPlot = new TH1F(getNextPlotName(&plotcount).c_str(),"",100,0,20);
+
 			double cerenkovEnergies[3]; // only need the [1] value 
 	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", &cerenkovEnergies);
 	 		double vetoEnergy[4]; //need all the values 
@@ -228,12 +234,13 @@ public:
 			for (int i = 0; i < SIZE; ++i)
 			{
 				orange->GetEntry(i);
-				this->beamVoltage.push(beamVoltage[i]);
 				if (passCuts(cerenkovEnergies[1],vetoEnergy,hodoVerticalEnergy,hodoHorizontalEnergy))
 				{
 					pbglEnergy.push(pbglTemp);
+					pbglPlot->Fill(pbglTemp);
 				}	
 			}
+			pbglPlot->Sumw2();
 		}
 	}
 	~OfficalBeamData(){}
@@ -257,6 +264,7 @@ private:
 
 	queue<double> pbglEnergy;
 	queue<int> beamVoltage;
+	TH1F *pbglPlot;
 };
 #endif
 
@@ -265,17 +273,23 @@ void Part2A(){
 	string filename = "beam_00000";
 	string extension = "-0000.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE=18;
-	int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
+	//const int NUMSIZE=18;
+	//int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
+	const int NUMSIZE=1;
+	int numbers[] = {551};
 	int* voltages = runToVoltage(numbers,NUMSIZE); //double check that these are right
-	TChain *all = new TChain("T1");
+	OfficalBeamData data[NUMSIZE];
+	TChain *all; 
 	stringstream ss;
 	for (int i = 0; i < NUMSIZE; ++i)
 	{
+		all= new TChain("T1");
 		ss<<numbers[i];
 		fileLocation = filename+ss.str()+extension;
 		all->Add(fileLocation.c_str());
+		data[i] = OfficalBeamData(all,voltages[i]);
 		ss.clear();
+		delete all;
+
 	}
-//	OfficalBeamData data(all,voltages);
 }
