@@ -209,23 +209,22 @@ int* runToVoltage(int* runs, int SIZE){
 class OfficalBeamData
 {
 public:
-	OfficalBeamData(TChain *orange, int* beamVoltage){ 
-		SIZE = orange->GetEntries();
+	OfficalBeamData(TChain *orange, int* beamVoltage) : SIZE(orange->GetEntries()){ 
 		if (SIZE==0)
 		{
 			cout<<"Error Data Size is 0"<<endl;
 		}
 		else{
 			double cerenkovEnergies[3]; // only need the [1] value 
-	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", cerenkovEnergies);
+	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", &cerenkovEnergies);
 	 		double vetoEnergy[4]; //need all the values 
-	 		orange->SetBranchAddress("TOWER_CALIB_TRIGGER_VETO.energy", vetoEnergy);
+	 		orange->SetBranchAddress("TOWER_CALIB_TRIGGER_VETO.energy", &vetoEnergy);
 	 		double hodoVerticalEnergy[8];
-			orange->SetBranchAddress("TOWER_CALIB_HODO_VERTICAL.energy", hodoVerticalEnergy);
+			orange->SetBranchAddress("TOWER_CALIB_HODO_VERTICAL.energy", &hodoVerticalEnergy);
 			double hodoHorizontalEnergy[8];
-			orange->SetBranchAddress("TOWER_CALIB_HODO_HORIZONTAL.energy", hodoHorizontalEnergy);
+			orange->SetBranchAddress("TOWER_CALIB_HODO_HORIZONTAL.energy", &hodoHorizontalEnergy);
 			double pbglTemp;
-			orange->SetBranchAddress("TOWER_CALIB_PbGL.energy", pbglTemp);
+			orange->SetBranchAddress("TOWER_CALIB_PbGL.energy", &pbglTemp);
 			for (int i = 0; i < SIZE; ++i)
 			{
 				orange->GetEntry(i);
