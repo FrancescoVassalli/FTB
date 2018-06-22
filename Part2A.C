@@ -297,6 +297,5 @@ void Part2A(){
 		data[i] = OfficalBeamData(all,voltages[i]);
 		ss.clear();
 		delete all;
-
 	}
 }
