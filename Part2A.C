@@ -1,6 +1,9 @@
 #include <sstream>
+#include <queue>
+#include "TH1F.h"
+#include "TChain.h"
 #include <iostream>
-
+//#include "NiceHists.C"
 using namespace std;
 
 namespace {
@@ -208,19 +211,20 @@ int* runToVoltage(int* runs, int SIZE){
 	return &voltages[0];
 }
 
+
 #ifndef OfficalBeamData_h
 #define OfficalBeamData_h 
 class OfficalBeamData
 {
 public:
 	OfficalBeamData(){}
-	OfficalBeamData(TChain *orange, int beamVoltage) : SIZE(orange->GetEntries()), beamVoltage(beamVoltage){ 
+	OfficalBeamData(TChain *orange, int beamVoltage, string name) : SIZE(orange->GetEntries()), beamVoltage(beamVoltage){ 
 		if (SIZE==0)
 		{
 			cout<<"Error Data Size is 0"<<endl;
 		}
 		else{
-			TH1F *pbglPlot = new TH1F(getNextPlotName(&plotcount).c_str(),"",100,0,20);
+			TH1F *pbglPlot = new TH1F(name.c_str(),"",100,0,20);
 
 			double cerenkovEnergies[3]; // only need the [1] value 
 	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", &cerenkovEnergies);
@@ -260,7 +264,9 @@ public:
 		pbglPlot=other.pbglPlot;
 		return *this;
 	}
-		
+	void makeGaus(){
+
+	}	
 private:
 	int SIZE;
 
@@ -271,11 +277,13 @@ private:
 
 	queue<double> pbglEnergy;
 	int beamVoltage;
+	double gaus;
 	TH1F *pbglPlot;
 };
 #endif
 
 void Part2A(){
+	cout<<"Start"<<endl;
 	string fileLocation = "";
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
@@ -294,8 +302,12 @@ void Part2A(){
 		ss<<numbers[i];
 		fileLocation = filename+ss.str()+extension;
 		all->Add(fileLocation.c_str());
-		data[i] = OfficalBeamData(all,voltages[i]);
+		ss.clear();
+		ss<<"beamdata"<<numbers[i];
+		data[i] = OfficalBeamData(all,voltages[i],ss.str());
 		ss.clear();
 		delete all;
 	}
+	
+	cout<<"End"<<std::endl;
 }
