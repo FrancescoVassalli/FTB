@@ -227,15 +227,15 @@ public:
 		else{
 			TH1F *pbglPlot = new TH1F(name.c_str(),"",100,0,20);
 
-			float cerenkovEnergies[3]; // only need the [1] value 
+			double cerenkovEnergies[3]; // only need the [1] value 
 	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", &cerenkovEnergies);
-	 		float vetoEnergy[4]; //need all the values 
+	 		double vetoEnergy[4]; //need all the values 
 	 		orange->SetBranchAddress("TOWER_CALIB_TRIGGER_VETO.energy", &vetoEnergy);
-	 		float hodoVerticalEnergy[8];
+	 		double hodoVerticalEnergy[8];
 			orange->SetBranchAddress("TOWER_CALIB_HODO_VERTICAL.energy", &hodoVerticalEnergy);
-			float hodoHorizontalEnergy[8];
+			double hodoHorizontalEnergy[8];
 			orange->SetBranchAddress("TOWER_CALIB_HODO_HORIZONTAL.energy", &hodoHorizontalEnergy);
-			double pbglTemp;
+			double pbglTemp[1];
 			orange->SetBranchAddress("TOWER_CALIB_PbGL.energy", &pbglTemp);
 			for (int i = 1; i < SIZE; ++i)
 			{
@@ -243,8 +243,8 @@ public:
 				orange->GetEntry(i);
 				if (passCuts(cerenkovEnergies[1],vetoEnergy,hodoVerticalEnergy,hodoHorizontalEnergy))
 				{
-					pbglEnergy.push(pbglTemp);
-					pbglPlot->Fill(pbglTemp);
+					pbglEnergy.push(pbglTemp[0]);
+					pbglPlot->Fill(pbglTemp[0]);
 					cout<<pbglTemp<<'\n';
 				}	
 			}
@@ -252,14 +252,14 @@ public:
 		}
 	}
 	~OfficalBeamData(){}
-	inline bool passCuts(float cerenkov, float* veto, float* vhodo, float* hhodo){
+	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
 		return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
 		//return true;
 	}
-	inline bool noVeto(float* veto){
+	inline bool noVeto(double* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
 	}
-	inline bool passHodo(float* hodo){
+	inline bool passHodo(double* hodo){
 		return hodo[0]>HODOcut && hodo[1]>HODOcut && hodo[2]>HODOcut && hodo[3]>HODOcut && hodo[4]>HODOcut && hodo[5]>HODOcut && hodo[6]>HODOcut && hodo[7]>HODOcut;
 	}
 	OfficalBeamData& operator=(OfficalBeamData other){
