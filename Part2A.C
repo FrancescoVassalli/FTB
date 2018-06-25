@@ -235,9 +235,9 @@ public:
 			orange->SetBranchAddress("TOWER_CALIB_HODO_VERTICAL.energy", &hodoVerticalEnergy);
 			float hodoHorizontalEnergy[8];
 			orange->SetBranchAddress("TOWER_CALIB_HODO_HORIZONTAL.energy", &hodoHorizontalEnergy);
-			float pbglTemp;
+			double pbglTemp;
 			orange->SetBranchAddress("TOWER_CALIB_PbGL.energy", &pbglTemp);
-			for (int i = 0; i < SIZE; ++i)
+			for (int i = 1; i < SIZE; ++i)
 			{
 				if(i%1000==0) cout<<i<<" events processed"<<'\n';
 				orange->GetEntry(i);
@@ -253,8 +253,8 @@ public:
 	}
 	~OfficalBeamData(){}
 	inline bool passCuts(float cerenkov, float* veto, float* vhodo, float* hhodo){
-	//	return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
-		return true;
+		return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
+		//return true;
 	}
 	inline bool noVeto(float* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
