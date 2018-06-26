@@ -31,7 +31,7 @@ class OfficalBeamData
 public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1D and tracks the voltage and energy
-	OfficalBeamData(string name, int voltage, int energy) : beamVoltage(voltage), beamEnergy(energy){
+	OfficalBeamData(string name, int voltage) : beamVoltage(voltage){
 		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 	}
@@ -77,10 +77,14 @@ public:
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
+		//numEntries = pbglPlot->Integral(gausLowBound,gausUpbound); //is this right? //we dont need this we have ParError
 		//cout<<mean;
 		//cout<<sigma;
 		return gaus;
 	}	
+	void setEnergy(double e){
+		beamEnergy=e;
+	}
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		tc->Draw();
@@ -132,6 +136,7 @@ private:
 	
 	Scalar mean;
 	Scalar sigma;
+	int numEntries=0;
 
 	void recursiveGaus(TH1* h, TF1* gaus, Scalar* data, float sigmadistance,int lazyMan=0){
 	    h->Fit(gaus,"","",data[0]-data[1]*sigmadistance,data[0]+data[1]*sigmadistance);
@@ -679,7 +684,7 @@ public :
    TBranch        *b_TOWER_CALIB_FINGER_COUNTER_signal_samples;   //!
    TBranch        *b_TOWER_CALIB_FINGER_COUNTER_HBD_channel;   //!
 
-   DSTReader551(TTree *tree=0);
+   DSTReader551(TTree *tree=0,string);
    virtual ~DSTReader551();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -690,14 +695,14 @@ public :
    virtual void     Show(Long64_t entry = -1);
 };
 
-DSTReader551::DSTReader551(TTree *tree) : fChain(0) 
+DSTReader551::DSTReader551(TTree *tree,string file) : fChain(0) 
 {
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("beam_00000551-0000_DSTReader.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject(file.c_str());
       if (!f || !f->IsOpen()) {
-         f = new TFile("beam_00000551-0000_DSTReader.root");
+         f = new TFile(file.c_str());
       }
       f->GetObject("T",tree);
 
@@ -1017,11 +1022,14 @@ Int_t DSTReader551::Cut(Long64_t entry)
 }
 ///////////////////////////////////////////////MAIN PROGRAM \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	//CHANGE
-OfficalBeamData* DSTReader551::Loop()
+OfficalBeamData* DSTReader551::Loop(int number)
 {
    if (fChain == 0) return NULL;
+   stringstream ss;
+   ss<<number;
+   string name = "data"+ss.str();
 	//CHANGE
-   OfficalBeamData *tally = new OfficalBeamData("data551",runToVoltage(511),runToEnergy(511));
+   OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number));
    Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
@@ -1037,6 +1045,7 @@ OfficalBeamData* DSTReader551::Loop()
       
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
+    tally->setEnergy(TMath::Abs(beam_MTNRG_GeV));
     return tally;
 }
 
@@ -1139,7 +1148,7 @@ void Part2A(){ // only put one voltage in for now
 	file = new TFile(fileLocation.c_str()); 
 	TTree *orange= (TTree*) file->Get("T");
 	//CHANGE
-	reader = new DSTReader551(orange);  
+	reader = new DSTReader551(orange,fileLocation);  
 	OfficalBeamData* data = reader->Loop(); // call the loop method for the reader you have
 	data->makeGaus();
 	cout<<"Res:"<<data->getResolution()<<'\n';
