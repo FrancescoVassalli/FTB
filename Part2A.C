@@ -60,6 +60,7 @@ public:
 	}
 	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
+		made=true;
 		int maxbin = pbglPlot->GetMaximumBin();
 		double gausLowBound = pbglPlot->GetBinLowEdge(maxbin);
 		double temp = gausLowBound*.7;
@@ -82,8 +83,9 @@ public:
 		//cout<<sigma;
 		return gaus;
 	}	
-	void setEnergy(double e){
+	void setEnergy(int e){
 		beamEnergy=e;
+		hasEnergy=true;
 	}
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
@@ -114,6 +116,14 @@ public:
 		if(!made) makeGaus();
 		return mean.uncertainty;
 	}
+	double getSigmaUncertainty(){
+		if(!made) makeGaus();
+		return sigma.uncertainty;
+	}
+	int getEnergy(){
+		if(!hasEnergy) return -1;
+		return beamEnergy;
+	}
 	OfficalBeamData& operator=(OfficalBeamData other){
 		pbglEnergy=other.pbglEnergy;
 		beamVoltage=other.beamVoltage;
@@ -131,9 +141,11 @@ private:
 	queue<double> pbglEnergy;
 	int beamVoltage;
 	int beamEnergy;
-	bool made;
 	TH1D *pbglPlot;
 	
+	bool made=false;
+	bool hasEnergy=false;
+
 	Scalar mean;
 	Scalar sigma;
 	int numEntries=0;
@@ -1065,51 +1077,6 @@ int* runToVoltage(int* runs, int SIZE){
 	}
 	return &voltages[0];
 }
-/*
-void drawTrend(TGraphErrors* mean, int nMeanBins, float* energies){
-	TCanvas *canvas1 = new TCanvas();
-	TF1* lin = new TF1("lin","[0]*x",0,energies[nMeanBins-1]);
-	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energies[nMeanBins-1]);
-	axisTitles(mean,"Beam Energy GeV","Mean #Delta ADC");
-	gNice();
-	mean->Fit(poly);
-	double nonLinearFactor = poly->GetParameter(1);
-	double nonLinearError = poly->GetParError(1);
-	float chi2 = poly->GetChisquare();
-	mean->Fit(lin,"0");
-	lin->SetLineColor(kRed);
-	double linearFactor = lin->GetParameter(0);
-	double linearError = lin->GetParError(0);
-	float chi = lin->GetChisquare();
-	int ndf = lin->GetNDF();
-	mean->SetMarkerStyle(kOpenCircle);
-	mean->Draw("AP");
-	poly->SetLineColor(kBlue);
-	poly->Draw("same");
-	lin->Draw("same");
-}
-
-void drawresolution(const int nMeanBins,float*meanBins, TGraphErrors *graph){
-	TCanvas *canvas1 = new TCanvas();
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,meanBins[nMeanBins-1]);
-	eF->SetLineColor(kRed);
-	graph->Fit(eF);
-	float eA = eF->GetParameter(0);
-	float eB = eF->GetParameter(1);
-	float errors[2];
-	errors[0] = eF->GetParError(0);
-	errors[1] = eF->GetParError(1);
-	//makeMarkerNice(&ehist, 1);
-	graph->SetMarkerSize(2);
-	graph->SetMinimum(0);
-	graph->SetMaximum(0.1);
-	graph->Draw("AP*");
-	axisTitles(graph,"Beam Energy GeV","#sigma/mean");
-	float chi = eF->GetChisquare();
-	int ndf = eF->GetNDF();
-}
-*/
-
 
 /*void superArraySorter5000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,int SIZE)
 {
@@ -1139,23 +1106,37 @@ void Part2A(){ // only put one voltage in for now
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
 	//CHANGE
-	int number = 551; 
+	const int NUMSIZE=2;
+	int number[] = {551,573}; 
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
-	ss<<number;
-	fileLocation = filename+ss.str()+extension;
-	file = new TFile(fileLocation.c_str()); 
-	TTree *orange= (TTree*) file->Get("T");
-	//CHANGE
-	reader = new DSTReader551(orange,fileLocation);  
-	OfficalBeamData* data = reader->Loop(); // call the loop method for the reader you have
-	data->makeGaus();
-	cout<<"Res:"<<data->getResolution()<<'\n';
-	ss.clear();
-	file->Close();
-	delete file;
-	delete reader;
+	float mean[NUMSIZE];
+	float meanU[NUMSIZE];
+	float sigma[NUMSIZE];
+	float sigmaU[NUMSIZE];
+	float energy[NUMSIZE];
+	for (int i = 0; i < NUMSIZE; ++i)
+	{
+		ss<<number[i];
+		fileLocation = filename+ss.str()+extension;
+		file = new TFile(fileLocation.c_str()); 
+		TTree *orange= (TTree*) file->Get("T");
+		//CHANGE
+		reader = new DSTReader551(orange,fileLocation);  
+		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have
+		cout<<"Res:"<<data->getResolution()<<'\n';
+		mean[i] =data->getMean();
+		meanU[i]=data->getMeanUncertainty();
+		sigma[i]=data->getSigma();
+		sigmaU[i]=data->getSigmaU();
+		energy[i]=data->getEnergy();
+		ss.clear();
+		file->Close();
+		delete file;
+		delete reader;
+	}
+	
 	cout<<"End"<<std::endl;
 }
 
