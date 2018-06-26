@@ -1,6 +1,7 @@
 #include <sstream>
 #include <queue>
 #include "TH1F.h"
+#include "TH1D.h"
 #include "TChain.h"
 #include <iostream>
 #include "TF1.h"
@@ -35,7 +36,7 @@ public:
 			cout<<"Error Data Size is 0"<<endl;
 		}
 		else{
-			TH1F *pbglPlot = new TH1F(name.c_str(),"",100,0,20);
+			pbglPlot = new TH1D(name.c_str(),"",100,0,20);
 
 			Double_t cerenkovEnergies[3]; // only need the [1] value 
 	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", &cerenkovEnergies);
@@ -68,13 +69,15 @@ public:
 		}
 	}
 	OfficalBeamData(string name, int voltage, int energy) : beamVoltage(voltage), beamEnergy(energy){
-		pbglPlot = new TH1F(name.c_str(),"",200,0,10000); // note the bounds are weird
+		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 	}
-	~OfficalBeamData(){}
+	~OfficalBeamData(){
+		delete pbglPlot;
+	}
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
-		if (r)
+		if (r&&pbgl>1000)
 		{
 			//cout<<"This:"<<pbgl<<'\n';
 			pbglEnergy.push(pbgl);
@@ -110,23 +113,38 @@ public:
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
+		cout<<mean;
+		cout<<sigma;
 		return gaus;
 	}	
 	void plot(){
-		TCanvas *tc = new TCanvas();
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		tc->Draw();
 		pbglPlot->Draw();
 		makeGaus()->Draw("same");
+		tc->Print("test.pdf");
+		
+	}
+	TH1D* getPlot(){
+		return pbglPlot;
+	}
+	queue<double> getData(){
+		return pbglEnergy;
 	}
 	double getResolution(){
+		if(!made) makeGaus();
 		return (sigma/mean).value;
 	}
 	double getMean(){
+		if(!made) makeGaus();
 		return mean.value;
 	}
 	double getResolutionUncertainty(){
+		if(!made) makeGaus();
 		return (sigma/mean).uncertainty;
 	}
 	double getMeanUncertainty(){
+		if(!made) makeGaus();
 		return mean.uncertainty;
 	}
 	OfficalBeamData& operator=(OfficalBeamData other){
@@ -148,7 +166,9 @@ private:
 	queue<double> pbglEnergy;
 	int beamVoltage;
 	int beamEnergy;
-	TH1F *pbglPlot;
+	bool made;
+	TH1D *pbglPlot;
+	
 	Scalar mean;
 	Scalar sigma;
 
@@ -704,7 +724,7 @@ public :
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   virtual void     Loop();
+   virtual OfficalBeamData*     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };
@@ -1034,7 +1054,7 @@ Int_t DSTReader551::Cut(Long64_t entry)
 // returns -1 otherwise.
    return 1;
 }
-void DSTReader551::Loop()
+OfficalBeamData* DSTReader551::Loop()
 {
 //   In a ROOT session, you can do:
 //      root> .L DSTReader551.C
@@ -1059,30 +1079,24 @@ void DSTReader551::Loop()
 // METHOD2: replace line
 //    fChain->GetEntry(jentry);       //read all branches
 //by  b_branchname->GetEntry(ientry); //read only this branch
-   if (fChain == 0) return;
+   if (fChain == 0) return NULL;
    OfficalBeamData *tally = new OfficalBeamData("data551",runToVoltage(511),runToEnergy(511));
    Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
-    for (Long64_t jentry=0; jentry<nentries; jentry++) {
+    for (Long64_t jentry=1; jentry<nentries; jentry++) {
       Long64_t ientry = LoadTree(jentry);
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);   nbytes += nb;
       tally->add(TOWER_CALIB_C2_energy[1],TOWER_CALIB_TRIGGER_VETO_energy,TOWER_CALIB_HODO_HORIZONTAL_energy,TOWER_CALIB_HODO_VERTICAL_energy,TOWER_CALIB_PbGL_energy[0]);
-      if (TOWER_CALIB_C2_energy[1]>1000)
+      if (TOWER_CALIB_PbGL_energy[0]>100000)
       {
-      	/*cout<<"Event"<<jentry<<'\n';
-      	cout<<"C:"<<TOWER_CALIB_C2_energy[1]<<'\n';
-      	cout<<"V:"<<TOWER_CALIB_TRIGGER_VETO_energy[0]<<','<<TOWER_CALIB_TRIGGER_VETO_energy[1]<<','<<TOWER_CALIB_TRIGGER_VETO_energy[2]<<','<<TOWER_CALIB_TRIGGER_VETO_energy[3]<<'\n';
-      	cout<<"Hh:"<<TOWER_CALIB_HODO_HORIZONTAL_energy[0]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[1]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[2]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[3]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[4]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[5]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[6]<<','<<TOWER_CALIB_HODO_HORIZONTAL_energy[7]<<'\n';
-      	cout<<"Hv:"<<TOWER_CALIB_HODO_VERTICAL_energy[0]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[1]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[2]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[3]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[4]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[5]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[6]<<','<<TOWER_CALIB_HODO_VERTICAL_energy[7]<<'\n';
-      	cout<<"PbGl"<<TOWER_CALIB_PbGL_energy[0]<<'\n';
-      	cout<<'\n';*/
+      	cout<<"Error:"<<jentry<<'\n';
       }
       
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
-    tally->plot();
+    return tally;
 }
 
 int* runToEnergy(int* runs, int SIZE){
@@ -1196,7 +1210,9 @@ void Part2A(){ // only put one voltage in for now
 		file = new TFile(fileLocation.c_str()); //mem leak
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange); //mem leak 
-		reader->Loop();
+		OfficalBeamData* data = reader->Loop();
+		data->makeGaus();
+		cout<<"Res:"<<data->getResolution()<<'\n';
 		ss.clear();
 		//ss<<"beamdata"<<numbers[i];
 		//OfficalBeamData data = OfficalBeamData(tree,voltages[i],energies[i],ss.str());
