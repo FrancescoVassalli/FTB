@@ -30,44 +30,7 @@ class OfficalBeamData
 {
 public:
 	OfficalBeamData(){}
-	OfficalBeamData(TTree *orange, int beamVoltage, int beamEnergy,string name) : SIZE(orange->GetEntries()), beamVoltage(beamVoltage), beamEnergy(beamEnergy){ 
-		if (SIZE==0)
-		{
-			cout<<"Error Data Size is 0"<<endl;
-		}
-		else{
-			pbglPlot = new TH1D(name.c_str(),"",100,0,20);
-
-			Double_t cerenkovEnergies[3]; // only need the [1] value 
-	 		orange->SetBranchAddress("TOWER_CALIB_C2.energy", &cerenkovEnergies);
-	 		Double_t vetoEnergy[4]; //need all the values 
-	 		orange->SetBranchAddress("TOWER_CALIB_TRIGGER_VETO.energy", &vetoEnergy);
-	 		Double_t hodoVerticalEnergy[8];
-			orange->SetBranchAddress("TOWER_CALIB_HODO_VERTICAL.energy", &hodoVerticalEnergy);
-			Double_t hodoHorizontalEnergy[8];
-			orange->SetBranchAddress("TOWER_CALIB_HODO_HORIZONTAL.energy", &hodoHorizontalEnergy);
-			Double_t pbglTemp[1];
-			orange->SetBranchAddress("TOWER_CALIB_PbGL.energy", &pbglTemp);
-			cout<<orange->GetEntries()<<endl;
-			for (int i = 1; i < 5; ++i)
-			{
-				orange->GetEntry(i);
-				cout<<"Event"<<i<<'\n';
-                cout<<"C:"<<cerenkovEnergies[1]<<'\n';
-                cout<<"V:"<<vetoEnergy[0]<<','<<vetoEnergy[1]<<','<<vetoEnergy[2]<<','<<vetoEnergy[3]<<'\n';
-
-				if(i%1000==0) cout<<i<<" events processed"<<'\n';
-				
-				if (passCuts(cerenkovEnergies[1],vetoEnergy,hodoVerticalEnergy,hodoHorizontalEnergy))
-				{
-					pbglEnergy.push(pbglTemp[0]);
-					pbglPlot->Fill(pbglTemp[0]);
-					cout<<pbglTemp<<'\n';
-				}	
-			}
-			pbglPlot->Sumw2();
-		}
-	}
+	//this constructor makes the TH1D and tracks the voltage and energy
 	OfficalBeamData(string name, int voltage, int energy) : beamVoltage(voltage), beamEnergy(energy){
 		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
@@ -75,6 +38,7 @@ public:
 	~OfficalBeamData(){
 		delete pbglPlot;
 	}
+	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
 		if (r&&pbgl>1000)
@@ -87,7 +51,6 @@ public:
 	}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
 		return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
-		//return true;
 	}
 	inline bool noVeto(double* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
@@ -95,6 +58,7 @@ public:
 	inline bool passHodo(double* hodo){
 		return hodo[0]>HODOcut || hodo[1]>HODOcut || hodo[2]>HODOcut || hodo[3]>HODOcut || hodo[4]>HODOcut || hodo[5]>HODOcut || hodo[6]>HODOcut || hodo[7]>HODOcut;
 	}
+	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
 		int maxbin = pbglPlot->GetMaximumBin();
 		double gausLowBound = pbglPlot->GetBinLowEdge(maxbin);
@@ -113,17 +77,16 @@ public:
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
-		cout<<mean;
-		cout<<sigma;
+		//cout<<mean;
+		//cout<<sigma;
 		return gaus;
 	}	
-	void plot(){
+	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		tc->Draw();
 		pbglPlot->Draw();
 		makeGaus()->Draw("same");
 		tc->Print("test.pdf");
-		
 	}
 	TH1D* getPlot(){
 		return pbglPlot;
@@ -154,8 +117,6 @@ public:
 		return *this;
 	}
 private:
-	int SIZE;
-
 	//we will need to play with these values
 	const double CERENKOVcut = 1600; //previously 1000
 	const float VETOcut = .3; // from dennis 
@@ -1054,32 +1015,12 @@ Int_t DSTReader551::Cut(Long64_t entry)
 // returns -1 otherwise.
    return 1;
 }
+///////////////////////////////////////////////MAIN PROGRAM \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	//CHANGE
 OfficalBeamData* DSTReader551::Loop()
 {
-//   In a ROOT session, you can do:
-//      root> .L DSTReader551.C
-//      root> DSTReader551 t
-//      root> t.GetEntry(12); // Fill t data members with entry number 12
-//      root> t.Show();       // Show values of entry 12
-//      root> t.Show(16);     // Read and show values of entry 16
-//      root> t.Loop();       // Loop on all entries
-//
-
-//     This is the loop skeleton where:
-//    jentry is the global entry number in the chain
-//    ientry is the entry number in the current Tree
-//  Note that the argument to GetEntry must be:
-//    jentry for TChain::GetEntry
-//    ientry for TTree::GetEntry and TBranch::GetEntry
-//
-//       To read only selected branches, Insert statements like:
-// METHOD1:
-//    fChain->SetBranchStatus("*",0);  // disable all branches
-//    fChain->SetBranchStatus("branchname",1);  // activate branchname
-// METHOD2: replace line
-//    fChain->GetEntry(jentry);       //read all branches
-//by  b_branchname->GetEntry(ientry); //read only this branch
    if (fChain == 0) return NULL;
+	//CHANGE
    OfficalBeamData *tally = new OfficalBeamData("data551",runToVoltage(511),runToEnergy(511));
    Long64_t nentries = fChain->GetEntriesFast();
 
@@ -1181,53 +1122,31 @@ void drawresolution(const int nMeanBins,float*meanBins, TGraphErrors *graph){
 	   }
 	}
 }*/
-
+//a comment titled CHANGE is place in front of eveything that needs to be chagned for evey run 
 void Part2A(){ // only put one voltage in for now 
 	cout<<"Start"<<endl;
 	string fileLocation = "";
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	//const int NUMSIZE=18;
-	//int numbers[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900};
-	const int NUMSIZE=1;
-	int numbers[] = {551};
-	//int* voltages = runToVoltage(numbers,NUMSIZE); //double check that these are right
-	//int* energies = runToEnergy(numbers,NUMSIZE);
+	//CHANGE
+	int number = 551; 
+	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
-	DSTReader551 *reader;
 	stringstream ss;
-	float resolution[NUMSIZE];
-	float mean[NUMSIZE];
-	float resolutionU[NUMSIZE];
-	float meanU[NUMSIZE];
-	TGraphErrors *stochastic;
-	TGraphErrors *trend;
-	for (int i = 0; i < NUMSIZE; ++i)
-	{
-		ss<<numbers[i];
-		fileLocation = filename+ss.str()+extension;
-		file = new TFile(fileLocation.c_str()); //mem leak
-		TTree *orange= (TTree*) file->Get("T");
-		reader = new DSTReader551(orange); //mem leak 
-		OfficalBeamData* data = reader->Loop();
-		data->makeGaus();
-		cout<<"Res:"<<data->getResolution()<<'\n';
-		ss.clear();
-		//ss<<"beamdata"<<numbers[i];
-		//OfficalBeamData data = OfficalBeamData(tree,voltages[i],energies[i],ss.str());
-		/*resolution[i] = data.getResolution();
-		mean[i] = data.getMean();
-		resolutionU[i] = data.getResolutionUncertainty();
-		meanU[i] = data.getMeanUncertainty();*/
-		//cout<<data[i].getMean()<<endl;
-		//ss.clear();
-		file->Close();
-	}
-	/*superArraySorter5000(energies,mean,meanU,resolution,resolutionU,NUMSIZE);
-	float temp;
-	trend = new TGraphErrors(NUMSIZE,energies,mean,zeroArray(NUMSIZE,&temp),meanU);
-	resolution = new TGraphErrors(NUMSIZE,energies,resolution,zeroArray(NUMSIZE,&temp),resolutionU);*/
+	ss<<number;
+	fileLocation = filename+ss.str()+extension;
+	file = new TFile(fileLocation.c_str()); 
+	TTree *orange= (TTree*) file->Get("T");
+	//CHANGE
+	reader = new DSTReader551(orange);  
+	OfficalBeamData* data = reader->Loop(); // call the loop method for the reader you have
+	data->makeGaus();
+	cout<<"Res:"<<data->getResolution()<<'\n';
+	ss.clear();
+	file->Close();
+	delete file;
+	delete reader;
 	cout<<"End"<<std::endl;
 }
 
