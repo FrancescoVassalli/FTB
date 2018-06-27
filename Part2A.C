@@ -1620,15 +1620,42 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 //file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start"<<endl;
+	bool want1200 = true;
+	bool want1100 = false;
 	//string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	//const int NUMSIZE=17;
-	//int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,900}; 
-	const int NUMSIZE=1;
-	int number[]={563}; //,567,809
+	const int totalNUMSIZE=28;
+	int totalnumber[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,631,544,652,653,654,687,572,574,577,578,579,580}; //all beam files
+	//const int totalNUMSIZE=1;
+	//int totalnumber[]={563}; //,567,809
+
+	int NUMSIZE=0;
+	int number[totalNUMSIZE]; //desired beam files
+	if(want1200 == true)
+	{
+		for(int i = 0; i<totalNUMSIZE; i++)
+		{
+			if(runToVoltage(totalnumber[i]) == 1200)
+			{
+				number[NUMSIZE] = totalnumber[i];
+				NUMSIZE++;
+			}
+		}
+	} 
+	else if(want1100 == true)
+	{
+		for(int i = 0; i<totalNUMSIZE; i++)
+		{
+			if(runToVoltage(totalnumber[i]) == 1100)
+			{
+				number[NUMSIZE] = totalnumber[i];
+				NUMSIZE++;
+			}
+		}
+	} 
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -1640,7 +1667,7 @@ void Part2A(){
 	for (int i = 0; i < NUMSIZE; ++i)//loop over beam files
 	{
 		fileLocation = filename+to_string(number[i])+extension;
-		file = new TFile(fileLocation.c_str()); 
+		file = new TFile(fileLocation.c_str());
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
 		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
@@ -1652,9 +1679,9 @@ void Part2A(){
 		energy[i]=data->getEnergy();
 		data->plotCerenkov();
 
-		data->plotVeto(); //plot vetos
-		data->plotHodoH(); //plots horizontal hodoscope
-		data->plotHodoV(); //plots vertical hodoscope
+		//data->plotVeto(); //plot vetos
+		//data->plotHodoH(); //plots horizontal hodoscope
+		//data->plotHodoV(); //plots vertical hodoscope
 
 		cout<<fileLocation<<'\n';
 		file->Close();
@@ -1663,7 +1690,10 @@ void Part2A(){
 	}
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
-	outFile.open("PbGlA.txt");
+
+	if(want1200 == true){outFile.open("PbGlA1200.txt");} //1200V data
+	else if(want1100 == true){outFile.open("PbGlA1100.txt");} //1100V data
+	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
 		cout<<"File Opened!"<<endl;
@@ -1851,11 +1881,8 @@ int runToVoltage(int run){
 		case 859:
 			r=1200;
 			break;
-		case 900:
-			r=1200;
-			break;
 		case 631:
-			r=1100;
+			r=1100; 
 			break;
 		case 544:
 			r= 1100;
