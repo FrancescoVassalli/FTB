@@ -31,7 +31,7 @@ class OfficalBeamData
 public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1D and tracks the voltage and energy
-	OfficalBeamData(string name, int voltage) : beamVoltage(voltage){
+	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
 		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 	}
@@ -92,7 +92,8 @@ public:
 		tc->Draw();
 		pbglPlot->Draw();
 		makeGaus()->Draw("same");
-		tc->Print("test.pdf");
+		string out = name+".pdf";
+		tc->Print(out.c_str());
 	}
 	TH1D* getPlot(){
 		return pbglPlot;
@@ -120,6 +121,10 @@ public:
 		if(!made) makeGaus();
 		return sigma.uncertainty;
 	}
+	double getSigma(){
+		if(!made) makeGaus();
+		return sigma.value;
+	}
 	int getEnergy(){
 		if(!hasEnergy) return -1;
 		return beamEnergy;
@@ -142,6 +147,7 @@ private:
 	int beamVoltage;
 	int beamEnergy;
 	TH1D *pbglPlot;
+	string name;
 	
 	bool made=false;
 	bool hasEnergy=false;
@@ -696,13 +702,13 @@ public :
    TBranch        *b_TOWER_CALIB_FINGER_COUNTER_signal_samples;   //!
    TBranch        *b_TOWER_CALIB_FINGER_COUNTER_HBD_channel;   //!
 
-   DSTReader551(TTree *tree=0,string);
+   DSTReader551(TTree *tree=0,string name="beam_00000551-0000_DSTReader.root");
    virtual ~DSTReader551();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   virtual OfficalBeamData*     Loop();
+   virtual OfficalBeamData*     Loop(int runnumber);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 };
@@ -1078,7 +1084,7 @@ int* runToVoltage(int* runs, int SIZE){
 	return &voltages[0];
 }
 
-/*void superArraySorter5000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,int SIZE)
+void superArraySorter5000(float* energies, float* mean, float* meanError, float* sigma, float* sigmaError,int* runNumber,int SIZE)
 {
 	int i, j;
 
@@ -1093,11 +1099,11 @@ int* runToVoltage(int* runs, int SIZE){
 	          oleSwitcheroo(&meanError[j],&meanError[j+1]);
 	          oleSwitcheroo(&sigma[j],&sigma[j+1]);
 	          oleSwitcheroo(&sigmaError[j],&sigmaError[j+1]);
-	          oleSwitcheroo(&numEntries[j],&numEntries[j+1]);
+	          oleSwitcheroo(&runNumber[j],&runNumber[j+1]);
 	       }
 	   }
 	}
-}*/
+}
 //a comment titled CHANGE is place in front of eveything that needs to be chagned for evey run 
 void Part2A(){ // only put one voltage in for now 
 	cout<<"Start"<<endl;
@@ -1118,8 +1124,7 @@ void Part2A(){ // only put one voltage in for now
 	float energy[NUMSIZE];
 	for (int i = 0; i < NUMSIZE; ++i)
 	{
-		ss<<number[i];
-		fileLocation = filename+ss.str()+extension;
+		fileLocation = filename+to_string(number[i])+extension;
 		file = new TFile(fileLocation.c_str()); 
 		TTree *orange= (TTree*) file->Get("T");
 		//CHANGE
@@ -1129,14 +1134,61 @@ void Part2A(){ // only put one voltage in for now
 		mean[i] =data->getMean();
 		meanU[i]=data->getMeanUncertainty();
 		sigma[i]=data->getSigma();
-		sigmaU[i]=data->getSigmaU();
+		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-		ss.clear();
+		cout<<fileLocation<<'\n';
 		file->Close();
 		delete file;
 		delete reader;
 	}
-	
+	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE);
+	ofstream outFile;
+	outFile.open("PbGlA.txt");
+	if(outFile.is_open()) //read info out to txt file if it opens
+	{
+		cout<<"File Opened!"<<endl;
+
+		outFile << "RunNumber";
+		for(int i = 0; i < NUMSIZE; i++) //enter all run numbers into txt file
+		{
+			outFile << ","<< number[i];
+		}
+		outFile << "\n";
+		outFile << "Mean";
+		for(int i = 0; i < NUMSIZE; i++) //enter all mean values into txt file
+		{
+			outFile << ","<< mean[i];
+		}
+		outFile << "\n";
+		outFile << "MeanUncertainty";
+		for(int i = 0; i < NUMSIZE; i++) //enter all mean values into txt file
+		{
+			outFile << ","<< meanU[i];
+		}
+		outFile << "\n";
+		outFile << "Sigma";
+		for(int i = 0; i < NUMSIZE; i++) //enter all signma values into txt file
+		{
+			outFile << ","<< sigma[i];
+		}
+		outFile << "\n";
+		outFile << "SigmaUncertainty";
+		for(int i = 0; i < NUMSIZE; i++) //enter all signma values into txt file
+		{
+			outFile << ","<< sigmaU[i];
+		}
+		outFile << "\n";
+		outFile << "Energy";
+		for(int i = 0; i < NUMSIZE; i++) //enter all signma values into txt file
+		{
+			outFile << ","<< energy[i];
+		}
+		outFile << "\n";
+
+		outFile.close();
+	}
+	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
+
 	cout<<"End"<<std::endl;
 }
 
