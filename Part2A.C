@@ -20,7 +20,7 @@
 // Header file for the classes stored in the TTree if any.
 #include "TClonesArray.h"
 #include "TObject.h"
-#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+//#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
 
 using namespace std;
 
@@ -39,7 +39,7 @@ public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1D and tracks the voltage and energy
 	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
-		pbglPlot = new TH1D(name.c_str(),"",200,200,10000); // note the bounds are weird
+		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 		//declare plots for energy, all veto counters, and hodoscopes counters
 		cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000); 
@@ -66,7 +66,7 @@ public:
 	}
 	~OfficalBeamData(){
 		delete pbglPlot;
-		delete cerenkov;
+		/*delete cerenkov;
 		delete p_hodov1;
 		delete p_hodov2;
 		delete p_hodov3;
@@ -86,12 +86,12 @@ public:
 		delete p_veto1;
 		delete p_veto2;
 		delete p_veto3;
-		delete p_veto4;
+		delete p_veto4;*/
 	}
 	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
-		this->cerenkov->Fill(cerenkov);
+		/*this->cerenkov->Fill(cerenkov);
 		p_hodoh1->Fill(hhodo[0]);
 		p_hodoh2->Fill(hhodo[1]);
 		p_hodoh3->Fill(hhodo[2]);
@@ -111,8 +111,8 @@ public:
 		p_veto1->Fill(veto[0]);
 		p_veto2->Fill(veto[1]);
 		p_veto3->Fill(veto[2]);
-		p_veto4->Fill(veto[3]);
-		if (r&&pbgl>1000)
+		p_veto4->Fill(veto[3]);*/
+		if (r)
 		{
 			pbglEnergy.push(pbgl);
 			pbglPlot->Fill(pbgl);			
@@ -120,13 +120,16 @@ public:
 		return r;
 	}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
-		return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
+		return cerenkov>CERENKOVcut && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
 	}
 	inline bool noVeto(double* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
 	}
-	inline bool passHodo(double* hodo){
-		return hodo[0]>HODOcut || hodo[1]>HODOcut || hodo[2]>HODOcut || hodo[3]>HODOcut || hodo[4]>HODOcut || hodo[5]>HODOcut || hodo[6]>HODOcut || hodo[7]>HODOcut;
+	inline bool passHodoV(double* hodo){ //exclusive or 
+		return hodo[0]>HODOVcut[0] ^ hodo[1]>HODOVcut[1] ^ hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5] ^ hodo[6]>HODOVcut[6] ^ hodo[7]>HODOVcut[7];
+	}
+	inline bool passHodoH(double* hodo){ //exclusive or 
+		return hodo[0]>HODOHcut[0] ^ hodo[1]>HODOHcut[1] ^ hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5] ^ hodo[6]>HODOHcut[6] ^ hodo[7]>HODOHcut[7];
 	}
 	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
@@ -145,7 +148,7 @@ public:
 		mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
 		int lazyMan = 10;
 		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,lazyMan);
-		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
+		//pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
 		//numEntries = pbglPlot->Integral(gausLowBound,gausUpbound); //is this right? //we dont need this we have ParError
@@ -346,7 +349,6 @@ public:
 		}
 	}
 
-	
 	TH1D* getPlot(){
 		return pbglPlot;
 	}
@@ -391,7 +393,9 @@ private:
 	//we will need to play with these values
 	const double CERENKOVcut = 1400; //previously 1600
 	const float VETOcut = .35; // from .3
-	const float HODOcut = .55; //from .45
+	//we should split up the vertical vs horizontal
+	const float HODOHcut[8] = {.45,.55,.45,.5,.5,.55,.45,.45}; 
+	const float HODOVcut[8] = {.65,.66,.70,.65,.65,.55,.60,.60}; //changed to arrays
 	const int VETOSIZE = 4;
 	const int HODOSIZE = 8;
 
@@ -444,6 +448,7 @@ private:
 	        return;
 	    }
 	}
+
 	void plotVeto1(){
 		TCanvas *v1 = new TCanvas("v1","tc",800,600);
 		gPad->SetLogy();
@@ -460,7 +465,7 @@ private:
 		TCanvas *hh1 = new TCanvas("hh1","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh1->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[0],0,HODOHcut[0]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -484,7 +489,7 @@ private:
 		TCanvas *hh2 = new TCanvas("hh2","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh2->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[1],0,HODOHcut[1]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -508,7 +513,7 @@ private:
 		TCanvas *hh3 = new TCanvas("hh3","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh3->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[2],0,HODOHcut[2]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -533,7 +538,7 @@ private:
 		TCanvas *hh4 = new TCanvas("hh4","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh4->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[3],0,HODOHcut[3]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -545,7 +550,7 @@ private:
 		TCanvas *hh5 = new TCanvas("hh5","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh5->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[4],0,HODOHcut[4]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -557,7 +562,7 @@ private:
 		TCanvas *hh6 = new TCanvas("hh6","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh6->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[5],0,HODOHcut[5]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -569,7 +574,7 @@ private:
 		TCanvas *hh7 = new TCanvas("hh7","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh7->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[6],0,HODOHcut[6]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -581,7 +586,7 @@ private:
 		TCanvas *hh8 = new TCanvas("hh8","tc",800,600);
 		gPad->SetLogy();
 		p_hodoh8->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOHcut[7],0,HODOHcut[7]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -593,7 +598,7 @@ private:
 		TCanvas *hv1 = new TCanvas("hv1","tc",800,600);
 		gPad->SetLogy();
 		p_hodov1->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[0],0,HODOVcut[0]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -605,7 +610,7 @@ private:
 		TCanvas *hv2 = new TCanvas("hv2","tc",800,600);
 		gPad->SetLogy();
 		p_hodov2->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[1],0,HODOVcut[1]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -617,7 +622,7 @@ private:
 		TCanvas *hv3 = new TCanvas("hv3","tc",800,600);
 		gPad->SetLogy();
 		p_hodov3->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[2],0,HODOVcut[2]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -629,7 +634,7 @@ private:
 		TCanvas *hv4 = new TCanvas("hv4","tc",800,600);
 		gPad->SetLogy();
 		p_hodov4->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[3],0,HODOVcut[3]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -641,7 +646,7 @@ private:
 		TCanvas *hv5 = new TCanvas("hv5","tc",800,600);
 		gPad->SetLogy();
 		p_hodov5->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[4],0,HODOVcut[4]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -653,7 +658,7 @@ private:
 		TCanvas *hv6 = new TCanvas("hv6","tc",800,600);
 		gPad->SetLogy();
 		p_hodov6->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[5],0,HODOVcut[5]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -665,7 +670,7 @@ private:
 		TCanvas *hv7 = new TCanvas("hv7","tc",800,600);
 		gPad->SetLogy();
 		p_hodov7->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[6],0,HODOVcut[6]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
@@ -677,10 +682,11 @@ private:
 		TCanvas *hv8 = new TCanvas("hv8","tc",800,600);
 		gPad->SetLogy();
 		p_hodov8->Draw();
-		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		TLine *cut = new TLine(HODOVcut[7],0,HODOVcut[7]+1,DBL_MAX);
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
+
 		axisTitles(p_hodov8,"calibrated hodoscope v8 energy","count");
 		string out = name+"hodov8.pdf";
 		hv8->Print(out.c_str());
@@ -1562,7 +1568,6 @@ OfficalBeamData* DSTReader551::Loop(int number)
    stringstream ss;
    ss<<number;
    string name = "data"+ss.str();
-	//CHANGE
    OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number));
    Long64_t nentries = fChain->GetEntriesFast();
 
@@ -1576,6 +1581,7 @@ OfficalBeamData* DSTReader551::Loop(int number)
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
     tally->setEnergy(TMath::Abs(beam_MTNRG_GeV)); //lab set energy of beam, (negative bc its neg particles so take abs())
+    if(number==567) tally->setEnergy(8);
     //tally->plot();
     return tally;
 }
@@ -1656,6 +1662,7 @@ void Part2A(){
 			}
 		}
 	} 
+
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -1677,12 +1684,12 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-		data->plotCerenkov();
 
-		//data->plotVeto(); //plot vetos
-		//data->plotHodoH(); //plots horizontal hodoscope
-		//data->plotHodoV(); //plots vertical hodoscope
-
+		cout<<"Energy:"<<energy[i]<<'\n';
+		data->plot();
+		//data->plotCerenkov();
+		//data->plotHodo();
+		//data->plotVeto();
 		cout<<fileLocation<<'\n';
 		file->Close();
 		delete file;

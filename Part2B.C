@@ -49,8 +49,16 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	return Scalar(linearFactor,linearError);
 }
 
-void Part2B(){
-	ifstream inFile ("PbGlA.txt"); //txt file containing the data from Part2A
+struct Data
+{
+	Scalar mean;
+	Scalar sigma;
+	int energy;
+	int size;
+};
+
+Data* siglefileAnalysis(string filename){
+	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
 	const int LINES = 6;
 	queue<float> input[LINES]; //create array of queues
 	string intemp;
@@ -67,11 +75,40 @@ void Part2B(){
 		}
 		ss.clear();
 	}
-
+	Data *rdata = new Data[input[5].size()];
 	//convert each of the queues into an array resulting in arrays of GeV, mean, sigma, mean error, and sigma error
-	cout<< trendForced(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
+	Scalar slope = trendForced(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
+	//convert the arrays to energy 
+	/*
+	for (int i = 0; i < input[5].size(); ++i)
+	{
+		rdata[i].mean = Scalar(input[1].front(),input[2].front())/slope; //these Q's might be empty b/c of the queueToarray
+		rdata[i].sigma = Scalar(input[3].front(),input[4].front())/slope;
+		rdata[i].energy = input[5].front();
+		rdata[i].size = input[5].size();
+		input[1].pop();
+		input[2].pop();
+		input[3].pop();
+		input[4].pop();
+		input[5].pop();
+		cout<<"work"<<i<<'\n';
+	}*/
+	//return all the arrays in terms of energy 
+	cout<<slope;
+	return rdata;
+}
 
-	/*ofstream outFile;
+void Part2B(){
+	Data *d1 = siglefileAnalysis("PbGlA.txt");
+	const int size1 = d1->size;
+
+}
+
+
+
+
+
+/*ofstream outFile;
 	outFile.open("PbGl_data2.txt");
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{	
@@ -87,4 +124,3 @@ void Part2B(){
 	}
 	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
 */
-}
