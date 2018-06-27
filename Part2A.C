@@ -1627,8 +1627,8 @@ void Part2A(){
 	filename = fileLocation+filename;
 	//const int NUMSIZE=17;
 	//int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,900}; 
-	const int NUMSIZE=2;
-	int number[]={563,567};
+	const int NUMSIZE=1;
+	int number[]={563}; //,567,809
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
