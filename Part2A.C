@@ -43,7 +43,6 @@ public:
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
 		if (r&&pbgl>1000)
 		{
-			//cout<<"This:"<<pbgl<<'\n';
 			pbglEnergy.push(pbgl);
 			pbglPlot->Fill(pbgl);			
 		}
@@ -67,7 +66,6 @@ public:
 		double gausUpbound = gausLowBound +temp;
 		if(gausUpbound >10000){gausUpbound=10000;} //so that fit doesn't exceed range of histogram
 		gausLowBound -= temp; 
-		cout<<"GausRange:"<<gausLowBound<<"-"<<gausUpbound<<'\n';
 		TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
 
 		pbglPlot->Fit(gaus,"","",gausLowBound,gausUpbound);       //“R” Use the range specified in the function range
@@ -75,8 +73,6 @@ public:
 		mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
 		mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
 		int lazyMan = 10;
-		cout<<"Mean1:";
-		cout<<mygaus[0].value<<","<<mygaus[1].value;
 		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,lazyMan);
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
@@ -721,7 +717,7 @@ DSTReader551::DSTReader551(TTree *tree,string file) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-   	cout<<file<<'\n';
+   	//cout<<file<<'\n';
       TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject(file.c_str());
       if (!f || !f->IsOpen()) {
          f = new TFile(file.c_str());
@@ -1064,7 +1060,7 @@ OfficalBeamData* DSTReader551::Loop(int number)
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
     tally->setEnergy(TMath::Abs(beam_MTNRG_GeV));
-    tally->plot();
+    //tally->plot();
     return tally;
 }
 
@@ -1107,14 +1103,14 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 }
 void Part2A(){
 	cout<<"Start"<<endl;
-	string fileLocation = "";
+	string fileLocation = "/home/user/Droptemp/NewBeams/";
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	//const int NUMSIZE=18;
-	//int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900}; 
-	const int NUMSIZE=1;
-	int number[]={573};
+	const int NUMSIZE=18;
+	int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900}; 
+	//const int NUMSIZE=2;
+	//int number[]={551,573};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;

@@ -2,13 +2,14 @@
 using namespace std;
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
-	float ex[nMeanBins]; // make a zero array
+	float *ex;
+	ex= zeroArray(SIZE,ex);
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,ex,meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[SIZE-1]);
 	axisTitles(p_mean,"Beam Energy GeV","Mean PbGl");
-	gNice();
+	//gNice();
 	p_mean->Fit(poly);
 	double nonLinearFactor = poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(1);
@@ -23,9 +24,9 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
 	//cout<<"Ratio: "<<ratiouncertainty<<endl;
 	p_mean->SetMarkerStyle(kOpenCircle);
-	doubleZero(p_mean,mean[SIZE-1]+1000,energy[SIZE-1]+1);
+	//doubleZero(p_mean,mean[SIZE-1]+1000,energy[SIZE-1]+1);
 	p_mean->Draw("AP");
-	p_mean->GetXaxis()->SetLimits(0,energy[SIZE-1]+1);
+	//p_mean->GetXaxis()->SetLimits(0,energy[SIZE-1]+1);
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
 	lin->Draw("same");
@@ -37,7 +38,7 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	return Scalar(linearFactor,linearError);
 }
 
-void BeamAnalysis2(){
+void Part2B(){
 	ifstream inFile ("PbGlA.txt"); //txt file containing the data from Part2A
 	const int LINES = 6;
 	queue<float> input[LINES];
