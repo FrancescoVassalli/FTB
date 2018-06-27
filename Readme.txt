@@ -10,6 +10,9 @@ PbGl_data2.txt - out put from BeamAnalysis 2 should be the same as the data1.txt
 PbGl_dataC.txt - contains the filenames of the outputs from BeamAnalysis2
 CombineShell.sh - run with bash to move the data2.txt into data3.txt and move data3.txt to data4.txt and so on. The filenames for the Beam2 outputs are then saved to dataC
 Combination.C - removed because the shell script is a better way to do this imo
-
-
+----------------------------------------------------------------------------------------------------
+After this point new calibrated analysis was made. 
+Part2A.C - does what BeamAna1 did but outputs to PbGlA.txt with the beam energy intead of the numentries.  Set the input files in the main. More useful if only a single set of voltage files is used
+Part2B.C - does what BeamAna2 did 
+PbGlA.txt - records run,mean,meanU,sigmaU,energy more useful if only a single set of voltage files are used 
 vassalli@rssh.rcf.bnl.gov
