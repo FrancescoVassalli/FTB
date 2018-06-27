@@ -40,13 +40,13 @@ public:
 	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
 		pbglPlot = new TH1D(name.c_str(),"",200,200,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
-		cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000);
+		/*cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000);
 		p_veto = new TH1D(string(name+"veto").c_str(),"",20,0,2);
-		p_hodo = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
+		p_hodo = new TH1D(string(name+"hodo").c_str(),"",20,0,2);*/
 	}
 	~OfficalBeamData(){
 		delete pbglPlot;
-		delete cerenkov;
+		/*delete cerenkov;
 		delete p_hodov1;
 		delete p_hodov2;
 		delete p_hodov3;
@@ -66,12 +66,12 @@ public:
 		delete p_veto1;
 		delete p_veto2;
 		delete p_veto3;
-		delete p_veto4;
+		delete p_veto4;*/
 	}
 	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
-		this->cerenkov->Fill(cerenkov);
+		/*this->cerenkov->Fill(cerenkov);
 		p_hodoh1->Fill(hhodo[0]);
 		p_hodoh2->Fill(hhodo[1]);
 		p_hodoh3->Fill(hhodo[2]);
@@ -91,7 +91,7 @@ public:
 		p_veto1->Fill(veto[0]);
 		p_veto2->Fill(veto[1]);
 		p_veto3->Fill(veto[2]);
-		p_veto4->Fill(veto[3]);
+		p_veto4->Fill(veto[3]);*/
 		if (r&&pbgl>1000)
 		{
 			pbglEnergy.push(pbgl);
@@ -105,8 +105,8 @@ public:
 	inline bool noVeto(double* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
 	}
-	inline bool passHodo(double* hodo){
-		return hodo[0]>HODOcut || hodo[1]>HODOcut || hodo[2]>HODOcut || hodo[3]>HODOcut || hodo[4]>HODOcut || hodo[5]>HODOcut || hodo[6]>HODOcut || hodo[7]>HODOcut;
+	inline bool passHodo(double* hodo){ //exclusive or 
+		return hodo[0]>HODOcut ^ hodo[1]>HODOcut ^ hodo[2]>HODOcut ^ hodo[3]>HODOcut ^ hodo[4]>HODOcut ^ hodo[5]>HODOcut ^ hodo[6]>HODOcut ^ hodo[7]>HODOcut;
 	}
 	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
@@ -158,7 +158,7 @@ public:
 		string out = name+"ceren.pdf";
 		tc->Print(out.c_str());
 	}
-	void plotVeto(int i){
+	/*void plotVeto(int i){
 		switch (i){
 			case 1:
 				plotVeto1();
@@ -167,7 +167,7 @@ public:
 				break;
 			
 		}
-	}
+	}*/
 	
 	TH1D* getPlot(){
 		return pbglPlot;
@@ -213,6 +213,7 @@ private:
 	//we will need to play with these values
 	const double CERENKOVcut = 1400; //previously 1600
 	const float VETOcut = .35; // from .3
+	//we should split up the vertical vs horizontal
 	const float HODOcut = .55; //from .45
 	const int VETOSIZE = 4;
 	const int HODOSIZE = 8;
@@ -266,7 +267,7 @@ private:
 	        return;
 	    }
 	}
-	void plotVeto1(){
+	/*void plotVeto1(){
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		gPad->SetLogy();
 		p_veto1->Draw();
@@ -518,7 +519,7 @@ private:
 		axisTitles(p_hodo,"calibrated hodoscope energy","count");
 		string out = name+"hodo.pdf";
 		tc->Print(out.c_str());
-	}
+	}*/
 
 };
 #endif
@@ -1396,7 +1397,6 @@ OfficalBeamData* DSTReader551::Loop(int number)
    stringstream ss;
    ss<<number;
    string name = "data"+ss.str();
-	//CHANGE
    OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number));
    Long64_t nentries = fChain->GetEntriesFast();
 
@@ -1410,6 +1410,7 @@ OfficalBeamData* DSTReader551::Loop(int number)
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
     tally->setEnergy(TMath::Abs(beam_MTNRG_GeV)); //lab set energy of beam, (negative bc its neg particles so take abs())
+    if(number==567) tally->setEnergy(8);
     //tally->plot();
     return tally;
 }
@@ -1458,8 +1459,11 @@ void Part2A(){
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE=17;
-	int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,900}; 
+	const int NUMSIZE=13;
+	// 1000V: 653,654
+	// 1100V: 652,544,574,577,578,580,579
+	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567,572
+	int number[] = {551,558,563,567,573,776,777,809,810,829,830,849,859}; 
 	//const int NUMSIZE=1;
 	//int number[]={551};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
@@ -1483,9 +1487,10 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-		data->plotCerenkov();
-		data->plotHodo();
-		data->plotVeto();
+		cout<<"Energy:"<<energy[i]<<'\n';
+		//data->plotCerenkov();
+		//data->plotHodo();
+		//data->plotVeto();
 		cout<<fileLocation<<'\n';
 		file->Close();
 		delete file;
