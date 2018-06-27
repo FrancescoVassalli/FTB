@@ -1,5 +1,6 @@
 
 using namespace std;
+//using namespace Frannamespace.C //for chase
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
 	float *ex;
@@ -41,22 +42,25 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 void Part2B(){
 	ifstream inFile ("PbGlA.txt"); //txt file containing the data from Part2A
 	const int LINES = 6;
-	queue<float> input[LINES];
+	queue<float> input[LINES]; //create array of queues
 	string intemp;
 	stringstream ss;
-	for (int i = 0; i < LINES; ++i)
+	for (int i = 0; i < LINES; ++i) //loop over each beam files data
 	{
 		inFile>>intemp;
 		ss<<intemp;
 		getline(ss,intemp,',');
 		//cout<<intemp<<":\n";
-		while(getline(ss,intemp,',')){
+		while(getline(ss,intemp,',')){   //loop to put data from each line into each queue at the same place in the arrays
 			input[i].push(stof(intemp));
 			//cout<<intemp<<endl;
 		}
 		ss.clear();
 	}
+
+	//convert each of the queues into an array resulting in arrays of GeV, mean, sigma, mean error, and sigma error
 	cout<< trendForced(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
+
 	/*ofstream outFile;
 	outFile.open("PbGl_data2.txt");
 	if(outFile.is_open()) //read info out to txt file if it opens

@@ -1,3 +1,9 @@
+// Made by Francesco Vassalli for analysis of PbGl detector for sPHENIX EMCal calibration effort
+// 6/27/18 at the CU Boulder
+// This script takes beam data files in DSTReader format and plots the PbGl energy after making 
+// hodoscope and cherenkov radiation cuts. It then fits a gaussian to the energy to get 
+// mean energy as well as the sigma on the energies gaussian distribution.
+
 #include <sstream>
 #include <queue>
 #include "TH1F.h"
@@ -1059,7 +1065,7 @@ OfficalBeamData* DSTReader551::Loop(int number)
             
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
-    tally->setEnergy(TMath::Abs(beam_MTNRG_GeV));
+    tally->setEnergy(TMath::Abs(beam_MTNRG_GeV)); //lab set energy of beam, (negative bc its neg particles so take abs())
     //tally->plot();
     return tally;
 }
@@ -1119,13 +1125,13 @@ void Part2A(){
 	float sigma[NUMSIZE];
 	float sigmaU[NUMSIZE];
 	float energy[NUMSIZE];
-	for (int i = 0; i < NUMSIZE; ++i)
+	for (int i = 0; i < NUMSIZE; ++i) //loop over beam files
 	{
 		fileLocation = filename+to_string(number[i])+extension;
 		file = new TFile(fileLocation.c_str()); 
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
-		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have
+		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
 		cout<<"Res:"<<data->getResolution()<<'\n';
 		mean[i] =data->getMean();
 		meanU[i]=data->getMeanUncertainty();
@@ -1137,7 +1143,7 @@ void Part2A(){
 		delete file;
 		delete reader;
 	}
-	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE);
+	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
 	outFile.open("PbGlA.txt");
 	if(outFile.is_open()) //read info out to txt file if it opens
@@ -1373,3 +1379,7 @@ int runToVoltage(int run){
     }
     return r;
 }
+
+
+
+
