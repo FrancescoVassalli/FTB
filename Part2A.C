@@ -20,7 +20,7 @@
 // Header file for the classes stored in the TTree if any.
 #include "TClonesArray.h"
 #include "TObject.h"
-//#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
 
 using namespace std;
 
@@ -1626,15 +1626,15 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 //file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start"<<endl;
-	bool want1200 = true;
-	bool want1100 = false;
+	bool want1200 = false;
+	bool want1100 = true;
 	//string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int totalNUMSIZE=28;
-	int totalnumber[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,631,544,652,653,654,687,572,574,577,578,579,580}; //all beam files
+	const int totalNUMSIZE=26;
+	int totalnumber[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,544,652,653,654,572,574,577,578,579,580}; //all beam files
 	//const int totalNUMSIZE=1;
 	//int totalnumber[]={563}; //,567,809
 
