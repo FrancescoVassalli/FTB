@@ -34,13 +34,40 @@ public:
 	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
 		pbglPlot = new TH1D(name.c_str(),"",200,200,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
+		cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000);
+		p_veto = new TH1D(string(name+"veto").c_str(),"",20,0,2);
+		p_hodo = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
 	}
 	~OfficalBeamData(){
 		delete pbglPlot;
+		delete p_veto;
+		delete p_hodo;
+		delete cerenkov;
 	}
 	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
+		this->cerenkov->Fill(cerenkov);
+		p_hodo->Fill(hhodo[0]);
+		p_hodo->Fill(hhodo[1]);
+		p_hodo->Fill(hhodo[2]);
+		p_hodo->Fill(hhodo[3]);
+		p_hodo->Fill(hhodo[4]);
+		p_hodo->Fill(hhodo[5]);
+		p_hodo->Fill(hhodo[6]);
+		p_hodo->Fill(hhodo[7]);
+		p_hodo->Fill(vhodo[0]);
+		p_hodo->Fill(vhodo[1]);
+		p_hodo->Fill(vhodo[2]);
+		p_hodo->Fill(vhodo[3]);
+		p_hodo->Fill(vhodo[4]);
+		p_hodo->Fill(vhodo[5]);
+		p_hodo->Fill(vhodo[6]);
+		p_hodo->Fill(vhodo[7]);
+		p_veto->Fill(veto[0]);
+		p_veto->Fill(veto[1]);
+		p_veto->Fill(veto[2]);
+		p_veto->Fill(veto[3]);
 		if (r&&pbgl>1000)
 		{
 			pbglEnergy.push(pbgl);
@@ -92,6 +119,43 @@ public:
 		pbglPlot->Draw();
 		makeGaus()->Draw("same");
 		string out = name+".pdf";
+		tc->Print(out.c_str());
+	}
+	void plotCerenkov(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		cerenkov->GetXaxis()->SetRangeUser(1,100000);
+		cerenkov->Draw();
+		TLine *cut = new TLine(CERENKOVcut,0,CERENKOVcut+1,DBL_MAX);
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		cut->Draw("same");
+		axisTitles(cerenkov,"calibrated cerenkov energy","count");
+		string out = name+"ceren.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotVeto(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_veto->Draw();
+		TLine *cut = new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_veto,"calibrated veto energy","count");
+		string out = name+"veto.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodo(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodo->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
 		tc->Print(out.c_str());
 	}
 	TH1D* getPlot(){
@@ -146,6 +210,9 @@ private:
 	int beamVoltage;
 	int beamEnergy;
 	TH1D *pbglPlot;
+	TH1D *cerenkov;
+	TH1D *p_hodo;
+	TH1D *p_veto;
 	string name;
 	
 	bool made=false;
@@ -1107,10 +1174,10 @@ void Part2A(){
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE=18;
-	int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900}; 
-	//const int NUMSIZE=2;
-	//int number[]={551,573};
+	//const int NUMSIZE=18;
+	//int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900}; 
+	const int NUMSIZE=1;
+	int number[]={551};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -1132,6 +1199,9 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
+		data->plotCerenkov();
+		data->plotHodo();
+		data->plotVeto();
 		cout<<fileLocation<<'\n';
 		file->Close();
 		delete file;
