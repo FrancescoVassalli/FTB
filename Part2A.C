@@ -112,7 +112,7 @@ public:
 		p_veto2->Fill(veto[1]);
 		p_veto3->Fill(veto[2]);
 		p_veto4->Fill(veto[3]);*/
-		if (r)
+		if (r&pbglEnergy>100)
 		{
 			pbglEnergy.push(pbgl);
 			pbglPlot->Fill(pbgl);			
@@ -1632,10 +1632,11 @@ void Part2A(){
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
 	const int NUMSIZE=12;
+	//573 is saturated 
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
 	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
-	int number[] = {563,776,777,830,849,551,810,859,558,809,829,567}; 
+	int number[] = {652,544,574,577,578,580,579,572}; 
 	//const int NUMSIZE=1;
 	//int number[]={551};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
