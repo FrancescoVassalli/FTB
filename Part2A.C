@@ -1633,8 +1633,8 @@ void Part2A(){
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int totalNUMSIZE=26;
-	int totalnumber[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,544,652,653,654,572,574,577,578,579,580}; //all beam files
+	const int totalNUMSIZE=20;
+	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,572,574,577,578,579,580}; //all beam files
 	//const int totalNUMSIZE=1;
 	//int totalnumber[]={563}; //,567,809
 
