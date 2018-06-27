@@ -43,26 +43,26 @@ public:
 		pbglPlot->Sumw2();
 		//declare plots for energy, all veto counters, and hodoscopes counters
 		cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000); 
-		p_veto1 = new TH1D(string(name+"veto").c_str(),"",20,0,2);
-		p_veto2 = new TH1D(string(name+"veto").c_str(),"",20,0,2);
-		p_veto3 = new TH1D(string(name+"veto").c_str(),"",20,0,2);
-		p_veto4 = new TH1D(string(name+"veto").c_str(),"",20,0,2);
-		p_hodov1 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov2 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov3 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov4 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov5 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov6 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov7 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodov8 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh1 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh2 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh3 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh4 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh5 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh6 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh7 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
-		p_hodoh8 = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
+		p_veto1 = new TH1D(string(name+"veto1").c_str(),"",20,0,2);
+		p_veto2 = new TH1D(string(name+"veto2").c_str(),"",20,0,2);
+		p_veto3 = new TH1D(string(name+"veto3").c_str(),"",20,0,2);
+		p_veto4 = new TH1D(string(name+"veto4").c_str(),"",20,0,2);
+		p_hodov1 = new TH1D(string(name+"hodov1").c_str(),"",20,0,2);
+		p_hodov2 = new TH1D(string(name+"hodov2").c_str(),"",20,0,2);
+		p_hodov3 = new TH1D(string(name+"hodov3").c_str(),"",20,0,2);
+		p_hodov4 = new TH1D(string(name+"hodov4").c_str(),"",20,0,2);
+		p_hodov5 = new TH1D(string(name+"hodov5").c_str(),"",20,0,2);
+		p_hodov6 = new TH1D(string(name+"hodov6").c_str(),"",20,0,2);
+		p_hodov7 = new TH1D(string(name+"hodov7").c_str(),"",20,0,2);
+		p_hodov8 = new TH1D(string(name+"hodov8").c_str(),"",20,0,2);
+		p_hodoh1 = new TH1D(string(name+"hodoh1").c_str(),"",20,0,2);
+		p_hodoh2 = new TH1D(string(name+"hodoh2").c_str(),"",20,0,2);
+		p_hodoh3 = new TH1D(string(name+"hodoh3").c_str(),"",20,0,2);
+		p_hodoh4 = new TH1D(string(name+"hodoh4").c_str(),"",20,0,2);
+		p_hodoh5 = new TH1D(string(name+"hodoh5").c_str(),"",20,0,2);
+		p_hodoh6 = new TH1D(string(name+"hodoh6").c_str(),"",20,0,2);
+		p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
+		p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
 	}
 	~OfficalBeamData(){
 		delete pbglPlot;
@@ -1627,8 +1627,8 @@ void Part2A(){
 	filename = fileLocation+filename;
 	//const int NUMSIZE=17;
 	//int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,900}; 
-	const int NUMSIZE=1;
-	int number[]={551};
+	const int NUMSIZE=2;
+	int number[]={563,567};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
