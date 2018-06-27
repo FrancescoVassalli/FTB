@@ -1,6 +1,16 @@
+// Made by Francesco Vassalli for analysis of PbGl detector for sPHENIX EMCal calibration effort
+// 6/27/18 at the CU Boulder
+
+#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+  	TLatex l; //l.SetTextAlign(12); 
+  	l.SetTextSize(tsize); 
+  	l.SetNDC();
+ 	l.SetTextColor(color);
+  	l.DrawLatex(x,y,text);
+}	
 
 using namespace std;
-//using namespace Frannamespace.C //for chase
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
 	float *ex;
