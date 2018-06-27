@@ -38,7 +38,7 @@ public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1D and tracks the voltage and energy
 	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
-		pbglPlot = new TH1D(name.c_str(),"",200,200,10000); // note the bounds are weird
+		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 		/*cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000);
 		p_veto = new TH1D(string(name+"veto").c_str(),"",20,0,2);
@@ -92,7 +92,7 @@ public:
 		p_veto2->Fill(veto[1]);
 		p_veto3->Fill(veto[2]);
 		p_veto4->Fill(veto[3]);*/
-		if (r&&pbgl>1000)
+		if (r)
 		{
 			pbglEnergy.push(pbgl);
 			pbglPlot->Fill(pbgl);			
@@ -100,13 +100,16 @@ public:
 		return r;
 	}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
-		return cerenkov>CERENKOVcut && noVeto(veto),passHodo(vhodo),passHodo(hhodo);
+		return cerenkov>CERENKOVcut && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
 	}
 	inline bool noVeto(double* veto){
 		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
 	}
-	inline bool passHodo(double* hodo){ //exclusive or 
-		return hodo[0]>HODOcut ^ hodo[1]>HODOcut ^ hodo[2]>HODOcut ^ hodo[3]>HODOcut ^ hodo[4]>HODOcut ^ hodo[5]>HODOcut ^ hodo[6]>HODOcut ^ hodo[7]>HODOcut;
+	inline bool passHodoV(double* hodo){ //exclusive or 
+		return hodo[0]>HODOVcut[0] ^ hodo[1]>HODOVcut[1] ^ hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5] ^ hodo[6]>HODOVcut[6] ^ hodo[7]>HODOVcut[7];
+	}
+	inline bool passHodoH(double* hodo){ //exclusive or 
+		return hodo[0]>HODOHcut[0] ^ hodo[1]>HODOHcut[1] ^ hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5] ^ hodo[6]>HODOHcut[6] ^ hodo[7]>HODOHcut[7];
 	}
 	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
@@ -125,7 +128,7 @@ public:
 		mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
 		int lazyMan = 10;
 		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,lazyMan);
-		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
+		//pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
 		//numEntries = pbglPlot->Integral(gausLowBound,gausUpbound); //is this right? //we dont need this we have ParError
@@ -214,7 +217,8 @@ private:
 	const double CERENKOVcut = 1400; //previously 1600
 	const float VETOcut = .35; // from .3
 	//we should split up the vertical vs horizontal
-	const float HODOcut = .55; //from .45
+	const float HODOHcut[8] = {.45,.55,.45,.5,.5,.55,.45,.45}; 
+	const float HODOVcut[8] = {.65,.66,.70,.65,.65,.55,.60,.60}; //changed to arrays
 	const int VETOSIZE = 4;
 	const int HODOSIZE = 8;
 
@@ -1459,11 +1463,11 @@ void Part2A(){
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE=13;
+	const int NUMSIZE=12;
 	// 1000V: 653,654
-	// 1100V: 652,544,574,577,578,580,579
-	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567,572
-	int number[] = {551,558,563,567,573,776,777,809,810,829,830,849,859}; 
+	// 1100V: 652,544,574,577,578,580,579,572
+	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
+	int number[] = {563,776,777,830,849,551,810,859,558,809,829,567}; 
 	//const int NUMSIZE=1;
 	//int number[]={551};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
@@ -1488,6 +1492,7 @@ void Part2A(){
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
 		cout<<"Energy:"<<energy[i]<<'\n';
+		data->plot();
 		//data->plotCerenkov();
 		//data->plotHodo();
 		//data->plotVeto();
