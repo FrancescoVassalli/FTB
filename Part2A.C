@@ -32,7 +32,7 @@ public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1D and tracks the voltage and energy
 	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
-		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
+		pbglPlot = new TH1D(name.c_str(),"",200,200,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 	}
 	~OfficalBeamData(){
@@ -63,17 +63,20 @@ public:
 		made=true;
 		int maxbin = pbglPlot->GetMaximumBin();
 		double gausLowBound = pbglPlot->GetBinLowEdge(maxbin);
-		double temp = gausLowBound*.7;
+		double temp = gausLowBound*.3;
 		double gausUpbound = gausLowBound +temp;
 		if(gausUpbound >10000){gausUpbound=10000;} //so that fit doesn't exceed range of histogram
 		gausLowBound -= temp; 
+		cout<<"GausRange:"<<gausLowBound<<"-"<<gausUpbound<<'\n';
 		TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
 
-		pbglPlot->Fit(gaus,"R");       //“R” Use the range specified in the function range
+		pbglPlot->Fit(gaus,"","",gausLowBound,gausUpbound);       //“R” Use the range specified in the function range
 		Scalar mygaus[2];
 		mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
 		mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
-		int lazyMan = 0;
+		int lazyMan = 10;
+		cout<<"Mean1:";
+		cout<<mygaus[0].value<<","<<mygaus[1].value;
 		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,lazyMan);
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
@@ -718,6 +721,7 @@ DSTReader551::DSTReader551(TTree *tree,string file) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
+   	cout<<file<<'\n';
       TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject(file.c_str());
       if (!f || !f->IsOpen()) {
          f = new TFile(file.c_str());
@@ -1056,14 +1060,11 @@ OfficalBeamData* DSTReader551::Loop(int number)
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);   nbytes += nb;
       tally->add(TOWER_CALIB_C2_energy[1],TOWER_CALIB_TRIGGER_VETO_energy,TOWER_CALIB_HODO_HORIZONTAL_energy,TOWER_CALIB_HODO_VERTICAL_energy,TOWER_CALIB_PbGL_energy[0]);
-      if (TOWER_CALIB_PbGL_energy[0]>100000)
-      {
-      	cout<<"Error:"<<jentry<<'\n';
-      }
-      
+            
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
     tally->setEnergy(TMath::Abs(beam_MTNRG_GeV));
+    tally->plot();
     return tally;
 }
 
@@ -1104,16 +1105,16 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 	   }
 	}
 }
-//a comment titled CHANGE is place in front of eveything that needs to be chagned for evey run 
-void Part2A(){ // only put one voltage in for now 
+void Part2A(){
 	cout<<"Start"<<endl;
 	string fileLocation = "";
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	//CHANGE
-	const int NUMSIZE=2;
-	int number[] = {551,573}; 
+	//const int NUMSIZE=18;
+	//int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900}; 
+	const int NUMSIZE=1;
+	int number[]={573};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -1127,7 +1128,6 @@ void Part2A(){ // only put one voltage in for now
 		fileLocation = filename+to_string(number[i])+extension;
 		file = new TFile(fileLocation.c_str()); 
 		TTree *orange= (TTree*) file->Get("T");
-		//CHANGE
 		reader = new DSTReader551(orange,fileLocation);  
 		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have
 		cout<<"Res:"<<data->getResolution()<<'\n';
@@ -1191,23 +1191,6 @@ void Part2A(){ // only put one voltage in for now
 
 	cout<<"End"<<std::endl;
 }
-
-
-
-/*
-Double_t cerenkovEnergies[3]; // only need the [1] value 
-	 	reader->SetBranchAddress("TOWER_CALIB_C2.energy", cerenkovEnergies);
-	 	Double_t vetoEnergy[4]; //need all the values 
-	 	reader->SetBranchAddress("TOWER_CALIB_TRIGGER_VETO.energy", vetoEnergy);
-	 	Double_t hodoVerticalEnergy[8];
-		reader->SetBranchAddress("TOWER_CALIB_HODO_VERTICAL.energy", hodoVerticalEnergy);
-		Double_t hodoHorizontalEnergy[8];
-		reader->SetBranchAddress("TOWER_CALIB_HODO_HORIZONTAL.energy", hodoHorizontalEnergy);
-		Double_t pbglTemp[1];
-		reader->SetBranchAddress("TOWER_CALIB_PbGL.energy", pbglTemp);
-		cout<<orange->GetEntries()<<endl;
-*/
-
 
 int runToEnergy(int run){
     int r;
@@ -1296,6 +1279,7 @@ int runToEnergy(int run){
 			break;
         default:
             r=-1;
+            cout<<"Error in runToEnergy line:"<<__LINE__<<std::endl;
             break;
     }
     return r;
@@ -1388,6 +1372,7 @@ int runToVoltage(int run){
 			break;
         default:
             r=-1;
+            cout<<"Error in runToVoltage line:"<<__LINE__<<std::endl;
             break;
     }
     return r;
