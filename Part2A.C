@@ -40,13 +40,58 @@ public:
 	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
 		pbglPlot = new TH1D(name.c_str(),"",200,200,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
+		cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000);
+		p_veto = new TH1D(string(name+"veto").c_str(),"",20,0,2);
+		p_hodo = new TH1D(string(name+"hodo").c_str(),"",20,0,2);
 	}
 	~OfficalBeamData(){
 		delete pbglPlot;
+		delete cerenkov;
+		delete p_hodov1;
+		delete p_hodov2;
+		delete p_hodov3;
+		delete p_hodov4;
+		delete p_hodov5;
+		delete p_hodov6;
+		delete p_hodov7;
+		delete p_hodov8;
+		delete p_hodoh1;
+		delete p_hodoh2;
+		delete p_hodoh3;
+		delete p_hodoh4;
+		delete p_hodoh5;
+		delete p_hodoh6;
+		delete p_hodoh7;
+		delete p_hodoh8;
+		delete p_veto1;
+		delete p_veto2;
+		delete p_veto3;
+		delete p_veto4;
 	}
 	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
+		this->cerenkov->Fill(cerenkov);
+		p_hodoh1->Fill(hhodo[0]);
+		p_hodoh2->Fill(hhodo[1]);
+		p_hodoh3->Fill(hhodo[2]);
+		p_hodoh4->Fill(hhodo[3]);
+		p_hodoh5->Fill(hhodo[4]);
+		p_hodoh6->Fill(hhodo[5]);
+		p_hodoh7->Fill(hhodo[6]);
+		p_hodoh8->Fill(hhodo[7]);
+		p_hodov1->Fill(vhodo[0]);
+		p_hodov2->Fill(vhodo[1]);
+		p_hodov3->Fill(vhodo[2]);
+		p_hodov4->Fill(vhodo[3]);
+		p_hodov5->Fill(vhodo[4]);
+		p_hodov6->Fill(vhodo[5]);
+		p_hodov7->Fill(vhodo[6]);
+		p_hodov8->Fill(vhodo[7]);
+		p_veto1->Fill(veto[0]);
+		p_veto2->Fill(veto[1]);
+		p_veto3->Fill(veto[2]);
+		p_veto4->Fill(veto[3]);
 		if (r&&pbgl>1000)
 		{
 			pbglEnergy.push(pbgl);
@@ -100,6 +145,30 @@ public:
 		string out = name+".pdf";
 		tc->Print(out.c_str());
 	}
+	void plotCerenkov(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		cerenkov->GetXaxis()->SetRangeUser(1,100000);
+		cerenkov->Draw();
+		TLine *cut = new TLine(CERENKOVcut,0,CERENKOVcut+1,DBL_MAX);
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		cut->Draw("same");
+		axisTitles(cerenkov,"calibrated cerenkov energy","count");
+		string out = name+"ceren.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotVeto(int i){
+		switch (i){
+			case 1:
+				plotVeto1();
+				break;
+			case 2: plotVeto2();
+				break;
+			
+		}
+	}
+	
 	TH1D* getPlot(){
 		return pbglPlot;
 	}
@@ -142,9 +211,9 @@ public:
 	}
 private:
 	//we will need to play with these values
-	const double CERENKOVcut = 1600; //previously 1000
-	const float VETOcut = .3; // from dennis 
-	const float HODOcut = .45;
+	const double CERENKOVcut = 1400; //previously 1600
+	const float VETOcut = .35; // from .3
+	const float HODOcut = .55; //from .45
 	const int VETOSIZE = 4;
 	const int HODOSIZE = 8;
 
@@ -152,6 +221,27 @@ private:
 	int beamVoltage;
 	int beamEnergy;
 	TH1D *pbglPlot;
+	TH1D *cerenkov;
+	TH1D *p_hodov1;
+	TH1D *p_hodov2;
+	TH1D *p_hodov3;
+	TH1D *p_hodov4;
+	TH1D *p_hodov5;
+	TH1D *p_hodov6;
+	TH1D *p_hodov7;
+	TH1D *p_hodov8;
+	TH1D *p_hodoh1;
+	TH1D *p_hodoh2;
+	TH1D *p_hodoh3;
+	TH1D *p_hodoh4;
+	TH1D *p_hodoh5;
+	TH1D *p_hodoh6;
+	TH1D *p_hodoh7;
+	TH1D *p_hodoh8;
+	TH1D *p_veto1;
+	TH1D *p_veto2;
+	TH1D *p_veto3;
+	TH1D *p_veto4;
 	string name;
 	
 	bool made=false;
@@ -176,6 +266,260 @@ private:
 	        return;
 	    }
 	}
+	void plotVeto1(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_veto1->Draw();
+		TLine *cut = new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_veto,"calibrated veto energy","count");
+		string out = name+"veto.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh1(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh1->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotVeto2(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_veto1->Draw();
+		TLine *cut = new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_veto,"calibrated veto energy","count");
+		string out = name+"veto.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh2(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh2->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotVeto3(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_veto2->Draw();
+		TLine *cut = new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_veto,"calibrated veto energy","count");
+		string out = name+"veto.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodh3(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh3->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+
+	void plotVeto4(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_veto4->Draw();
+		TLine *cut = new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_veto,"calibrated veto energy","count");
+		string out = name+"veto.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh4(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh4->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh5(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh5->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh6(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh6->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh7(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh7->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodoh8(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodoh8->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov1(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov1->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov2(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov2->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov3(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov3->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov4(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov4->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov5(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov5->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov6(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov6->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov6(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov6->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+	void plotHodov7(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov7->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+		void plotHodov8(){
+		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		gPad->SetLogy();
+		p_hodov8->Draw();
+		TLine *cut = new TLine(HODOcut,0,HODOcut+1,DBL_MAX);
+		cut->Draw("same");
+		cut->SetLineWidth(8);
+		cut->SetLineStyle(9);
+		axisTitles(p_hodo,"calibrated hodoscope energy","count");
+		string out = name+"hodo.pdf";
+		tc->Print(out.c_str());
+	}
+
 };
 #endif
 
@@ -1107,16 +1451,17 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 	   }
 	}
 }
+//file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start"<<endl;
 	string fileLocation = "/home/user/Droptemp/NewBeams/";
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE=18;
-	int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,816,829,830,849,859,900}; 
-	//const int NUMSIZE=2;
-	//int number[]={551,573};
+	const int NUMSIZE=17;
+	int number[] = {551,558,563,567,573,652,653,654,776,777,809,810,829,830,849,859,900}; 
+	//const int NUMSIZE=1;
+	//int number[]={551};
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -1125,7 +1470,7 @@ void Part2A(){
 	float sigma[NUMSIZE];
 	float sigmaU[NUMSIZE];
 	float energy[NUMSIZE];
-	for (int i = 0; i < NUMSIZE; ++i) //loop over beam files
+	for (int i = 0; i < NUMSIZE; ++i)//loop over beam files
 	{
 		fileLocation = filename+to_string(number[i])+extension;
 		file = new TFile(fileLocation.c_str()); 
@@ -1138,6 +1483,9 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
+		data->plotCerenkov();
+		data->plotHodo();
+		data->plotVeto();
 		cout<<fileLocation<<'\n';
 		file->Close();
 		delete file;
