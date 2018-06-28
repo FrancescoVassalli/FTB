@@ -220,6 +220,19 @@ public:
 		}
 		return mainGaus;
 	}
+	GausPlot* getMainPlot(string name){
+
+		if (!plotsexits[0])
+		{
+			plotsexits[0]=true;
+			TF1 *gaus = makeGaus();
+			axisTitles(pbglPlot,name.c_str(),"");
+			pbglPlot->SetMarkerSize(.03);
+			mainGaus = new GausPlot(pbglPlot,gaus);
+			delete gaus;
+		}
+		return mainGaus;
+	}
 	void plotCerenkov(){
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		plotsexits[1]=true;
@@ -1969,11 +1982,11 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 }
 
 void makeBigPlot(OfficalBeamData *data, int number){
-	TCanvas *tc = new TCanvas("big","",800,600);
+	TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
 	string name = to_string(number)+": "+to_string(runToEnergy(number))+"GeV "+to_string(runToVoltage(number))+"V";
 	const int NUMPLOTS=22;
 	PlotWithLine *plots[NUMPLOTS];
-	plots[0]=data->getMainPlot();
+	plots[0]=data->getMainPlot(name);
 	plots[1]=data->getCerenkovPlot();
 	plots[2]=data->getVetoPlot(1);
 	plots[3]=data->getVetoPlot(2);
