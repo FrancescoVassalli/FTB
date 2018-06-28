@@ -1,5 +1,8 @@
 // Made by Francesco Vassalli for analysis of PbGl detector for sPHENIX EMCal calibration effort
 // 6/27/18 at the CU Boulder
+// This script takes the mean, sigma, mean error, and sigma error from Part2A.C's
+// 2 output files and plots the 1200V and 1100V data trendline together. 
+// It will also plot the combined resolution of each data set
 
 #include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
@@ -11,6 +14,9 @@ void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsiz
 }	
 
 using namespace std;
+
+
+
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
 	float *ex;
@@ -58,6 +64,7 @@ struct Data
 
 queue<Data> singlefileAnalysis(string filename){
 	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
+	cout<<"Opened file!"<<endl;
 	const int LINES = 6;
 	queue<float> input[LINES]; //create array of queues
 	string intemp;
@@ -79,7 +86,7 @@ queue<Data> singlefileAnalysis(string filename){
 	Scalar slope = trendForced(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
 	//convert the arrays to energy 
 	Data temp;
-	while (!input.empty())
+	while (!input[5].empty())
 	{
 		temp.mean = Scalar(input[1].front(),input[2].front())/slope; //these Q's might be empty b/c of the queueToarray
 		temp.sigma = Scalar(input[3].front(),input[4].front())/slope;
@@ -90,7 +97,7 @@ queue<Data> singlefileAnalysis(string filename){
 		input[3].pop();
 		input[4].pop();
 		input[5].pop();
-		cout<<"work"<<i<<'\n';
+		//cout<<"work"<<i<<'\n';
 	}
 	//return all the arrays in terms of energy 
 	cout<<slope;
@@ -155,14 +162,143 @@ queue<Data> sortcombine(queue<Data> d1, queue<Data> d2){
 		}
 		while(d2.front().energy==currentEnergy){
 			rdata.push(d2.front());
-			dc2.pop();
+			d2.pop();
 		}
 	}
 	return rdata;
 }
+//trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror)
+//trendForced(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]))
+
+void resolution(queue<Data> temp){
+	int SIZE = temp.size();
+	float mean[SIZE]; 
+	float sigma[SIZE]; 
+	float meanerror[SIZE]; 
+	float sigmaerror[SIZE];
+	float energy[SIZE];
+	float ex[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		ex[i] = 0;
+		mean[i] = temp.front().mean.value;
+		meanerror[i] = temp.front().mean.uncertainty;
+		sigma[i] = temp.front().sigma.value;
+		sigmaerror[i] = temp.front().sigma.uncertainty;
+		energy[i] = temp.front().energy;
+		temp.pop();
+	}
+	TCanvas *canvas1 = new TCanvas();
+	float relativeE[SIZE];
+	float relativeU[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		relativeE[i] = sigma[i]/energy[i];
+		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],energy[i],meanerror[i]);
+		//cout<<relativeU[i]<<endl;
+	}
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,mean[SIZE-1]);
+	eF->SetLineColor(kRed);
+	TGraphErrors* ehist = new TGraphErrors(SIZE,mean,relativeE,ex,relativeU);
+	ehist->Fit(eF);
+	float eA = eF->GetParameter(0);
+	float eB = eF->GetParameter(1);
+	float errors[2];
+	errors[0] = eF->GetParError(0);
+	errors[1] = eF->GetParError(1);
+	//makeMarkerNice(&ehist, 1);
+	ehist->SetMarkerSize(2);
+	ehist->SetMinimum(0);
+	ehist->SetMaximum(0.1);
+	ehist->GetXaxis()->SetLimits(0,13);
+	ehist->Draw("AP*");
+	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
+	float chi = eF->GetChisquare();
+	int ndf = eF->GetNDF();
+	myText(.3,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05);
+	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
+	myText(.24,.85,kRed,Form("Stochastic: %0.6f#pm%0.6f ",eA,errors[0]),.05);
+	myText(.24,.8,kRed,Form("Constant: %0.6f#pm%0.6f",eB,errors[1]),.05);
+}
+
+void combinedResolution(string filename1, string filename2){
+	cout<<"Started Resolution!"<<endl;
+	ifstream inFile1 (filename1.c_str()); //txt file containing the first data file from Part2A
+	cout<<"Opened file2!"<<endl;
+	const int LINES = 6;
+	queue<float> input1[LINES]; //create array of queues
+	string intemp1;
+	stringstream ss1;
+	for (int i = 0; i < LINES; ++i) //loop over each beam files data
+	{
+		inFile1>>intemp1;
+		ss1<<intemp1;
+		getline(ss1,intemp1,',');
+		//cout<<intemp<<":\n";
+		while(getline(ss1,intemp1,',')){   //loop to put data from each line into each queue at the same place in the arrays
+			input1[i].push(stof(intemp1));
+			//cout<<intemp<<endl;
+		}
+		ss1.clear();
+	}
+	Scalar slope1 = trendForced(input1[5].size(),queueToArray(input1[5]),queueToArray(input1[1]),queueToArray(input1[2]),queueToArray(input1[3]),queueToArray(input1[4]));
+	queue<Data> rdata1;
+	Data temp1;
+	while (!input1[5].empty())
+	{
+		temp1.mean = Scalar(input1[1].front(),input1[2].front())/slope1; //these Q's might be empty b/c of the queueToarray
+		temp1.sigma = Scalar(input1[3].front(),input1[4].front())/slope1;
+		temp1.energy = input1[5].front();
+		rdata1.push(temp1);
+		input1[1].pop();
+		input1[2].pop();
+		input1[3].pop();
+		input1[4].pop();
+		input1[5].pop();
+		//cout<<"work"<<i<<'\n';
+	}
+	inFile1.close();
+	ifstream inFile2 (filename2.c_str()); //txt file containing the 2nd data file from Part2A
+	cout<<"Opened file3!"<<endl;
+	queue<float> input2[LINES]; //create array of queues
+	string intemp2;
+	stringstream ss2;
+	for (int i = 0; i < LINES; ++i) //loop over each beam files data
+	{
+		inFile2>>intemp2;
+		ss2<<intemp2;
+		getline(ss2,intemp2,',');
+		//cout<<intemp<<":\n";
+		while(getline(ss2,intemp2,',')){   //loop to put data from each line into each queue at the same place in the arrays
+			input2[i].push(stof(intemp2));
+			//cout<<intemp<<endl;
+		}
+		ss2.clear();
+	}
+	Scalar slope2 = trendForced(input2[5].size(),queueToArray(input2[5]),queueToArray(input2[1]),queueToArray(input2[2]),queueToArray(input2[3]),queueToArray(input2[4]));
+	queue<Data> rdata2;
+	Data temp2;
+	while (!input2[5].empty())
+	{
+		temp2.mean = Scalar(input2[1].front(),input2[2].front())/slope2; //these Q's might be empty b/c of the queueToarray
+		temp2.sigma = Scalar(input2[3].front(),input2[4].front())/slope2;
+		temp2.energy = input2[5].front();
+		rdata2.push(temp2);
+		input2[1].pop();
+		input2[2].pop();
+		input2[3].pop();
+		input2[4].pop();
+		input2[5].pop();
+		//cout<<"work"<<i<<'\n';
+	}
+	inFile2.close();
+	queue<Data> rdata = sortcombine(rdata1, rdata2);
+	resolution(rdata);
+}
 
 void Part2B(){
-	combinedplot(sortcombine(singlefileAnalysis("A1200.txt"),singlefileAnalysis("A1100.txt")));
+	combinedplot(sortcombine(singlefileAnalysis("PbGlA1200.txt"),singlefileAnalysis("PbGlA1100.txt")));
+	combinedResolution("PbGlA1200.txt","PbGlA1100.txt");
 }
 
 
