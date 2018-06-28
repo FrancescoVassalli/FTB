@@ -112,7 +112,12 @@ public:
 		p_veto2->Fill(veto[1]);
 		p_veto3->Fill(veto[2]);
 		p_veto4->Fill(veto[3]);*/
-		if (r&pbglEnergy>100)
+		int pbglCUT;
+		if(beamEnergy>8){
+			pbglCUT=1000;
+		}
+		else pbglCUT=100;
+		if (r&(pbgl>pbglCUT))
 		{
 			pbglEnergy.push(pbgl);
 			pbglPlot->Fill(pbgl);			
@@ -1568,7 +1573,10 @@ OfficalBeamData* DSTReader551::Loop(int number)
    stringstream ss;
    ss<<number;
    string name = "data"+ss.str();
+   fChain->GetEntry(1);
    OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number));
+   tally->setEnergy(TMath::Abs(beam_MTNRG_GeV)); //lab set energy of beam, (negative bc its neg particles so take abs())
+   if(number==567) tally->setEnergy(8);
    Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
@@ -1580,8 +1588,6 @@ OfficalBeamData* DSTReader551::Loop(int number)
             
       if(jentry%10000==0) cout<<jentry<<" events entered"<<'\n';
     }
-    tally->setEnergy(TMath::Abs(beam_MTNRG_GeV)); //lab set energy of beam, (negative bc its neg particles so take abs())
-    if(number==567) tally->setEnergy(8);
     //tally->plot();
     return tally;
 }
@@ -1625,20 +1631,46 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 }
 //file 816 appears to have different data 
 void Part2A(){
-	cout<<"Start"<<endl;
+	cout<<"Start Here is your code Mr. Stark "<<endl;
+	bool want1200 = false;
+	bool want1100 = true;
 	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int NUMSIZE=12;
+	const int totalNUMSIZE=20;
+	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,572,574,577,578,579,580}; //all beam files
+	//const int totalNUMSIZE=1;
+	//int totalnumber[]={563}; //,567,809
 	//573 is saturated 
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
 	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
-	int number[] = {652,544,574,577,578,580,579,572}; 
-	//const int NUMSIZE=1;
-	//int number[]={551};
+	int NUMSIZE=0;
+	int number[totalNUMSIZE]; //desired beam files
+	if(want1200 == true)
+	{
+		for(int i = 0; i<totalNUMSIZE; i++)
+		{
+			if(runToVoltage(totalnumber[i]) == 1200)
+			{
+				number[NUMSIZE] = totalnumber[i];
+				NUMSIZE++;
+			}
+		}
+	} 
+	else if(want1100 == true)
+	{
+		for(int i = 0; i<totalNUMSIZE; i++)
+		{
+			if(runToVoltage(totalnumber[i]) == 1100)
+			{
+				number[NUMSIZE] = totalnumber[i];
+				NUMSIZE++;
+			}
+		}
+	} 
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -1650,7 +1682,7 @@ void Part2A(){
 	for (int i = 0; i < NUMSIZE; ++i)//loop over beam files
 	{
 		fileLocation = filename+to_string(number[i])+extension;
-		file = new TFile(fileLocation.c_str()); 
+		file = new TFile(fileLocation.c_str());
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
 		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
@@ -1660,6 +1692,7 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
+
 		cout<<"Energy:"<<energy[i]<<'\n';
 		data->plot();
 		//data->plotCerenkov();
@@ -1672,7 +1705,10 @@ void Part2A(){
 	}
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
-	outFile.open("PbGlA.txt");
+
+	if(want1200 == true){outFile.open("PbGlA1200.txt");} //1200V data
+	else if(want1100 == true){outFile.open("PbGlA1100.txt");} //1100V data
+	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
 		cout<<"File Opened!"<<endl;
@@ -1817,21 +1853,22 @@ int runToEnergy(int run){
 int runToVoltage(int run){
     int r;
     int s = (int) run;
+
     switch (s){
         case 558:
-            r=1100;
+            r=1200;
             break;
         case 551:
-            r= 1100;
+            r= 1200;
             break;
         case 563:
-            r= 1100;
+            r= 1200;
             break;
-        case 573:
-            r= 1100;
+        case 573: //saturated
+            r= 00;
             break;
         case 567:
-            r= 1100;
+            r= 1200;
             break;
         case 776:
         	r=1200;
@@ -1845,7 +1882,7 @@ int runToVoltage(int run){
 		case 810:
 			r=1200;
 			break;
-		case 816:
+		case 816: // double check this 
 			r=1200;
 			break;
 		case 829:
@@ -1860,11 +1897,8 @@ int runToVoltage(int run){
 		case 859:
 			r=1200;
 			break;
-		case 900:
-			r=1200;
-			break;
-		case 631:
-			r=1100;
+		case 631: // not in list 
+			r=1100; 
 			break;
 		case 544:
 			r= 1100;
@@ -1873,12 +1907,12 @@ int runToVoltage(int run){
 			r= 1100;
 			break;
 		case 653:
-			r= 1100;
+			r= 1000;
 			break;
 		case 654:
-			r= 1100;
+			r= 1000;
 			break;
-		case 687:
+		case 687: // not in list 
 			r= 1100;
 			break;
 		case 572:
