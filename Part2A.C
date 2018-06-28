@@ -63,10 +63,15 @@ public:
 		p_hodoh6 = new TH1D(string(name+"hodoh6").c_str(),"",20,0,2);
 		p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
 		p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
+
+		for (int i = 0; i < NUMPLOTS; ++i)
+		{
+			plotsexits[i]=false;
+		}
 	}
 	~OfficalBeamData(){
 		delete pbglPlot;
-		/*delete cerenkov;
+		delete cerenkov;
 		delete p_hodov1;
 		delete p_hodov2;
 		delete p_hodov3;
@@ -86,12 +91,34 @@ public:
 		delete p_veto1;
 		delete p_veto2;
 		delete p_veto3;
-		delete p_veto4;*/
+		delete p_veto4;
+		delete mainGaus;
+		delete cut_cerenkov;
+		delete cut_hodov1;
+		delete cut_hodov2;
+		delete cut_hodov3;
+		delete cut_hodov4;
+		delete cut_hodov5;
+		delete cut_hodov6;
+		delete cut_hodov7;
+		delete cut_hodov8;
+		delete cut_hodoh1;
+		delete cut_hodoh2;
+		delete cut_hodoh3;
+		delete cut_hodoh4;
+		delete cut_hodoh5;
+		delete cut_hodoh6;
+		delete cut_hodoh7;
+		delete cut_hodoh8;
+		delete cut_veto1;
+		delete cut_veto2;
+		delete cut_veto3;
+		delete cut_veto4;
 	}
 	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
-		/*this->cerenkov->Fill(cerenkov);
+		this->cerenkov->Fill(cerenkov);
 		p_hodoh1->Fill(hhodo[0]);
 		p_hodoh2->Fill(hhodo[1]);
 		p_hodoh3->Fill(hhodo[2]);
@@ -111,7 +138,7 @@ public:
 		p_veto1->Fill(veto[0]);
 		p_veto2->Fill(veto[1]);
 		p_veto3->Fill(veto[2]);
-		p_veto4->Fill(veto[3]);*/
+		p_veto4->Fill(veto[3]);
 		int pbglCUT;
 		if(beamEnergy>8){
 			pbglCUT=1000;
@@ -167,14 +194,29 @@ public:
 	}
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		plotsexits[0]=true;
 		tc->Draw();
 		pbglPlot->Draw();
-		makeGaus()->Draw("same");
+		TF1 *gaus = makeGaus();
+		gaus->Draw("same");
+		mainGaus = new GausPlot(*pbglPlot,*gaus);
+		delete gaus;
 		string out = name+".pdf";
 		tc->Print(out.c_str());
 	}
+	void getMainPlot(){
+		if (!plotsexits[0])
+		{
+			plotsexits[0]=true;
+			TF1 *gaus = makeGaus();
+			mainGaus = new GausPlot(*pbglPlot,*gaus);
+			delete gaus;
+		}
+		return mainGaus;
+	}
 	void plotCerenkov(){
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
+		plotsexits[1]=true;
 		gPad->SetLogy();
 		cerenkov->GetXaxis()->SetRangeUser(1,100000);
 		cerenkov->Draw();
@@ -183,110 +225,366 @@ public:
 		cut->SetLineStyle(9);
 		cut->Draw("same");
 		axisTitles(cerenkov,"calibrated cerenkov energy","count");
+		cut_cerenkov = new CutPlot(cerenkov,cut);
 		string out = name+"ceren.pdf";
 		tc->Print(out.c_str());
+	}
+	void getCerenkovPlot(){
+		if (!plotsexits[1])
+		{
+			plotsexits[1]=true;
+			TLine cut =  TLine(CERENKOVcut,0,CERENKOVcut+1,DBL_MAX);
+			cut.SetLineWidth(8);
+			cut.SetLineStyle(9);
+			axisTitles(cerenkov,"calibrated cerenkov energy","count");
+			cut_cerenkov = new CutPlot(*cerenkov,cut);
+		}
+		return cut_cerenkov;
 	}
 	void plotVeto(int i){
 		switch (i){
 			case 1:
 				plotVeto1();
+				plotsexits[2]=true;
 				break;
 			case 2: 
 				plotVeto2();
+				plotsexits[3]=true;
 				break;
 			case 3: 
 				plotVeto3();
+				plotsexits[4]=true;
 				break;
 			case 4: 
 				plotVeto4();
+				plotsexits[5]=true;
+				break;
+			default:
+				cout<<"invalid plot number: "<<i<<endl;	
+		}
+	}
+	void getVetoPlot(int i){
+		switch (i){
+			case 1:
+				if (!plotsexits[2])
+				{
+					plotsexits[2]=true;
+					TLine cut =  TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_veto1,"calibrated veto1 energy","count");
+					cut_veto1 = new CutPlot(*p_veto1,cut);
+				}
+				return cut_veto1;
+				break;
+			case 2: 
+				if (!plotsexits[3])
+				{
+					plotsexits[3]=true;
+					TLine cut =  TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_veto2,"calibrated veto2 energy","count");
+					cut_veto2 = new CutPlot(*p_veto2,cut);
+				}
+				return cut_veto2;
+				break;
+			case 3: 
+				if (!plotsexits[4])
+				{
+					plotsexits[4]=true;
+					TLine cut =  TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_veto3,"calibrated veto3 energy","count");
+					cut_veto3 = new CutPlot(*p_veto3,cut);
+				}
+				return cut_veto3;
+				break;
+			case 4: 
+				if (!plotsexits[5])
+				{
+					plotsexits[5]=true;
+					TLine cut =  TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_veto4,"calibrated veto4 energy","count");
+					cut_veto4 = new CutPlot(*p_veto4,cut);
+				}
+				return cut_veto4;
 				break;
 			default:
 				cout<<"invalid plot number: "<<i<<endl;	
 		}
 	}
 	void plotVeto(){ //overloaded to plot all 4 veto plots
-		for(int i = 1; i < 5; i++)
-		{
-			switch (i){
-				case 1:
-					plotVeto1();
-					break;
-				case 2: 
-					plotVeto2();
-					break;
-				case 3: 
-					plotVeto3();
-					break;
-				case 4: 
-					plotVeto4();
-					break;
-				default:
-					cout<<"invalid plot number: "<<i<<endl;	
-			}
-		}
+		plotVeto1();
+		plotVeto2();
+		plotVeto3();
+		plotVeto4();
+		plotsexits[2]=true;
+		plotsexits[3]=true;
+		plotsexits[4]=true;
+		plotsexits[5]=true;
 	}
 
+	void getHodoH(int i){
+		switch (i){
+			case 1:
+				if (!plotsexits[6])
+				{
+					plotsexits[6]=true;
+					TLine cut =  TLine(HODOHcut[0],0,HODOHcut[0]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh1,"calibrated hodoh1 energy","count");
+					cut_hodoh1 = new CutPlot(*p_hodoh1,cut);
+				}
+				return cut_hodoh1;
+				break;
+			case 2: 
+				if (!plotsexits[7])
+				{
+					plotsexits[7]=true;
+					TLine cut =  TLine(HODOHcut[1],0,HODOHcut[1]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh2,"calibrated hodoh2 energy","count");
+					cut_hodoh2 = new CutPlot(*p_hodoh2,cut);
+				}
+				return cut_hodoh2;
+				break;
+			case 3: 
+				if (!plotsexits[8])
+				{
+					plotsexits[8]=true;
+					TLine cut =  TLine(HODOHcut[2],0,HODOHcut[2]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh3,"calibrated hodoh3 energy","count");
+					cut_hodoh3 = new CutPlot(*p_hodoh3,cut);
+				}
+				return cut_hodoh3;
+				break;
+			case 4: 
+				if (!plotsexits[9])
+				{
+					plotsexits[9]=true;
+					TLine cut =  TLine(HODOHcut[3],0,HODOHcut[3]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh4,"calibrated hodoh4 energy","count");
+					cut_hodoh4 = new CutPlot(*p_hodoh4,cut);
+				}
+				return cut_hodoh4;
+				break;
+			case 5:
+				if (!plotsexits[10])
+				{
+					plotsexits[10]=true;
+					TLine cut =  TLine(HODOHcut[4],0,HODOHcut[4]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh5,"calibrated hodoh5 energy","count");
+					cut_hodoh5 = new CutPlot(*p_hodoh5,cut);
+				}
+				return cut_hodoh5;
+				break;
+			case 6: 
+				if (!plotsexits[11])
+				{
+					plotsexits[11]=true;
+					TLine cut =  TLine(HODOHcut[5],0,HODOHcut[5]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh6,"calibrated hodoh6 energy","count");
+					cut_hodoh6 = new CutPlot(*p_hodoh6,cut);
+				}
+				return cut_hodoh6;
+				break;
+			case 7: 
+				if (!plotsexits[12])
+				{
+					plotsexits[12]=true;
+					TLine cut =  TLine(HODOHcut[6],0,HODOHcut[6]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh7,"calibrated hodoh7 energy","count");
+					cut_hodoh7 = new CutPlot(*p_hodoh7,cut);
+				}
+				return cut_hodoh7;
+				break;
+			case 8: 
+				if (!plotsexits[13])
+				{
+					plotsexits[13]=true;
+					TLine cut =  TLine(HODOHcut[7],0,HODOHcut[7]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodoh5,"calibrated hodoh5 energy","count");
+					cut_hodoh5 = new CutPlot(*p_hodoh5,cut);
+				}
+				return cut_hodoh5;
+				break;
+			default:
+				cout<<"invalid plot number: "<<i<<endl;
+		}
+	}
 	void plotHodoH(int i){
 		switch (i){
 			case 1:
-				plotHodoh1();
+				
 				break;
 			case 2: 
 				plotHodoh2();
+				plotsexits[7]=true;
 				break;
 			case 3: 
 				plotHodoh3();
+				plotsexits[8]=true;
 				break;
 			case 4: 
 				plotHodoh4();
+				plotsexits[9]=true;
 				break;
 			case 5:
 				plotHodoh5();
+				plotsexits[10]=true;
 				break;
 			case 6: 
 				plotHodoh6();
+				plotsexits[11]=true;
 				break;
 			case 7: 
 				plotHodoh7();
+				plotsexits[12]=true;
 				break;
 			case 8: 
 				plotHodoh8();
+				plotsexits[13]=true;
 				break;
 			default:
 				cout<<"invalid plot number: "<<i<<endl;
 		}
 	}
 	void plotHodoH(){ //overloaded to plot all 8 horizontal hodo plots
-		for(int i = 1; i < 9; i++)
-		{
-			switch (i){
-				case 1:
-					plotHodoh1();
-					break;
-				case 2: 
-					plotHodoh2();
-					break;
-				case 3: 
-					plotHodoh3();
-					break;
-				case 4: 
-					plotHodoh4();
-					break;
-				case 5:
-					plotHodoh5();
-					break;
-				case 6: 
-					plotHodoh6();
-					break;
-				case 7: 
-					plotHodoh7();
-					break;
-				case 8: 
-					plotHodoh8();
-					break;
-				default:
-					cout<<"invalid plot number: "<<i<<endl;
-			}
+		plotHodoh1();
+		plotHodoh2();
+		plotHodoh3();
+		plotHodoh4();
+		plotHodoh5();
+		plotHodoh6();
+		plotHodoh7();
+		plotHodoh8();
+		plotsexits[12]=true;
+		plotsexits[13]=true;
+		plotsexits[6]=true;
+		plotsexits[7]=true;
+		plotsexits[8]=true;
+		plotsexits[9]=true;
+		plotsexits[10]=true;
+		plotsexits[11]=true;
+	}
+	void getHodoV(int i){
+		switch (i){
+			case 1:
+				if (!plotsexits[14])
+				{
+					plotsexits[14]=true;
+					TLine cut =  TLine(HODOVcut[0],0,HODOVcut[0]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov1,"calibrated hodov1 energy","count");
+					cut_hodov1 = new CutPlot(*p_hodov1,cut);
+				}
+				return cut_hodov1;
+				break;
+			case 2: 
+				if (!plotsexits[15])
+				{
+					plotsexits[15]=true;
+					TLine cut =  TLine(HODOVcut[1],0,HODOVcut[1]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov2,"calibrated hodov2 energy","count");
+					cut_hodov2 = new CutPlot(*p_hodov2,cut);
+				}
+				return cut_hodov2;
+				break;
+			case 3: 
+				if (!plotsexits[16])
+				{
+					plotsexits[16]=true;
+					TLine cut =  TLine(HODOVcut[2],0,HODOVcut[2]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov3,"calibrated hodov3 energy","count");
+					cut_hodov3 = new CutPlot(*p_hodov3,cut);
+				}
+				return cut_hodov3;
+				break;
+			case 4: 
+				if (!plotsexits[17])
+				{
+					plotsexits[17]=true;
+					TLine cut =  TLine(HODOVcut[3],0,HODOVcut[3]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov4,"calibrated hodov4 energy","count");
+					cut_hodov4 = new CutPlot(*p_hodov4,cut);
+				}
+				return cut_hodov4;
+				break;
+			case 5:
+				if (!plotsexits[18])
+				{
+					plotsexits[18]=true;
+					TLine cut =  TLine(HODOVcut[4],0,HODOVcut[4]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov5,"calibrated hodov5 energy","count");
+					cut_hodov5 = new CutPlot(*p_hodov5,cut);
+				}
+				return cut_hodov5;
+				break;
+			case 6: 
+				if (!plotsexits[19])
+				{
+					plotsexits[19]=true;
+					TLine cut =  TLine(HODOVcut[5],0,HODOVcut[5]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov6,"calibrated hodov6 energy","count");
+					cut_hodov6 = new CutPlot(*p_hodov6,cut);
+				}
+				return cut_hodov6;
+				break;
+			case 7: 
+				if (!plotsexits[20])
+				{
+					plotsexits[20]=true;
+					TLine cut =  TLine(HODOVcut[6],0,HODOVcut[6]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov7,"calibrated hodov7 energy","count");
+					cut_hodov7 = new CutPlot(*p_hodov7,cut);
+				}
+				return cut_hodov7;
+				break;
+			case 8: 
+				if (!plotsexits[21])
+				{
+					plotsexits[21]=true;
+					TLine cut =  TLine(HODOVcut[7],0,HODOVcut[7]+1,DBL_MAX);
+					cut.SetLineWidth(8);
+					cut.SetLineStyle(9);
+					axisTitles(p_hodov5,"calibrated hodov5 energy","count");
+					cut_hodov5 = new CutPlot(*p_hodov5,cut);
+				}
+				return cut_hodov5;
+				break;
+			default:
+				cout<<"invalid plot number: "<<i<<endl;
 		}
 	}
 
@@ -294,64 +592,57 @@ public:
 		switch (i){
 			case 1:
 				plotHodov1();
+				plotsexits[14]=true;
 				break;
 			case 2: 
 				plotHodov2();
+				plotsexits[15]=true;
 				break;
 			case 3: 
 				plotHodov3();
+				plotsexits[16]=true;
 				break;
 			case 4: 
 				plotHodov4();
+				plotsexits[17]=true;
 				break;
 			case 5:
 				plotHodov5();
+				plotsexits[18]=true;
 				break;
 			case 6: 
 				plotHodov6();
+				plotsexits[19]=true;
 				break;
 			case 7: 
 				plotHodov7();
+				plotsexits[20]=true;
 				break;
 			case 8: 
 				plotHodov8();
+				plotsexits[21]=true;
 				break;
 			default:
 				cout<<"invalid plot number: "<<i<<endl;
 		}
 	}
 	void plotHodoV(){ //overloaded to plot all 8 horizontal hodo plots
-		for(int i = 1; i < 9; i++)
-		{
-			switch (i){
-				case 1:
-					plotHodov1();
-					break;
-				case 2: 
-					plotHodov2();
-					break;
-				case 3: 
-					plotHodov3();
-					break;
-				case 4: 
-					plotHodov4();
-					break;
-				case 5:
-					plotHodov5();
-					break;
-				case 6: 
-					plotHodov6();
-					break;
-				case 7: 
-					plotHodov7();
-					break;
-				case 8: 
-					plotHodov8();
-					break;
-				default:
-					cout<<"invalid plot number: "<<i<<endl;
-			}
-		}
+		plotHodov1();
+		plotHodov2();
+		plotHodov3();
+		plotHodov4();
+		plotHodov5();
+		plotHodov6();
+		plotHodov7();
+		plotHodov8();
+		plotsexits[14]=true;
+		plotsexits[15]=true;
+		plotsexits[16]=true;
+		plotsexits[17]=true;
+		plotsexits[18]=true;
+		plotsexits[19]=true;
+		plotsexits[20]=true;
+		plotsexits[21]=true;
 	}
 
 	TH1D* getPlot(){
@@ -429,10 +720,34 @@ private:
 	TH1D *p_veto2;
 	TH1D *p_veto3;
 	TH1D *p_veto4;
+	GausPlot *mainGaus;
+	CutPlot *cut_cerenkov;
+	CutPlot *cut_hodov1;
+	CutPlot *cut_hodov2;
+	CutPlot *cut_hodov3;
+	CutPlot *cut_hodov4;
+	CutPlot *cut_hodov5;
+	CutPlot *cut_hodov6;
+	CutPlot *cut_hodov7;
+	CutPlot *cut_hodov8;
+	CutPlot *cut_hodoh1;
+	CutPlot *cut_hodoh2;
+	CutPlot *cut_hodoh3;
+	CutPlot *cut_hodoh4;
+	CutPlot *cut_hodoh5;
+	CutPlot *cut_hodoh6;
+	CutPlot *cut_hodoh7;
+	CutPlot *cut_hodoh8;
+	CutPlot *cut_veto1;
+	CutPlot *cut_veto2;
+	CutPlot *cut_veto3;
+	CutPlot *cut_veto4;
 	string name;
 	
 	bool made=false;
 	bool hasEnergy=false;
+	const int NUMPLOTS=22;
+	bool plotsexits[NUMPLOTS]; // to track if the plots have been made first the main then the cerenkov then the veto then the vhodo then the hhodo
 
 	Scalar mean;
 	Scalar sigma;
@@ -463,6 +778,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_veto1,"calibrated veto1 energy","count");
+		cut_veto1 = new CutPlot(p_veto1,cut);
 		string out = name+"veto1.pdf";
 		v1->Print(out.c_str());
 	}
@@ -475,6 +791,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh1,"calibrated hodoscope h1 energy","count");
+		cut_hodoh1 = new CutPlot(p_hodoh1 ,cut);
 		string out = name+"hodoh1.pdf";
 		hh1->Print(out.c_str());
 	}
@@ -487,6 +804,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_veto2,"calibrated veto2 energy","count");
+		cut_veto2 = new CutPlot(p_veto2,cut);
 		string out = name+"veto2.pdf";
 		v2->Print(out.c_str());
 	}
@@ -499,6 +817,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh2,"calibrated hodoscope h2 energy","count");
+		cut_hodoh2 = new CutPlot(p_hodoh2,cut);
 		string out = name+"hodoh2.pdf";
 		hh2->Print(out.c_str());
 	}
@@ -511,6 +830,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_veto3,"calibrated veto3 energy","count");
+		cut_veto3 = new CutPlot(p_veto3,cut);
 		string out = name+"veto3.pdf";
 		v3->Print(out.c_str());
 	}
@@ -523,6 +843,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh3,"calibrated hodoscope h3 energy","count");
+		cut_hodoh3 = new CutPlot(p_hodoh3,cut);
 		string out = name+"hodoh3.pdf";
 		hh3->Print(out.c_str());
 	}
@@ -536,6 +857,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_veto4,"calibrated veto4 energy","count");
+		cut_veto3 = new CutPlot(p_veto3,cut);
 		string out = name+"veto4.pdf";
 		v4->Print(out.c_str());
 	}
@@ -548,6 +870,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh4,"calibrated hodoscope h4 energy","count");
+		cut_hodoh4 = new CutPlot(p_hodoh4,cut);
 		string out = name+"hodoh4.pdf";
 		hh4->Print(out.c_str());
 	}
@@ -560,6 +883,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh5,"calibrated hodoscope h5 energy","count");
+		cut_hodoh5 = new CutPlot(p_hodoh5,cut);
 		string out = name+"hodoh5.pdf";
 		hh5->Print(out.c_str());
 	}
@@ -572,6 +896,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh6,"calibrated hodoscope h6 energy","count");
+		cut_hodoh6 = new CutPlot(p_hodoh6,cut);
 		string out = name+"hodoh6.pdf";
 		hh6->Print(out.c_str());
 	}
@@ -584,6 +909,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh7,"calibrated hodoscope h7 energy","count");
+		cut_hodoh7 = new CutPlot(p_hodoh7,cut);
 		string out = name+"hodoh7.pdf";
 		hh7->Print(out.c_str());
 	}
@@ -596,6 +922,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodoh8,"calibrated hodoscope h8 energy","count");
+		cut_hodoh8 = new CutPlot(p_hodoh8,cut);
 		string out = name+"hodoh8.pdf";
 		hh8->Print(out.c_str());
 	}
@@ -608,6 +935,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov1,"calibrated hodoscope v1 energy","count");
+		cut_hodov1 = new CutPlot(p_hodov1,cut);
 		string out = name+"hodov1.pdf";
 		hv1->Print(out.c_str());
 	}
@@ -620,6 +948,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov2,"calibrated hodoscope v2 energy","count");
+		cut_hodov2 = new CutPlot(p_hodov2,cut);
 		string out = name+"hodov2.pdf";
 		hv2->Print(out.c_str());
 	}
@@ -632,6 +961,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov3,"calibrated hodoscope v3 energy","count");
+		cut_hodov3 = new CutPlot(p_hodov3,cut);
 		string out = name+"hodov3.pdf";
 		hv3->Print(out.c_str());
 	}
@@ -644,6 +974,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov4,"calibrated hodoscope v4 energy","count");
+		cut_hodov4 = new CutPlot(p_hodov4,cut);
 		string out = name+"hodov4.pdf";
 		hv4->Print(out.c_str());
 	}
@@ -656,6 +987,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov5,"calibrated hodoscope v5 energy","count");
+		cut_hodov5 = new CutPlot(p_hodov5,cut);
 		string out = name+"hodov5.pdf";
 		hv5->Print(out.c_str());
 	}
@@ -668,6 +1000,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov6,"calibrated hodoscope v6 energy","count");
+		cut_hodov6 = new CutPlot(p_hodov6,cut);
 		string out = name+"hodov6.pdf";
 		hv6->Print(out.c_str());
 	}
@@ -680,6 +1013,7 @@ private:
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
 		axisTitles(p_hodov7,"calibrated hodoscope v7 energy","count");
+		cut_hodov7 = new CutPlot(p_hodov7,cut);
 		string out = name+"hodov7.pdf";
 		hv7->Print(out.c_str());
 	}
@@ -691,8 +1025,8 @@ private:
 		cut->Draw("same");
 		cut->SetLineWidth(8);
 		cut->SetLineStyle(9);
-
 		axisTitles(p_hodov8,"calibrated hodoscope v8 energy","count");
+		cut_hodov8 = new CutPlot(p_hodov8,cut);
 		string out = name+"hodov8.pdf";
 		hv8->Print(out.c_str());
 	}
@@ -1629,6 +1963,43 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 	   }
 	}
 }
+
+void makeBigPlot(OfficalBeamData *data, int number){
+	TCanvas *tc = new TCanvas("big","",800,600);
+	string name = to_string(number)+": "+to_string(runToEnergy(number))+"GeV "+to_string(runToVoltage(number))+"V";
+	const int NUMPLOTS=22;
+	PlotWithLine *plots[NUMPLOTS];
+	plots[0]=data->getPlot();
+	plots[1]=data->getCerenkovPlot();
+	plots[2]=data->getVetoPlot(1);
+	plots[3]=data->getVetoPlot(2);
+	plots[4]=data->getVetoPlot(3);
+	plots[5]=data->getVetoPlot(4);
+	plots[6]=data->getHodoV(1);
+	plots[7]=data->getHodoV(2);
+	plots[8]=data->getHodoV(3);
+	plots[9]=data->getHodoV(4);
+	plots[10]=data->getHodoV(5);
+	plots[11]=data->getHodoV(6);
+	plots[12]=data->getHodoV(7);
+	plots[13]=data->getHodoV(8);
+	plots[14]=data->getHodoH(1);
+	plots[15]=data->getHodoH(2);
+	plots[16]=data->getHodoH(3);
+	plots[17]=data->getHodoH(4);
+	plots[18]=data->getHodoH(5);
+	plots[19]=data->getHodoH(6);
+	plots[20]=data->getHodoH(7);
+	plots[21]=data->getHodoH(8);
+	tc->Divide(2,11,0.01,0.01);
+	for (int i = 0; i < NUMPLOTS; ++i)
+	{
+		tc->cd(i+1);
+		plots[i]->Draw();
+	}
+
+}
+
 //file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
@@ -1639,11 +2010,11 @@ void Part2A(){
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int totalNUMSIZE=20;
-	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,572,574,577,578,579,580}; //all beam files
+	const int totalNUMSIZE=19;
+	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
 	//const int totalNUMSIZE=1;
 	//int totalnumber[]={563}; //,567,809
-	//573 is saturated 
+	//573 is saturated I think 572 is as well
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
 	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
@@ -1667,8 +2038,10 @@ void Part2A(){
 			if(runToVoltage(totalnumber[i]) == 1100)
 			{
 				number[NUMSIZE] = totalnumber[i];
+				//cout<<totalnumber[i]<<'\n';
 				NUMSIZE++;
 			}
+			//cout<<totalnumber[i]<<'\n';
 		}
 	} 
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
@@ -1682,6 +2055,7 @@ void Part2A(){
 	for (int i = 0; i < NUMSIZE; ++i)//loop over beam files
 	{
 		fileLocation = filename+to_string(number[i])+extension;
+		//cout<<number[i]<<'\n';
 		file = new TFile(fileLocation.c_str());
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
@@ -1692,9 +2066,9 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-
+		makeBigPlot(data);
 		cout<<"Energy:"<<energy[i]<<'\n';
-		data->plot();
+		//data->plot();
 		//data->plotCerenkov();
 		//data->plotHodo();
 		//data->plotVeto();
@@ -1916,7 +2290,7 @@ int runToVoltage(int run){
 			r= 1100;
 			break;
 		case 572:
-			r= 1100;
+			r= 0;
 			break;
 		case 574:
 			r= 1100;
