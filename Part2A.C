@@ -20,7 +20,7 @@
 // Header file for the classes stored in the TTree if any.
 #include "TClonesArray.h"
 #include "TObject.h"
-//#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
 
 using namespace std;
 
@@ -2026,10 +2026,10 @@ void makeBigPlot(OfficalBeamData *data, int number){
 //file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool want1200 = false;
-	bool want1100 = true;
-	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
-	//string fileLocation = "springBeamFiles/"; //chase
+	bool want1200 = true;
+	bool want1100 = false;
+	//string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
+	string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
