@@ -37,14 +37,9 @@ class OfficalBeamData
 {
 public:
 	OfficalBeamData(){}
-	//this constructor makes the TH1D and tracks the voltage and energy
-	OfficalBeamData(string name, int voltage,float beamEnergy) : beamVoltage(voltage), name(name),beamEnergy(beamEnergy){
-		if(beamEnergy<8){
-			pbglPlot = new TH1D(name.c_str(),"",400,0,8000); // note the bounds are weird
-		}
-		else{
-			pbglPlot = new TH1D(name.c_str(),"",200,0,10000); 
-		}
+	//this constructor makes the TH1Ds and tracks the voltage and energy
+	OfficalBeamData(string name, int voltage, float beamEnergy) : beamVoltage(voltage), name(name), beamEnergy(beamEnergy){
+		pbglPlot = new TH1D(name.c_str(),"",800,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 		pbglUnFit = new TH1D(string(name+" no fit").c_str(),"",200,0,10000); 
 		pbglNoCut= new TH1D(string(name+"NoCUT").c_str(),"",200,0,10000);
@@ -212,6 +207,7 @@ public:
 		int lazyMan = 10;
 		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,lazyMan);
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
+		//pbglPlot->GetXaxis()->SetRangeUser(0,3000);
 		mean = mygaus[0];
 		sigma = mygaus[1];
 		//numEntries = pbglPlot->Integral(gausLowBound,gausUpbound); //is this right? //we dont need this we have ParError
@@ -2284,8 +2280,8 @@ void Part2A(){
 	filename = fileLocation+filename;
 	const int totalNUMSIZE=19;
 	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
-	//const int totalNUMSIZE=1;
-	//int totalnumber[]={563}; //,567,809
+	//const int totalNUMSIZE=16;
+	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,580}; //all beam files
 	//573 is saturated I think 572 is as well
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
@@ -2341,7 +2337,7 @@ void Part2A(){
 		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		data->makeBigPlot(bigname);
 		cout<<"Energy:"<<energy[i]<<'\n';
-		//data->plot();
+		data->plot();
 		//data->plotCerenkov();
 		//data->plotHodo();
 		//data->plotVeto();
