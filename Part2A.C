@@ -719,7 +719,7 @@ public:
 		getHodoH(7);
 		getHodoH(8);
 	}
-	void makeBigPlot(string name){
+	void makeBigPlot2(string name){
 		makeAllPlots();
 		TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
 		tc->Divide(5,5,0.01,0.01);
@@ -837,6 +837,128 @@ public:
 		delete ccut;
 		delete cvcut;
 		delete acut;
+	}
+	void makeBigPlot(string name){
+		makeAllPlots();
+		TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
+		tc->Divide(5,5,0.01,0.01);
+		tc->cd(23); 
+		mainGaus->Draw();
+		myText(.6,.8,kBlack,"PbGl E",.16);
+		tc->cd(24); 
+		//TGraphAsymmErrors *ccut = new TGraphAsymmErrors(pbglCCut,pbglNoCut);
+		//TGraphAsymmErrors *cvcut = new TGraphAsymmErrors(pbglCVCut,pbglNoCut);
+		//TGraphAsymmErrors *acut = new TGraphAsymmErrors(pbglUnFit,pbglNoCut);
+		//ccut->SetMarkerSize(.03);
+		//cvcut->SetMarkerSize(.03);
+		//acut->SetMarkerSize(.03);
+		pbglCCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		pbglCVCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		pbglUnFit->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		pbglCCut->SetMarkerSize(.03);
+		pbglCVCut->SetMarkerSize(.03);
+		pbglUnFit->SetMarkerSize(.03);
+		makeDifferent(pbglCCut,1);
+		makeDifferent(pbglCVCut,2);
+		gPad->SetLogy();
+		//makeDifferent(ccut,2);
+		//makeDifferent(cvcut,1);
+		TLegend *cutLegend = new TLegend(.2,.2,.8,.8);
+		cutLegend->SetBorderSize(0);
+		cutLegend->SetFillColorAlpha(kWhite,0);
+		pbglCCut->Draw();
+		pbglCVCut->Draw("same");
+		pbglUnFit->Draw("same");
+		cutLegend->AddEntry(pbglCCut,"Cherenkov Cut","l");
+		cutLegend->AddEntry(pbglCVCut,"Cherenkov+Veto","l");
+		cutLegend->AddEntry(pbglUnFit,"All Cuts","l");
+		myText(.2,.8,kBlack,"PbGl Cuts",.16);
+		tc->cd(25);
+		cutLegend->Draw();
+		//gPad->SetLogy();
+		tc->cd(2); gPad->SetLogy();
+		cut_cerenkov->Draw();
+		myText(.4,.8,kBlack,"Cherenkov Signal",.18);
+		tc->cd(3); gPad->SetLogy();
+		cut_veto1->Draw();
+		myText(.6,.8,kBlack,"Veto1",.18);
+		tc->cd(4); gPad->SetLogy();
+		cut_veto2->Draw();
+		myText(.6,.8,kBlack,"Veto2",.18);
+		tc->cd(5); gPad->SetLogy();
+		cut_veto3->Draw();
+		myText(.6,.8,kBlack,"Veto3",.18);
+		tc->cd(6); gPad->SetLogy();
+		cut_veto4->Draw();
+		myText(.6,.8,kBlack,"Veto4",.18);
+		tc->cd(7); gPad->SetLogy();
+		cut_hodov1->Draw();
+		myText(.4,.8,kBlack,"H-Hodo1",.18);
+		tc->cd(8); gPad->SetLogy();
+		cut_hodov2->Draw();
+		myText(.6,.8,kBlack,"H-Hodo2",.18);
+		tc->cd(9); gPad->SetLogy();
+		cut_hodov3->Draw();
+		myText(.6,.8,kBlack,"H-Hodo3",.18);
+		tc->cd(10); gPad->SetLogy();
+		cut_hodov4->Draw();
+		myText(.6,.8,kBlack,"H-Hodo4",.18);
+		tc->cd(11); gPad->SetLogy();
+		cut_hodov5->Draw();
+		myText(.6,.8,kBlack,"H-Hodo5",.18);
+		tc->cd(12); gPad->SetLogy();
+		cut_hodov6->Draw();
+		myText(.6,.8,kBlack,"H-Hodo6",.18);
+		tc->cd(13); gPad->SetLogy();
+		cut_hodov7->Draw();
+		myText(.6,.8,kBlack,"H-Hodo7",.18);
+		tc->cd(14); gPad->SetLogy();
+		cut_hodov8->Draw();
+		myText(.6,.8,kBlack,"H-Hodo8",.18);
+		tc->cd(15); gPad->SetLogy();
+		cut_hodoh1->Draw();
+		myText(.6,.8,kBlack,"V-Hodo1",.18);
+		tc->cd(16); gPad->SetLogy();
+		cut_hodoh2->Draw();
+		myText(.6,.8,kBlack,"V-Hodo2",.18);
+		tc->cd(17); gPad->SetLogy();
+		cut_hodoh3->Draw();
+		myText(.6,.8,kBlack,"V-Hodo3",.18);
+		tc->cd(18); gPad->SetLogy();
+		cut_hodoh4->Draw();
+		myText(.6,.8,kBlack,"V-Hodo4",.18);
+		tc->cd(19); gPad->SetLogy();
+		cut_hodoh5->Draw();
+		myText(.6,.8,kBlack,"V-Hodo5",.18);
+		tc->cd(20); gPad->SetLogy();
+		cut_hodoh6->Draw();
+		myText(.6,.8,kBlack,"V-Hodo6",.18);
+		tc->cd(21); gPad->SetLogy();
+		cut_hodoh7->Draw();
+		myText(.6,.8,kBlack,"V-Hodo7",.18);
+		tc->cd(22); gPad->SetLogy();
+		cut_hodoh8->Draw();
+		myText(.6,.8,kBlack,"V-Hodo8",.18);
+		tc->cd(1);
+		myText(.12,.8,kBlack,name.c_str(),.13);
+		myText(.12,.6,kBlack,Form("Mean:%0.2f#pm %0.2f",mean.value,mean.uncertainty),.13);
+		myText(.12,.4,kBlack,Form("#sigma:%0.2f#pm %0.2f",sigma.value,sigma.uncertainty),.13);
+		myText(.12,.2,kBlack,Form("Resolution:%0.2f#pm%0.3f",(sigma/mean).value,(sigma/mean).uncertainty),.11);
+		for (int i = 0; i < 25; ++i)
+		{
+			tc->cd(i+1);
+			gPad->SetTopMargin(.01);
+			gPad->SetBottomMargin(.06);
+			gPad->SetRightMargin(.001);
+			gPad->SetLeftMargin(.07);
+		}
+		name+=".pdf";
+		tc->SaveAs(name.c_str());
+		tc->Close();
+		delete tc;
+		/*delete ccut;
+		delete cvcut;
+		delete acut;*/
 	}
 	/*OfficalBeamData& operator=(OfficalBeamData other){
 		beamVoltage=other.beamVoltage;
