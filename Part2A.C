@@ -38,9 +38,23 @@ class OfficalBeamData
 public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1D and tracks the voltage and energy
-	OfficalBeamData(string name, int voltage) : beamVoltage(voltage), name(name){
-		pbglPlot = new TH1D(name.c_str(),"",200,0,10000); // note the bounds are weird
+	OfficalBeamData(string name, int voltage,float beamEnergy) : beamVoltage(voltage), name(name),beamEnergy(beamEnergy){
+		if(beamEnergy<8){
+			pbglPlot = new TH1D(name.c_str(),"",400,0,8000); // note the bounds are weird
+		}
+		else{
+			pbglPlot = new TH1D(name.c_str(),"",200,0,10000); 
+		}
 		pbglPlot->Sumw2();
+		pbglUnFit = new TH1D(string(name+" no fit").c_str(),"",200,0,10000); 
+		pbglNoCut= new TH1D(string(name+"NoCUT").c_str(),"",200,0,10000);
+		pbglCCut = new TH1D(string(name+"CCUT").c_str(),"",200,0,10000);
+		pbglCVCut = new TH1D(string(name+"CVCUT").c_str(),"",200,0,10000);
+		pbglPlot->Sumw2();
+		pbglUnFit->Sumw2();
+		pbglCCut->Sumw2();
+		pbglCVCut->Sumw2();
+		pbglNoCut->Sumw2();
 		//declare plots for energy, all veto counters, and hodoscopes counters
 		cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000); 
 		p_veto1 = new TH1D(string(name+"veto1").c_str(),"",20,0,2);
@@ -119,7 +133,7 @@ public:
 	}
 	//use this function to add data to the class is will return wether the data passes teh cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
-		bool r = passCuts(cerenkov,veto,vhodo,hhodo);
+		bool r = false;
 		this->cerenkov->Fill(cerenkov);
 		p_hodoh1->Fill(hhodo[0]);
 		p_hodoh2->Fill(hhodo[1]);
@@ -146,11 +160,23 @@ public:
 			pbglCUT=1000;
 		}
 		else pbglCUT=100;
-		if (r&(pbgl>pbglCUT))
+		if (pbgl>pbglCUT)
 		{
-			pbglEnergy.push(pbgl);
-			pbglPlot->Fill(pbgl);			
+			pbglNoCut->Fill(pbgl);
+			if(cerenkov>CERENKOVcut){
+				pbglCCut->Fill(pbgl);
+				if(noVeto(veto)){
+					pbglCVCut->Fill(pbgl);
+					if (passHodoH(hhodo)&&passHodoV(vhodo))
+					{
+						pbglPlot->Fill(pbgl);
+						pbglUnFit->Fill(pbgl);
+						r=true;
+					}
+				}
+			}
 		}
+		
 		return r;
 	}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
@@ -176,7 +202,9 @@ public:
 		gausLowBound -= temp; 
 		TCanvas *fitcanvas = new TCanvas("fit","",800,600);
 		TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
-
+		gaus->SetLineStyle(1);
+		gaus->SetLineWidth(2);
+		gaus->SetLineColor(kRed);
 		pbglPlot->Fit(gaus,"","",gausLowBound,gausUpbound);       //“R” Use the range specified in the function range
 		Scalar mygaus[2];
 		mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
@@ -189,6 +217,7 @@ public:
 		//numEntries = pbglPlot->Integral(gausLowBound,gausUpbound); //is this right? //we dont need this we have ParError
 		//cout<<mean;
 		//cout<<sigma;
+		mainGaus = new GausPlot(pbglPlot,gaus,mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		fitcanvas->Close();
 		delete fitcanvas;
 		return gaus;
@@ -204,7 +233,6 @@ public:
 		pbglPlot->Draw();
 		TF1 *gaus = makeGaus();
 		gaus->Draw("same");
-		mainGaus = new GausPlot(pbglPlot,gaus);
 		string out = name+".pdf";
 		tc->Print(out.c_str());
 		tc->Close();
@@ -219,19 +247,18 @@ public:
 		{
 			plotsexits[0]=true;
 			TF1 *gaus = makeGaus();
-			pbglPlot->SetMarkerSize(.08);
-			mainGaus = new GausPlot(pbglPlot,gaus);
+			pbglPlot->SetMarkerSize(.03);
 		}
 		return mainGaus;
 	}
 	GausPlot* getMainPlot(string name){
-
 		if (!plotsexits[0])
 		{
 			plotsexits[0]=true;
 			TF1 *gaus = makeGaus();
 			pbglPlot->SetMarkerSize(.03);
-			gaus->SetLineWidth(.02);
+			gaus->SetLineWidth(1);
+			gaus->SetLineStyle(5);
 			mainGaus = new GausPlot(pbglPlot,gaus);
 		}
 		return mainGaus;
@@ -650,10 +677,6 @@ public:
 		plotsexits[21]=true;
 	}
 
-	
-	queue<double> getData(){
-		return pbglEnergy;
-	}
 	double getResolution(){
 		if(!made) makeGaus();
 		return (sigma/mean).value;
@@ -710,83 +733,126 @@ public:
 		makeAllPlots();
 		TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
 		tc->Divide(5,5,0.01,0.01);
-		tc->cd(1); 
+		tc->cd(23); 
 		mainGaus->Draw();
-		myText(.5,.27,kBlack,Form("PbGl Energy:%i #sigma:%i",mean.value,sigma.value),.05);
+		myText(.6,.8,kBlack,"PbGl E",.16);
+		tc->cd(24); 
+		TGraphAsymmErrors *ccut = new TGraphAsymmErrors(pbglCCut,pbglNoCut);
+		TGraphAsymmErrors *cvcut = new TGraphAsymmErrors(pbglCVCut,pbglNoCut);
+		TGraphAsymmErrors *acut = new TGraphAsymmErrors(pbglUnFit,pbglNoCut);
+		ccut->SetMarkerSize(.03);
+		cvcut->SetMarkerSize(.03);
+		acut->SetMarkerSize(.03);
+		cvcut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		ccut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		acut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		//makeDifferent(pbglNoCut,3);
+		//makeDifferent(pbglCCut,1);
+		//makeDifferent(pbglCVCut,2);
+		makeDifferent(ccut,2);
+		makeDifferent(cvcut,1);
+		TLegend *cutLegend = new TLegend(.2,.8,.2,.8);
+		cutLegend->SetBorderSize(0);
+		cutLegend->SetFillColorAlpha(kWhite,0);
+		ccut->Draw();
+		cvcut->Draw("same");
+		acut->Draw("same");
+		cutLegend->AddEntry(ccut,"Cherenkov Cut","l");
+		cutLegend->AddEntry(cvcut,"Cherenkov+Veto","l");
+		cutLegend->AddEntry(acut,"All Cuts","l");
+		tc->cd(25);
+		cutLegend->Draw();
+		//gPad->SetLogy();
+		myText(.55,.8,kBlack,"PbGl E",.18);
 		tc->cd(2); gPad->SetLogy();
 		cut_cerenkov->Draw();
-		myText(.5,.27,kBlack,"Cerenkov Signal",.05);
+		myText(.4,.8,kBlack,"Cherenkov Signal",.18);
 		tc->cd(3); gPad->SetLogy();
 		cut_veto1->Draw();
-		myText(.5,.27,kBlack,"Veto1",.05);
+		myText(.6,.8,kBlack,"Veto1",.18);
 		tc->cd(4); gPad->SetLogy();
 		cut_veto2->Draw();
-		myText(.5,.27,kBlack,"Veto2",.05);
+		myText(.6,.8,kBlack,"Veto2",.18);
 		tc->cd(5); gPad->SetLogy();
 		cut_veto3->Draw();
-		myText(.5,.27,kBlack,"Veto3",.05);
+		myText(.6,.8,kBlack,"Veto3",.18);
 		tc->cd(6); gPad->SetLogy();
 		cut_veto4->Draw();
-		myText(.5,.27,kBlack,"Veto4",.05);
+		myText(.6,.8,kBlack,"Veto4",.18);
 		tc->cd(7); gPad->SetLogy();
 		cut_hodov1->Draw();
-		myText(.5,.27,kBlack,"Horzontal Hodo1",.05);
+		myText(.4,.8,kBlack,"H-Hodo1",.18);
 		tc->cd(8); gPad->SetLogy();
 		cut_hodov2->Draw();
-		myText(.5,.27,kBlack,"H-Hodo2",.05);
+		myText(.6,.8,kBlack,"H-Hodo2",.18);
 		tc->cd(9); gPad->SetLogy();
 		cut_hodov3->Draw();
-		myText(.5,.27,kBlack,"H-Hodo3",.05);
+		myText(.6,.8,kBlack,"H-Hodo3",.18);
 		tc->cd(10); gPad->SetLogy();
 		cut_hodov4->Draw();
-		myText(.5,.27,kBlack,"H-Hodo4",.05);
+		myText(.6,.8,kBlack,"H-Hodo4",.18);
 		tc->cd(11); gPad->SetLogy();
 		cut_hodov5->Draw();
-		myText(.5,.27,kBlack,"H-Hodo5",.05);
+		myText(.6,.8,kBlack,"H-Hodo5",.18);
 		tc->cd(12); gPad->SetLogy();
 		cut_hodov6->Draw();
-		myText(.5,.27,kBlack,"H-Hodo6",.05);
+		myText(.6,.8,kBlack,"H-Hodo6",.18);
 		tc->cd(13); gPad->SetLogy();
 		cut_hodov7->Draw();
-		myText(.5,.27,kBlack,"H-Hodo7",.05);
+		myText(.6,.8,kBlack,"H-Hodo7",.18);
 		tc->cd(14); gPad->SetLogy();
 		cut_hodov8->Draw();
-		myText(.5,.27,kBlack,"H-Hodo8",.05);
+		myText(.6,.8,kBlack,"H-Hodo8",.18);
 		tc->cd(15); gPad->SetLogy();
 		cut_hodoh1->Draw();
-		myText(.5,.27,kBlack,"V-Hodo1",.05);
+		myText(.6,.8,kBlack,"V-Hodo1",.18);
 		tc->cd(16); gPad->SetLogy();
 		cut_hodoh2->Draw();
-		myText(.5,.27,kBlack,"V-Hodo2",.05);
+		myText(.6,.8,kBlack,"V-Hodo2",.18);
 		tc->cd(17); gPad->SetLogy();
 		cut_hodoh3->Draw();
-		myText(.5,.27,kBlack,"V-Hodo3",.05);
+		myText(.6,.8,kBlack,"V-Hodo3",.18);
 		tc->cd(18); gPad->SetLogy();
 		cut_hodoh4->Draw();
-		myText(.5,.27,kBlack,"V-Hodo4",.05);
+		myText(.6,.8,kBlack,"V-Hodo4",.18);
 		tc->cd(19); gPad->SetLogy();
 		cut_hodoh5->Draw();
-		myText(.5,.27,kBlack,"V-Hodo5",.05);
+		myText(.6,.8,kBlack,"V-Hodo5",.18);
 		tc->cd(20); gPad->SetLogy();
 		cut_hodoh6->Draw();
-		myText(.5,.27,kBlack,"V-Hodo6",.05);
+		myText(.6,.8,kBlack,"V-Hodo6",.18);
 		tc->cd(21); gPad->SetLogy();
 		cut_hodoh7->Draw();
-		myText(.5,.27,kBlack,"V-Hodo7",.05);
+		myText(.6,.8,kBlack,"V-Hodo7",.18);
 		tc->cd(22); gPad->SetLogy();
 		cut_hodoh8->Draw();
-		myText(.5,.27,kBlack,"V-Hodo8",.05);
+		myText(.6,.8,kBlack,"V-Hodo8",.18);
+		tc->cd(1);
+		myText(.12,.8,kBlack,name.c_str(),.13);
+		myText(.12,.6,kBlack,Form("Mean:%0.2f#pm %0.2f",mean.value,mean.uncertainty),.13);
+		myText(.12,.4,kBlack,Form("#sigma:%0.2f#pm %0.2f",sigma.value,sigma.uncertainty),.13);
+		myText(.12,.2,kBlack,Form("Resolution:%0.2f#pm%0.3f",(sigma/mean).value,(sigma/mean).uncertainty),.11);
+		for (int i = 0; i < 25; ++i)
+		{
+			tc->cd(i+1);
+			gPad->SetTopMargin(.01);
+			gPad->SetBottomMargin(.06);
+			gPad->SetRightMargin(.01);
+			gPad->SetLeftMargin(.02);
+		}
 		name+=".pdf";
 		tc->SaveAs(name.c_str());
 		tc->Close();
 		delete tc;
+		delete ccut;
+		delete cvcut;
+		delete acut;
 	}
-	OfficalBeamData& operator=(OfficalBeamData other){
-		pbglEnergy=other.pbglEnergy;
+	/*OfficalBeamData& operator=(OfficalBeamData other){
 		beamVoltage=other.beamVoltage;
 		pbglPlot=other.pbglPlot;
 		return *this;
-	}
+	}*/
 private:
 	//we will need to play with these values
 	const double CERENKOVcut = 1400; //previously 1600
@@ -797,7 +863,6 @@ private:
 	const int VETOSIZE = 4;
 	const int HODOSIZE = 8;
 
-	queue<double> pbglEnergy;
 	int beamVoltage;
 	int beamEnergy;
 	TH1D *pbglPlot=NULL;
@@ -822,6 +887,10 @@ private:
 	TH1D *p_veto2=NULL;
 	TH1D *p_veto3=NULL;
 	TH1D *p_veto4=NULL;
+	TH1D *pbglCCut=NULL;
+	TH1D *pbglCVCut=NULL;
+	TH1D *pbglNoCut=NULL;
+	TH1D *pbglUnFit=NULL;
 	GausPlot *mainGaus=NULL;
 	CutPlot *cut_cerenkov=NULL;
 	CutPlot *cut_hodov1=NULL;
@@ -2036,8 +2105,7 @@ OfficalBeamData* DSTReader551::Loop(int number)
    ss<<number;
    string name = "data"+ss.str();
    fChain->GetEntry(1);
-   OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number));
-   tally->setEnergy(TMath::Abs(beam_MTNRG_GeV)); //lab set energy of beam, (negative bc its neg particles so take abs())
+   OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
    if(number==567) tally->setEnergy(8);
    Long64_t nentries = fChain->GetEntriesFast();
 
@@ -2095,8 +2163,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 //file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool want1200 = true;
-	bool want1100 = false;
+	bool want1200 = false;
+	bool want1100 = true;
 	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
@@ -2144,7 +2212,7 @@ void Part2A(){
 	float sigma[NUMSIZE];
 	float sigmaU[NUMSIZE];
 	float energy[NUMSIZE];
-	for (int i = 0; i < 1; ++i)//loop over beam files
+	for (int i = 0; i < NUMSIZE; ++i)//loop over beam files
 	{
 		fileLocation = filename+to_string(number[i])+extension;
 		//cout<<number[i]<<'\n';
