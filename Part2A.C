@@ -248,18 +248,8 @@ public:
 			plotsexits[0]=true;
 			TF1 *gaus = makeGaus();
 			pbglPlot->SetMarkerSize(.03);
-		}
-		return mainGaus;
-	}
-	GausPlot* getMainPlot(string name){
-		if (!plotsexits[0])
-		{
-			plotsexits[0]=true;
-			TF1 *gaus = makeGaus();
-			pbglPlot->SetMarkerSize(.03);
-			gaus->SetLineWidth(1);
-			gaus->SetLineStyle(5);
-			mainGaus = new GausPlot(pbglPlot,gaus);
+			//gaus->SetLineWidth(1);
+			//gaus->SetLineStyle(5);
 		}
 		return mainGaus;
 	}
@@ -751,7 +741,7 @@ public:
 		//makeDifferent(pbglCVCut,2);
 		makeDifferent(ccut,2);
 		makeDifferent(cvcut,1);
-		TLegend *cutLegend = new TLegend(.2,.8,.2,.8);
+		TLegend *cutLegend = new TLegend(.2,.2,.8,.8);
 		cutLegend->SetBorderSize(0);
 		cutLegend->SetFillColorAlpha(kWhite,0);
 		ccut->Draw();
@@ -760,10 +750,10 @@ public:
 		cutLegend->AddEntry(ccut,"Cherenkov Cut","l");
 		cutLegend->AddEntry(cvcut,"Cherenkov+Veto","l");
 		cutLegend->AddEntry(acut,"All Cuts","l");
+		myText(.2,.8,kBlack,"PbGl Cuts",.16);
 		tc->cd(25);
 		cutLegend->Draw();
 		//gPad->SetLogy();
-		myText(.55,.8,kBlack,"PbGl E",.18);
 		tc->cd(2); gPad->SetLogy();
 		cut_cerenkov->Draw();
 		myText(.4,.8,kBlack,"Cherenkov Signal",.18);
@@ -837,8 +827,8 @@ public:
 			tc->cd(i+1);
 			gPad->SetTopMargin(.01);
 			gPad->SetBottomMargin(.06);
-			gPad->SetRightMargin(.01);
-			gPad->SetLeftMargin(.02);
+			gPad->SetRightMargin(.001);
+			gPad->SetLeftMargin(.07);
 		}
 		name+=".pdf";
 		tc->SaveAs(name.c_str());
@@ -2163,8 +2153,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 //file 816 appears to have different data 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool want1200 = false;
-	bool want1100 = true;
+	bool want1200 = true;
+	bool want1100 = false;
 	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
