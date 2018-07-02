@@ -5,6 +5,7 @@
 // It will also plot the combined resolution of each data set
 #include <queue>
 #include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
   	l.SetTextSize(tsize); 
@@ -13,9 +14,8 @@ void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsiz
   	l.DrawLatex(x,y,text);
 }	
 
+
 using namespace std;
-
-
 
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -49,7 +49,7 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	lin->Draw("same");
 	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
 	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
-	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
+	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.4f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 	return Scalar(linearFactor,linearError);
@@ -186,7 +186,7 @@ void combinedplot(queue<Data>* data){
 	lin->Draw("same");
 	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
 	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
-	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
+	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.4f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 
@@ -234,10 +234,86 @@ queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2){
 	delete d2;
 	return rdata;
 }
-//trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror)
-//trendForced(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]))
+Data weightedAverage(queue<Data>* temp)
+{
+	Data tempdata;
+	tempdata.energy = temp->front().energy;
+	float meanD = 0;
+	float sigmaD = 0;
+	float meanError = 0;
+	float sigmaError = 0;
+	int size = temp->size();
+	for(int i = 0; i < size; i++) //weighted average
+	{
+		//add up mean values
+		tempdata.mean.value += (1/temp->front().mean.uncertainty)*(temp->front().mean.value); //adding means
+		meanD += (1/temp->front().mean.uncertainty); //demoninator for mean
+		meanError += pow(temp->front().mean.uncertainty,2); //add mean uncertainties is quadrature
+		//add up sigma values
+		tempdata.sigma.value += (1/temp->front().sigma.uncertainty)*(temp->front().sigma.value); //adding sigmas
+		sigmaD += (1/temp->front().sigma.uncertainty); //demoninator for sigma
+		sigmaError += pow(temp->front().sigma.uncertainty,2);//add sigma uncertainties is quadrature
+		temp->pop();
+	}
+	tempdata.mean.value = tempdata.mean.value/meanD; //finish mean weighted average 
+	tempdata.sigma.value = tempdata.sigma.value/sigmaD; //finish mean weighted average
+	tempdata.mean.uncertainty = sqrt(meanError)/size; //set new uncertainties
+	tempdata.sigma.uncertainty = sqrt(sigmaError)/size;
+	return tempdata;
+}
 
-void resolution(queue<Data>* temp){
+Data combinePoint(queue<Data>* temp)
+{
+	Data tempdata;
+	int tempenergy = temp->front().energy;
+	int size = temp->size();
+	if(temp->size() == 1) //only one point, return this point
+	{
+		tempdata.mean = temp->front().mean;
+		tempdata.sigma= temp->front().sigma;
+		tempdata.energy = temp->front().energy;
+		return tempdata;
+	}
+	else
+	{
+		return weightedAverage(temp);
+	}
+}
+
+queue<Data>* combineAllPoints(queue<Data>* temp)
+{
+	queue<Data>* newData = new queue<Data>();
+	queue<Data>* currentpoints = new queue<Data>(); //queue for 'to be combined' particles
+	Data tempdata;
+	for (int i = 0; i < 7; ++i)
+	{
+		tempdata.mean = temp->front().mean;
+		tempdata.sigma= temp->front().sigma;
+		tempdata.energy = temp->front().energy;
+		currentpoints->push(temp->front()); //put first point in queue where 'to be combined' particles are stored
+		cout<<"Energy"<<temp->front().energy<<endl;
+		temp->pop();
+		for (int j = 0; j < temp->size(); ++j)
+		{
+			if(temp->front().energy == tempdata.energy)
+			{
+				currentpoints->push(temp->front()); //put next point in queue where 'to be combined' particles are stored
+				temp->pop();
+			}
+			else{break;} //break if no more same energy points, they are sorted so this will work correctly
+		}
+		newData->push(combinePoint(currentpoints));
+		while(!currentpoints->empty())
+		{
+			currentpoints->pop();
+		}
+	}
+	return newData;
+}
+
+void resolution(queue<Data>* notCombined){
+	queue<Data>* temp = combineAllPoints(notCombined); //combined points
+	//queue<Data>* temp = notCombined; //not combined points
 	int SIZE = temp->size();
 	float mean[SIZE]; 
 	float sigma[SIZE]; 
@@ -255,6 +331,7 @@ void resolution(queue<Data>* temp){
 		energy[i] = temp->front().energy;
 		temp->pop();
 	}
+
 	TCanvas *canvas1 = new TCanvas();
 	float relativeE[SIZE];
 	float relativeU[SIZE];
@@ -266,7 +343,7 @@ void resolution(queue<Data>* temp){
 	}
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,mean[SIZE-1]);
 	eF->SetLineColor(kRed);
-	TGraphErrors* ehist = new TGraphErrors(SIZE,mean,relativeE,ex,relativeU);
+	TGraphErrors* ehist = new TGraphErrors(SIZE,energy,relativeE,ex,relativeU);
 	ehist->Fit(eF);
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
@@ -275,10 +352,14 @@ void resolution(queue<Data>* temp){
 	errors[1] = eF->GetParError(1);
 	//makeMarkerNice(&ehist, 1);
 	ehist->SetMarkerSize(2);
+	ehist->SetMarkerStyle(41);
+	ehist->SetMarkerColor(4);
+	ehist->SetLineColor(4);
 	ehist->SetMinimum(0);
 	ehist->SetMaximum(0.1);
-	ehist->GetXaxis()->SetLimits(0,13);
-	ehist->Draw("AP*");
+	ehist->GetXaxis()->SetLimits(0,18);
+	gPad->SetTicks();
+	ehist->Draw("AP");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
@@ -368,7 +449,6 @@ void Part2B(){
 	combinedplot(sortcombine(singlefileAnalysis("PbGlA1200.txt"),singlefileAnalysis("PbGlA1100.txt")));
 	combinedResolution("PbGlA1200.txt","PbGlA1100.txt");
 }
-
 
 
 
