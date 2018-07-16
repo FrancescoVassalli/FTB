@@ -53,9 +53,9 @@ public:
 		pbglNoCut= new TH1D(string(name+"NoCUT").c_str(),"",200,0,10000);
 		pbglCCut = new TH1D(string(name+"CCUT").c_str(),"",200,0,10000);
 		pbglCVCut = new TH1D(string(name+"CVCUT").c_str(),"",200,0,10000);
-		hodo2=new TH1D (string( name+"hodo2").c_str(),"",200,0,10000);
-		hodo4=new TH1D (string( name+"hodo4").c_str(),"",200,0,10000);
-		hodo8=new TH1D (string( name+"hodo8").c_str(),"",200,0,10000);
+		hodo2=new TH1D (string( name+"hodo2").c_str(),"",70,0,8000);
+		hodo4=new TH1D (string( name+"hodo4").c_str(),"",70,0,8000);
+		hodo8=new TH1D (string( name+"hodo8").c_str(),"",70,0,8000);
 		pbglPlot->Sumw2();
 		pbglUnFit->Sumw2();
 		pbglCCut->Sumw2();
@@ -136,9 +136,9 @@ public:
 		if(p_veto2!=NULL) delete p_veto2;
 		if(p_veto3!=NULL) delete p_veto3;
 		if(p_veto4!=NULL) delete p_veto4;*/
-		if(hodo2!=NULL) delete hodo2;  
+		/*if(hodo2!=NULL) delete hodo2; //maybe root objects delete their members   
 		if(hodo4!=NULL) delete hodo4;
-		if(hodo8!=NULL) delete hodo8;
+		if(hodo8!=NULL) delete hodo8;*/
 	}
 	//use this function to add data to the class is will return wether the data passes the cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
@@ -286,20 +286,21 @@ public:
 		tc->Close();
 		delete tc;
 	}
-	void compareHodo(){
+	void compareHodo(int number){
 		TCanvas *tc = new TCanvas();
 		gPad->SetLogy();
 		makeDifferent(hodo4,1);
 		makeDifferent(hodo2,2);
-		TLegend *dairy = new TLegend(.2,.2,.8,.8);
-		dairy->AddEntry(hodo8,"8x8","l");
-		dairy->AddEntry(hodo4,"4x4","l");
-		dairy->AddEntry(hodo2,"2x2","l");
 		hodo8->Draw();
 		hodo4->Draw("same");
 		hodo2->Draw("same");
-		dairy->Draw();
-		tc->Print("hodocompare.pdf");
+		/*TLegend *dairy = new TLegend(.6,.6,.9,.9);
+		dairy->AddEntry(hodo8,"8x8","l");
+		dairy->AddEntry(hodo4,"4x4","l");
+		dairy->AddEntry(hodo2,"2x2","l");
+		dairy->Draw();*/
+		string title  = "hodocompare"+to_string(number)+".pdf";
+		tc->Print(title.c_str());
 		delete tc;
 	}
 	CutPlot* getCerenkovPlot(){
@@ -2243,7 +2244,7 @@ void Part2A(){
 		energy[i]=data->getEnergy();
 		//string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		//data->makeBigPlot(bigname);
-		data->compareHodo();
+		data->compareHodo(number[i]);
 		cout<<"Energy:"<<energy[i]<<'\n';
 		data->plot();
 		cout<<fileLocation<<'\n';
