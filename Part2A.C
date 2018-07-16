@@ -20,7 +20,15 @@
 // Header file for the classes stored in the TTree if any.
 #include "TClonesArray.h"
 #include "TObject.h"
-//#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+  	TLatex l; //l.SetTextAlign(12); 
+  	l.SetTextSize(tsize); 
+  	l.SetNDC();
+ 	l.SetTextColor(color);
+  	l.DrawLatex(x,y,text);
+}	
+
 
 using namespace std;
 
@@ -162,7 +170,7 @@ public:
 				pbglCCut->Fill(pbgl);
 				if(noVeto(veto)){
 					pbglCVCut->Fill(pbgl);
-					if (passHodoH(hhodo)&&passHodoV(vhodo))
+					if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
 					{
 						pbglPlot->Fill(pbgl);
 						pbglUnFit->Fill(pbgl);
@@ -185,6 +193,18 @@ public:
 	}
 	inline bool passHodoH(double* hodo){ //exclusive or 
 		return hodo[0]>HODOHcut[0] ^ hodo[1]>HODOHcut[1] ^ hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5] ^ hodo[6]>HODOHcut[6] ^ hodo[7]>HODOHcut[7];
+	}
+	inline bool passHodoV4x4(double* hodo){ //exclusive or 
+		return hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5];
+	}
+	inline bool passHodoH4x4(double* hodo){ //exclusive or 
+		return hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5];
+	}
+	inline bool passHodoV2x2(double* hodo){ //exclusive or 
+		return hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4];
+	}
+	inline bool passHodoH2x2(double* hodo){ //exclusive or 
+		return hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4];
 	}
 	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
@@ -218,10 +238,7 @@ public:
 		delete fitcanvas;
 		return gaus;
 	}	
-	void setEnergy(int e){
-		beamEnergy=e;
-		hasEnergy=true;
-	}
+	
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		plotsexits[0]=true;
@@ -688,7 +705,6 @@ public:
 		return sigma.value;
 	}
 	int getEnergy(){
-		if(!hasEnergy) return -1;
 		return beamEnergy;
 	}
 	void makeAllPlots(){
@@ -2208,14 +2224,14 @@ Int_t DSTReader551::Cut(Long64_t entry)
 	//CHANGE
 OfficalBeamData* DSTReader551::Loop(int number)
 {
-   if (fChain == 0) return NULL;
-   stringstream ss;
-   ss<<number;
-   string name = "data"+ss.str();
-   fChain->GetEntry(1);
-   OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
-   if(number==567) tally->setEnergy(8);
-   Long64_t nentries = fChain->GetEntriesFast();
+	if (fChain == 0) return NULL;
+	stringstream ss;
+	ss<<number;
+	string name = "data"+ss.str();
+	fChain->GetEntry(1);
+	if(number == 567){beam_MTNRG_GeV = 8;}
+	OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
+	Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
     for (Long64_t jentry=1; jentry<nentries; jentry++) {
@@ -2273,15 +2289,15 @@ void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	bool want1200 = true;
 	bool want1100 = false;
-	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
-	//string fileLocation = "springBeamFiles/"; //chase
+	//string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
+	string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int totalNUMSIZE=19;
-	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
-	//const int totalNUMSIZE=16;
-	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,580}; //all beam files
+	//const int totalNUMSIZE=19;
+	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
+	const int totalNUMSIZE=15;
+	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574}; //all beam files
 	//573 is saturated I think 572 is as well
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
@@ -2350,8 +2366,8 @@ void Part2A(){
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
 
-	if(want1200 == true){outFile.open("PbGlA1200.txt");} //1200V data
-	else if(want1100 == true){outFile.open("PbGlA1100.txt");} //1100V data
+	if(want1200 == true){outFile.open("PbGlA12002x2.txt");} //1200V data
+	else if(want1100 == true){outFile.open("PbGlA11002x2.txt");} //1100V data
 	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{

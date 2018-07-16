@@ -312,8 +312,8 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 }
 
 void resolution(queue<Data>* notCombined){
-	queue<Data>* temp = combineAllPoints(notCombined); //combined points
-	//queue<Data>* temp = notCombined; //not combined points
+	//queue<Data>* temp = combineAllPoints(notCombined); //combined points
+	queue<Data>* temp = notCombined; //not combined points
 	int SIZE = temp->size();
 	float mean[SIZE]; 
 	float sigma[SIZE]; 
@@ -446,8 +446,8 @@ void combinedResolution(string filename1, string filename2){
 }
 
 void Part2B(){
-	combinedplot(sortcombine(singlefileAnalysis("PbGlA1200.txt"),singlefileAnalysis("PbGlA1100.txt")));
-	combinedResolution("PbGlA1200.txt","PbGlA1100.txt");
+	combinedplot(sortcombine(singlefileAnalysis("PbGlA12008x8.txt"),singlefileAnalysis("PbGlA11008x8.txt")));
+	combinedResolution("PbGlA12008x8.txt","PbGlA11008x8.txt");
 }
 
 
