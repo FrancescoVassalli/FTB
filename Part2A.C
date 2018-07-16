@@ -20,6 +20,14 @@
 #include "TClonesArray.h"
 #include "TObject.h"
 //#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+  	TLatex l; //l.SetTextAlign(12); 
+  	l.SetTextSize(tsize); 
+  	l.SetNDC();
+ 	l.SetTextColor(color);
+  	l.DrawLatex(x,y,text);
+}	
+
 
 using namespace std;
 
@@ -45,6 +53,9 @@ public:
 		pbglNoCut= new TH1D(string(name+"NoCUT").c_str(),"",200,0,10000);
 		pbglCCut = new TH1D(string(name+"CCUT").c_str(),"",200,0,10000);
 		pbglCVCut = new TH1D(string(name+"CVCUT").c_str(),"",200,0,10000);
+		hodo2=new TH1D (string( name+"hodo2").c_str(),"",200,0,10000);
+		hodo4=new TH1D (string( name+"hodo4").c_str(),"",200,0,10000);
+		hodo8=new TH1D (string( name+"hodo8").c_str(),"",200,0,10000);
 		pbglPlot->Sumw2();
 		pbglUnFit->Sumw2();
 		pbglCCut->Sumw2();
@@ -125,6 +136,9 @@ public:
 		if(p_veto2!=NULL) delete p_veto2;
 		if(p_veto3!=NULL) delete p_veto3;
 		if(p_veto4!=NULL) delete p_veto4;*/
+		if(hodo2!=NULL) delete hodo2;  
+		if(hodo4!=NULL) delete hodo4;
+		if(hodo8!=NULL) delete hodo8;
 	}
 	//use this function to add data to the class is will return wether the data passes the cuts and only adds it if it does
 	bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
@@ -162,11 +176,19 @@ public:
 				pbglCCut->Fill(pbgl);
 				if(noVeto(veto)){
 					pbglCVCut->Fill(pbgl);
-					if (passHodoH(hhodo)&&passHodoV(vhodo))
-					{
-						pbglPlot->Fill(pbgl);
-						pbglUnFit->Fill(pbgl);
-						r=true;
+					if (passHodoH8x8(hhodo)&&passHodoV8x8(vhodo)){
+						hodo8->Fill(pbgl);
+						if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
+						{	
+							pbglPlot->Fill(pbgl);
+							pbglUnFit->Fill(pbgl);
+							hodo4->Fill(pbgl);
+							r=true;
+							if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
+							{
+								hodo2->Fill(pbgl);
+							}
+						}
 					}
 				}
 			}
@@ -185,6 +207,18 @@ public:
 	}
 	inline bool passHodoH(double* hodo){ 
 		return hodo[0]>HODOHcut[0] ^ hodo[1]>HODOHcut[1] ^ hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5] ^ hodo[6]>HODOHcut[6] ^ hodo[7]>HODOHcut[7];
+	}
+	inline bool passHodoV4x4(double* hodo){ //exclusive or 
+		return hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5];
+	}
+	inline bool passHodoH4x4(double* hodo){ //exclusive or 
+		return hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5];
+	}
+	inline bool passHodoV2x2(double* hodo){ //exclusive or 
+		return hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4];
+	}
+	inline bool passHodoH2x2(double* hodo){ //exclusive or 
+		return hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4];
 	}
 	//must be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
@@ -210,10 +244,7 @@ public:
 		mainGaus = new GausPlot(pbglPlot,gaus,mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		return gaus;
 	}	
-	void setEnergy(int e){
-		beamEnergy=e;
-		hasEnergy=true;
-	}
+	
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		plotsexits[0]=true;
@@ -253,6 +284,22 @@ public:
 		string out = name+"ceren.pdf";
 		tc->Print(out.c_str());
 		tc->Close();
+		delete tc;
+	}
+	void compareHodo(){
+		TCanvas *tc = new TCanvas();
+		gPad->SetLogy();
+		makeDifferent(hodo4,1);
+		makeDifferent(hodo2,2);
+		TLegend *dairy = new TLegend(.2,.2,.8,.8);
+		dairy->AddEntry(hodo8,"8x8","l");
+		dairy->AddEntry(hodo4,"4x4","l");
+		dairy->AddEntry(hodo2,"2x2","l");
+		hodo8->Draw();
+		hodo4->Draw("same");
+		hodo2->Draw("same");
+		dairy->Draw();
+		tc->Print("hodocompare.pdf");
 		delete tc;
 	}
 	CutPlot* getCerenkovPlot(){
@@ -678,7 +725,6 @@ public:
 		return sigma.value;
 	}
 	int getEnergy(){
-		if(!hasEnergy) return -1;
 		return beamEnergy;
 	}
 	void makeAllPlots(){
@@ -853,10 +899,15 @@ private:
 	TH1D *p_veto2=NULL;
 	TH1D *p_veto3=NULL;
 	TH1D *p_veto4=NULL;
+	
 	TH1D *pbglCCut=NULL; //pbgl energy after cherenkov cut 
 	TH1D *pbglCVCut=NULL;//pbgl energy after cherenkov and veto cut 
 	TH1D *pbglNoCut=NULL; //pbgl energy without cuts 
 	TH1D *pbglUnFit=NULL; //the main plot but does not get fit to a guassian 
+	TH1D *hodo2=NULL; // the final plot with nxn hodo cuts 
+	TH1D *hodo4=NULL;
+	TH1D *hodo8=NULL;
+	
 	GausPlot *mainGaus=NULL; //combined class of the main plot and its gaussian 
 	CutPlot *cut_cerenkov=NULL; // combined class of the cherenkov signal and the line showing the cut 
 	CutPlot *cut_hodov1=NULL; // combined class of the hodo signal  and the line showing the cut
@@ -2064,14 +2115,14 @@ Int_t DSTReader551::Cut(Long64_t entry)
 
 OfficalBeamData* DSTReader551::Loop(int number)
 {
-   if (fChain == 0) return NULL;
-   stringstream ss;
-   ss<<number;
-   string name = "data"+ss.str();
-   fChain->GetEntry(1);
-   OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
-   if(number==567) tally->setEnergy(8);
-   Long64_t nentries = fChain->GetEntriesFast();
+	if (fChain == 0) return NULL;
+	stringstream ss;
+	ss<<number;
+	string name = "data"+ss.str();
+	fChain->GetEntry(1);
+	if(number == 567){beam_MTNRG_GeV = 8;}
+	OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
+	Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
     for (Long64_t jentry=1; jentry<nentries; jentry++) {
@@ -2125,19 +2176,26 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool want1200 = false;
-	bool want1100 = true;
+	bool do1200V=true;
 	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
-	const int totalNUMSIZE=19;
-	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
-	//573 is saturated, 572 is as well
+	//const int totalNUMSIZE=19;
+	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
+	const int totalNUMSIZE=15;
+	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574}; //all beam files
+	//573 is saturated I think 572 is as well
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
 	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
+	bool want1200 = true;
+	bool want1100 = false;
+	if(!do1200V){
+		want1100=!want1100;
+		want1200=!want1200;
+	}
 	int NUMSIZE=0;
 	int number[totalNUMSIZE]; //desired beam files
 	if(want1200 == true)
@@ -2183,8 +2241,9 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
-		data->makeBigPlot(bigname);
+		//string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
+		//data->makeBigPlot(bigname);
+		data->compareHodo();
 		cout<<"Energy:"<<energy[i]<<'\n';
 		data->plot();
 		cout<<fileLocation<<'\n';
@@ -2193,11 +2252,12 @@ void Part2A(){
 		delete data;
 		delete reader;
 	}
+	return;
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
 
-	if(want1200 == true){outFile.open("PbGlA1200.txt");} //1200V data
-	else if(want1100 == true){outFile.open("PbGlA1100.txt");} //1100V data
+	if(want1200 == true){outFile.open("PbGlA12002x2.txt");} //1200V data
+	else if(want1100 == true){outFile.open("PbGlA11002x2.txt");} //1100V data
 	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
@@ -2430,7 +2490,3 @@ int runToVoltage(int run){
     }
     return r;
 }
-
-
-
-
