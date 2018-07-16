@@ -20,13 +20,13 @@
 #include "TClonesArray.h"
 #include "TObject.h"
 //#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
-void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+/*void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
   	l.SetTextSize(tsize); 
   	l.SetNDC();
  	l.SetTextColor(color);
   	l.DrawLatex(x,y,text);
-}	
+}	*/
 
 
 using namespace std;
@@ -176,7 +176,7 @@ public:
 				pbglCCut->Fill(pbgl);
 				if(noVeto(veto)){
 					pbglCVCut->Fill(pbgl);
-					if (passHodoH8x8(hhodo)&&passHodoV8x8(vhodo)){
+					if (passHodoH(hhodo)&&passHodoV(vhodo)){
 						hodo8->Fill(pbgl);
 						if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
 						{	
