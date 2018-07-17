@@ -449,23 +449,3 @@ void Part2B(){
 	combinedplot(sortcombine(singlefileAnalysis("PbGlA12008x8.txt"),singlefileAnalysis("PbGlA11008x8.txt")));
 	combinedResolution("PbGlA12008x8.txt","PbGlA11008x8.txt");
 }
-
-
-
-
-/*ofstream outFile;
-	outFile.open("PbGl_data2.txt");
-	if(outFile.is_open()) //read info out to txt file if it opens
-	{	
-		outFile<<r[0]<<","<<r[1]<<"\n";
-		for (int i = 0; i < LINES; ++i)
-		{
-			while(!input[i].empty()){
-				outFile<<input[i].front()<<",";
-				input[i].pop();
-			}
-			outFile<<"\n";
-		}
-	}
-	else {cout<<"RED ALERT! RED ALERT! FAILED TO WRITE TO A TEXT FILE! I REPEAT! RED ALERT!"<<endl;}
-*/
