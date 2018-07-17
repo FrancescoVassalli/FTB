@@ -2177,7 +2177,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool do1200V=true;
+	bool do1200V=false;
 	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_00000";
