@@ -12,17 +12,17 @@ Scalar linearity(const int SIZE,float*energy, float* mean, float* sigma, float* 
 	p_mean->Fit(lin,"0");
 	return Scalar(lin->GetParameter(0),lin->GetParError(0));
 }
-Scalar linearity(queue<Data>* data){
-	const int SIZE = data->size();
+Scalar linearity(queue<Data> data){
+	const int SIZE = data.size();
 	float energy[SIZE];
 	float mean[SIZE];
 	float meanerror[SIZE];
 	int i=0;
-	while(!data->empty()){
-		energy[i] = data->front().energy;
-		mean[i] = data->front().mean.value;
-		meanerror[i] = data->front().mean.uncertainty;
-		data->pop();
+	while(!data.empty()){
+		energy[i] = data.front().energy;
+		mean[i] = data.front().mean.value;
+		meanerror[i] = data.front().mean.uncertainty;
+		data.pop();
 		i++;
 	}
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE),meanerror); // how to set the uncertainty
@@ -74,7 +74,6 @@ queue<Data>* singlefileAnalysis(string filename){
 }
 
 queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2){
-	cout<<"Enter combine"<<endl;
 	queue<Data> *rdata = new queue<Data>();
 	while (!d1->empty()||!d2->empty())
 	{
@@ -110,13 +109,117 @@ queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2){
 			}
 		}
 	}
-	cout<<"Exit Combine"<<endl;
 	delete d1;
 	delete d2;
 	return rdata;
 }
 
+Data weightedAverage(queue<Data>* temp)
+{
+	Data tempdata;
+	tempdata.energy = temp->front().energy;
+	float meanD = 0;
+	float sigmaD = 0;
+	float meanError = 0;
+	float sigmaError = 0;
+	int size = temp->size();
+	for(int i = 0; i < size; i++) //weighted average
+	{
+		//add up mean values
+		tempdata.mean.value += (1/temp->front().mean.uncertainty)*(temp->front().mean.value); //adding means
+		meanD += (1/temp->front().mean.uncertainty); //demoninator for mean
+		meanError += pow(temp->front().mean.uncertainty,2); //add mean uncertainties is quadrature
+		//add up sigma values
+		tempdata.sigma.value += (1/temp->front().sigma.uncertainty)*(temp->front().sigma.value); //adding sigmas
+		sigmaD += (1/temp->front().sigma.uncertainty); //demoninator for sigma
+		sigmaError += pow(temp->front().sigma.uncertainty,2);//add sigma uncertainties is quadrature
+		temp->pop();
+	}
+	tempdata.mean.value = tempdata.mean.value/meanD; //finish mean weighted average 
+	tempdata.sigma.value = tempdata.sigma.value/sigmaD; //finish mean weighted average
+	tempdata.mean.uncertainty = sqrt(meanError)/size; //set new uncertainties
+	tempdata.sigma.uncertainty = sqrt(sigmaError)/size;
+	return tempdata;
+}
+
+Data combinePoint(queue<Data>* temp)
+{
+	Data tempdata;
+	int tempenergy = temp->front().energy;
+	int size = temp->size();
+	if(temp->size() == 1) //only one point, return this point
+	{
+		tempdata.mean = temp->front().mean;
+		tempdata.sigma= temp->front().sigma;
+		tempdata.energy = temp->front().energy;
+		return tempdata;
+	}
+	else
+	{
+		return weightedAverage(temp);
+	}
+}
+
+queue<Data>* combineAllPoints(queue<Data>* temp)
+{
+	queue<Data>* newData = new queue<Data>();
+	queue<Data>* currentpoints = new queue<Data>(); //queue for 'to be combined' particles
+	Data tempdata;
+	for (int i = 0; i < 7; ++i)
+	{
+		tempdata.mean = temp->front().mean;
+		tempdata.sigma= temp->front().sigma;
+		tempdata.energy = temp->front().energy;
+		currentpoints->push(temp->front()); //put first point in queue where 'to be combined' particles are stored
+		cout<<"Energy"<<temp->front().energy<<endl;
+		temp->pop();
+		for (int j = 0; j < temp->size(); ++j)
+		{
+			if(temp->front().energy == tempdata.energy)
+			{
+				currentpoints->push(temp->front()); //put next point in queue where 'to be combined' particles are stored
+				temp->pop();
+			}
+			else{break;} //break if no more same energy points, they are sorted so this will work correctly
+		}
+		newData->push(combinePoint(currentpoints));
+		while(!currentpoints->empty())
+		{
+			currentpoints->pop();
+		}
+	}
+	return newData;
+}
+
+void plotCorrection(queue<Data> *data,Scalar m){
+	TCanvas *tc = new TCanvas();
+	const int SIZE = data->size();
+	float x[SIZE];
+	float y[SIZE];
+	float yerror[SIZE];
+	float xerror[SIZE];
+	int i=0;
+	TLine *trend = new TLine(0,m.value,17,m.value);
+	TBox *band = new TBox(0,m.value-m.uncertainty,17,m.value+m.uncertainty);
+	band->SetFillColorAlpha(kBlue,.40);
+	band->SetLineColor(kBlue);
+	trend->SetLineColor(kRed);
+	while(!data->empty()){
+		y[i] = (data->front().mean/Scalar(data->front().energy)).value;
+		x[i] = data->front().energy;
+		yerror[i] = (data->front().mean/Scalar(data->front().energy)).uncertainty;
+		xerror[i] = 0;//data->front().mean.uncertainty;
+		data->pop();
+		i++;
+	}
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,x,y,xerror,yerror);
+	p_mean->Draw();
+	band->Draw("same");
+	trend->Draw("same");
+	tc->Print("plot1.pdf");
+}
 void plotCorrection(queue<Data> *data){
+	TCanvas *tc = new TCanvas();
 	const int SIZE = data->size();
 	float x[SIZE];
 	float y[SIZE];
@@ -124,10 +227,10 @@ void plotCorrection(queue<Data> *data){
 	float xerror[SIZE];
 	int i=0;
 	while(!data->empty()){
-		y[i] = (Scalar(data->front().energy)/data->front().mean).value;
-		x[i] = data->front().mean.value;
-		yerror[i] = (Scalar(data->front().energy)/data->front().mean).uncertainty;
-		xerror[i] = data->front().mean.uncertainty;
+		y[i] = (data->front().mean/Scalar(data->front().energy)).value;
+		x[i] = data->front().energy;
+		yerror[i] = (data->front().mean/Scalar(data->front().energy)).uncertainty;
+		xerror[i] = 0;//data->front().mean.uncertainty;
 		data->pop();
 		i++;
 	}
@@ -136,7 +239,7 @@ void plotCorrection(queue<Data> *data){
 }
 
 void EnergyCorrection(){
-	queue<Data> *data = sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt"));
-	plotCorrection(data);
+	queue<Data> *data = combineAllPoints(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
+	plotCorrection(data,linearity(*data));
 
 }
