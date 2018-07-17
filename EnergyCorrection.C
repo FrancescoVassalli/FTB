@@ -7,7 +7,7 @@ struct Data
 };
 
 Scalar linearity(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE,ex),meanerror); // how to set the uncertainty
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE),meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	p_mean->Fit(lin,"0");
 	return Scalar(lin->GetParameter(0),lin->GetParError(0));
@@ -25,7 +25,7 @@ Scalar linearity(queue<Data>* data){
 		data->pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE,ex),meanerror); // how to set the uncertainty
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE),meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	p_mean->Fit(lin,"0");
 	return Scalar(lin->GetParameter(0),lin->GetParError(0));
