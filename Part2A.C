@@ -2244,7 +2244,7 @@ void Part2A(){
 		energy[i]=data->getEnergy();
 		//string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		//data->makeBigPlot(bigname);
-		data->compareHodo(number[i]);
+		//data->compareHodo(number[i]);
 		cout<<"Energy:"<<energy[i]<<'\n';
 		data->plot();
 		cout<<fileLocation<<'\n';
@@ -2253,12 +2253,11 @@ void Part2A(){
 		delete data;
 		delete reader;
 	}
-	return;
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
 
-	if(want1200 == true){outFile.open("PbGlA12002x2.txt");} //1200V data
-	else if(want1100 == true){outFile.open("PbGlA11002x2.txt");} //1100V data
+	if(want1200 == true){outFile.open("PbGlA12004x4.txt");} //1200V data
+	else if(want1100 == true){outFile.open("PbGlA11004x4.txt");} //1100V data
 	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
