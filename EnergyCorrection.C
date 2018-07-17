@@ -34,21 +34,36 @@ TGraphErrors* makePlots(queue<Data> data, TGraphErrors* lin, TGraphErrors* quad)
 	TF1* linFit = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	TF1* quadraticFit = new TF1("poly","[1]*x*x+[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(linFit,"0");
-
 	lin->SetPoint(0,0,0);
 	quad->SetPoint(0,0,0);
-	for (int i = 1; i < kANABELMAX; ++i)
+	for (int i = 0; i < kANABELMAX; ++i)
 	{
-		lin->SetPoint(i,i,linFit->Eval(i)/i);
+		lin->SetPoint(i,i+1,0);
+		quad->SetPoint(i,i+1,0);
 	}
 	(TVirtualFitter::GetFitter())->GetConfidenceIntervals(lin);
 	p_mean->Fit(quadraticFit,"0");
-	for (int i = 1; i < kANABELMAX; ++i)
-	{
-		quad->SetPoint(i,i,quadraticFit->Eval(i)/i);
-	}
 	(TVirtualFitter::GetFitter())->GetConfidenceIntervals(quad);
+	Scalar ltemp,qtemp;
+	double screwthis;
+	double s;
+	for (int i = 0; i < kANABELMAX; ++i)
+	{
+		lin->GetPoint(i,screwthis,s);
+		ltemp.value = (float) s ;
+		ltemp.uncertainty=lin->GetErrorY(i);
+		quad->GetPoint(i,screwthis,s);
+		qtemp.value = (float) s ;
+		qtemp.uncertainty=quad->GetErrorY(i);
+		ltemp/=(float) (i+1);
+		qtemp/=(float) (i+1);
+		lin->SetPoint(i,i+1,ltemp.value);
+		lin->SetPointError(i,0,ltemp.uncertainty);
+		quad->SetPoint(i,i+1,qtemp.value);
+		quad->SetPointError(i,0,qtemp.uncertainty);
+	}
 	return p_mean;
+
 }
 void linearity(queue<Data> data){
 	const int kSIZE = data.size();
@@ -267,25 +282,41 @@ void plotCorrection(queue<Data> *data,Scalar m){
 		data->pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(kSIZE,x,y,xerror,yerror);
+	TGraphErrors* p_mean = new TGraphErrors(i,x,y,xerror,yerror);
 	p_mean->Draw();
 	band->Draw("same");
 	trend->Draw("same");
 	tc->Print("plot1.pdf");
 }
-void plotCorrection(TGraphErrors *data, TGraphErrors *lin, TGraphErrors *quad){
+void plotCorrection(queue<Data>* data, TGraphErrors *lin, TGraphErrors *quad){
+	const int kSIZE = data->size();
+	float x[kSIZE];
+	float y[kSIZE];
+	float yerror[kSIZE];
+	float xerror[kSIZE];
+	int i=0;
+	while(!data->empty()){
+		y[i] = (data->front().mean/Scalar(data->front().energy)).value;
+		x[i] = data->front().energy;
+		yerror[i] = (data->front().mean/Scalar(data->front().energy)).uncertainty;
+		xerror[i] = 0;//data->front().mean.uncertainty;
+		data->pop();
+		i++;
+	}
+	TGraphErrors *p_data= new TGraphErrors(i,x,y,xerror,yerror);
+	TGraphErrors *base = new TGraphErrors(kANABELMAX);
 	TCanvas *tc = new TCanvas();
-	//p_mean->SetLineWidth(0);
 	lin->SetFillColorAlpha(kBlue,.4);
 	lin->SetLineColor(kBlue);
 	quad->SetLineColor(kPink+3);
 	quad->SetFillColorAlpha(kPink+3,.4);
+	axisTitles(quad,"Beam Energy","Measured E/Beam E");
 
-	p_mean->Draw("AP");
+	quad->Draw("ACE3");
 	lin->Draw("same CE3");
-	quad->Draw("same CE3");
+	p_data->Draw("same P");
 
-	tc->Print("plot1.pdf");
+	//tc->Print("plot1.pdf");
 }
 void plotCorrection(queue<Data> *data){
 	TCanvas *tc = new TCanvas();
@@ -309,6 +340,10 @@ void plotCorrection(queue<Data> *data){
 
 void EnergyCorrection(){
 	queue<Data> *data = combineAllPoints(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
-	plotCorrection(data,linearity(*data),quadratic(*data));
+	TGraphErrors *lin = new TGraphErrors(kANABELMAX);
+	TGraphErrors *quad = new TGraphErrors(kANABELMAX);
+	makePlots(*data,lin,quad);
+	//lin->Draw();
+	plotCorrection(data,lin,quad);
 
 }
