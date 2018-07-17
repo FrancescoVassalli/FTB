@@ -6,17 +6,22 @@ struct Data
 	int energy;
 };
 
-Scalar linearity(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE),meanerror); // how to set the uncertainty
-	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
+namespace {
+	const int kDOMAINMAX=17;
+	const int kANABELMAX=25;
+}
+
+Scalar linearity(const int kSIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE),meanerror); // how to set the uncertainty
+	TF1* lin = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(lin,"0");
 	return Scalar(lin->GetParameter(0),lin->GetParError(0));
 }
-Scalar linearity(queue<Data> data){
-	const int SIZE = data.size();
-	float energy[SIZE];
-	float mean[SIZE];
-	float meanerror[SIZE];
+TGraphErrors* makePlots(queue<Data> data, TGraphErrors* lin, TGraphErrors* quad){
+	const int kSIZE = data.size();
+	float energy[kSIZE];
+	float mean[kSIZE];
+	float meanerror[kSIZE];
 	int i=0;
 	while(!data.empty()){
 		energy[i] = data.front().energy;
@@ -25,10 +30,60 @@ Scalar linearity(queue<Data> data){
 		data.pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,zeroArray(SIZE),meanerror); // how to set the uncertainty
-	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE),meanerror); // how to set the uncertainty
+	TF1* linFit = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
+	TF1* quadraticFit = new TF1("poly","[1]*x*x+[0]*x",0,energy[kSIZE-1]);
+	p_mean->Fit(linFit,"0");
+
+	lin->SetPoint(0,0,0);
+	quad->SetPoint(0,0,0);
+	for (int i = 1; i < kANABELMAX; ++i)
+	{
+		lin->SetPoint(i,i,linFit->Eval(i)/i);
+	}
+	(TVirtualFitter::GetFitter())->GetConfidenceIntervals(lin);
+	p_mean->Fit(quadraticFit,"0");
+	for (int i = 1; i < kANABELMAX; ++i)
+	{
+		quad->SetPoint(i,i,quadraticFit->Eval(i)/i);
+	}
+	(TVirtualFitter::GetFitter())->GetConfidenceIntervals(quad);
+	return p_mean;
+}
+void linearity(queue<Data> data){
+	const int kSIZE = data.size();
+	float energy[kSIZE];
+	float mean[kSIZE];
+	float meanerror[kSIZE];
+	int i=0;
+	while(!data.empty()){
+		energy[i] = data.front().energy;
+		mean[i] = data.front().mean.value;
+		meanerror[i] = data.front().mean.uncertainty;
+		data.pop();
+		i++;
+	}
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE),meanerror); // how to set the uncertainty
+	TF1* lin = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(lin,"0");
-	return Scalar(lin->GetParameter(0),lin->GetParError(0));
+}
+Poly2 quadratic(queue<Data> data){
+	const int kSIZE = data.size();
+	float energy[kSIZE];
+	float mean[kSIZE];
+	float meanerror[kSIZE];
+	int i=0;
+	while(!data.empty()){
+		energy[i] = data.front().energy;
+		mean[i] = data.front().mean.value;
+		meanerror[i] = data.front().mean.uncertainty;
+		data.pop();
+		i++;
+	}
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[kSIZE-1]);
+	p_mean->Fit(poly,"0");
+	return Poly2(Scalar(0.),Scalar(poly->GetParameter(0),poly->GetParError(0)),Scalar(poly->GetParameter(1),poly->GetParError(1)));
 }
 
 queue<Data>* singlefileAnalysis(string filename){
@@ -193,14 +248,14 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 
 void plotCorrection(queue<Data> *data,Scalar m){
 	TCanvas *tc = new TCanvas();
-	const int SIZE = data->size();
-	float x[SIZE];
-	float y[SIZE];
-	float yerror[SIZE];
-	float xerror[SIZE];
+	const int kSIZE = data->size();
+	float x[kSIZE];
+	float y[kSIZE];
+	float yerror[kSIZE];
+	float xerror[kSIZE];
 	int i=0;
-	TLine *trend = new TLine(0,m.value,17,m.value);
-	TBox *band = new TBox(0,m.value-m.uncertainty,17,m.value+m.uncertainty);
+	TLine *trend = new TLine(0,m.value,kDOMAINMAX,m.value);
+	TBox *band = new TBox(0,m.value-m.uncertainty,kDOMAINMAX,m.value+m.uncertainty);
 	band->SetFillColorAlpha(kBlue,.40);
 	band->SetLineColor(kBlue);
 	trend->SetLineColor(kRed);
@@ -212,19 +267,33 @@ void plotCorrection(queue<Data> *data,Scalar m){
 		data->pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,x,y,xerror,yerror);
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,x,y,xerror,yerror);
 	p_mean->Draw();
 	band->Draw("same");
 	trend->Draw("same");
 	tc->Print("plot1.pdf");
 }
+void plotCorrection(TGraphErrors *data, TGraphErrors *lin, TGraphErrors *quad){
+	TCanvas *tc = new TCanvas();
+	//p_mean->SetLineWidth(0);
+	lin->SetFillColorAlpha(kBlue,.4);
+	lin->SetLineColor(kBlue);
+	quad->SetLineColor(kPink+3);
+	quad->SetFillColorAlpha(kPink+3,.4);
+
+	p_mean->Draw("AP");
+	lin->Draw("same CE3");
+	quad->Draw("same CE3");
+
+	tc->Print("plot1.pdf");
+}
 void plotCorrection(queue<Data> *data){
 	TCanvas *tc = new TCanvas();
-	const int SIZE = data->size();
-	float x[SIZE];
-	float y[SIZE];
-	float yerror[SIZE];
-	float xerror[SIZE];
+	const int kSIZE = data->size();
+	float x[kSIZE];
+	float y[kSIZE];
+	float yerror[kSIZE];
+	float xerror[kSIZE];
 	int i=0;
 	while(!data->empty()){
 		y[i] = (data->front().mean/Scalar(data->front().energy)).value;
@@ -234,12 +303,12 @@ void plotCorrection(queue<Data> *data){
 		data->pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,x,y,xerror,yerror); // how to set the uncertainty
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,x,y,xerror,yerror); // how to set the uncertainty
 	p_mean->Draw();
 }
 
 void EnergyCorrection(){
 	queue<Data> *data = combineAllPoints(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
-	plotCorrection(data,linearity(*data));
+	plotCorrection(data,linearity(*data),quadratic(*data));
 
 }
