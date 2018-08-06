@@ -1,4 +1,14 @@
 
+#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+
+void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+  	TLatex l; //l.SetTextAlign(12); 
+  	l.SetTextSize(tsize); 
+  	l.SetNDC();
+ 	l.SetTextColor(color);
+  	l.DrawLatex(x,y,text);
+}	
+
 struct Data
 {
 	Scalar mean;
@@ -12,7 +22,8 @@ namespace {
 }
 
 Scalar linearity(const int kSIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
-	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE),meanerror); // how to set the uncertainty
+	float foo[10];
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE, foo),meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(lin,"0");
 	return Scalar(lin->GetParameter(0),lin->GetParError(0));
@@ -30,7 +41,8 @@ TGraphErrors* makePlots(queue<Data> data, TGraphErrors* lin, TGraphErrors* quad)
 		data.pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE),meanerror); // how to set the uncertainty
+	float foo[10];
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE,foo),meanerror); // how to set the uncertainty
 	TF1* linFit = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	TF1* quadraticFit = new TF1("poly","[1]*x*x+[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(linFit,"0");
@@ -78,7 +90,8 @@ void linearity(queue<Data> data){
 		data.pop();
 		i++;
 	}
-	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE),meanerror); // how to set the uncertainty
+	float foo[10];
+	TGraphErrors* p_mean = new TGraphErrors(kSIZE,energy,mean,zeroArray(kSIZE,foo),meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(lin,"0");
 }
@@ -304,17 +317,26 @@ void plotCorrection(queue<Data>* data, TGraphErrors *lin, TGraphErrors *quad){
 		i++;
 	}
 	TGraphErrors *p_data= new TGraphErrors(i,x,y,xerror,yerror);
+	p_data->SetMarkerStyle(kFullCircle);
 	TGraphErrors *base = new TGraphErrors(kANABELMAX);
 	TCanvas *tc = new TCanvas();
-	lin->SetFillColorAlpha(kBlue,.4);
-	lin->SetLineColor(kBlue);
-	quad->SetLineColor(kPink+3);
-	quad->SetFillColorAlpha(kPink+3,.4);
-	axisTitles(quad,"Beam Energy","Measured E/Beam E");
+	//lin->SetFillColorAlpha(kPink+3,.4);
+	//lin->SetLineColor(kPink+3);
+	lin->SetFillColorAlpha(kRed,.4);
+	lin->SetLineColor(kRed);
+	quad->SetLineColor(kBlue);
+	quad->SetFillColorAlpha(kBlue,.4);
+	axisTitles(quad,"Beam Energy [GeV]","Measured E/Beam E");
 
 	quad->Draw("ACE3");
 	lin->Draw("same CE3");
 	p_data->Draw("same P");
+	TLegend *legend2 = new TLegend(0.15,0.15,0.3,0.35);
+	legend2->SetTextSize(0.035);
+	legend2->AddEntry(lin,"Linear","LF");
+	legend2->AddEntry(quad,"Quad","LF");
+	legend2->AddEntry(p_data,"Data","EP");
+	legend2->Draw("same");
 
 	//tc->Print("plot1.pdf");
 }

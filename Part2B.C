@@ -49,7 +49,7 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	lin->Draw("same");
 	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
 	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
-	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.4f",linearFactor,linearError),.05);
+	myText(.5,.37,kRed,Form("Linear = %0.4f #pm %0.4f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 	return Scalar(linearFactor,linearError);
@@ -162,11 +162,13 @@ void combinedplot(queue<Data>* data){
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,ex,meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[SIZE-1]);
-	axisTitles(p_mean,"Beam Energy GeV","Mean PbGl");
+	axisTitles(p_mean,"Beam Energy [GeV]","Measured Energy [GeV]");
 	//gNice();
 	p_mean->Fit(poly);
 	double nonLinearFactor = poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(1);
+	double polylinear = poly->GetParameter(0);
+	double polylinearError = poly->GetParError(0);
 	float chi2 = poly->GetChisquare();
 	p_mean->Fit(lin,"0");
 	lin->SetLineColor(kRed);
@@ -184,11 +186,11 @@ void combinedplot(queue<Data>* data){
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
 	lin->Draw("same");
-	myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
-	myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
-	myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.4f",linearFactor,linearError),.05);
-	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
-	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
+	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
+	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
+	//myText(.15,.77,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
 
 }
 
@@ -312,8 +314,8 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 }
 
 void resolution(queue<Data>* notCombined){
-	//queue<Data>* temp = combineAllPoints(notCombined); //combined points
-	queue<Data>* temp = notCombined; //not combined points
+	queue<Data>* temp = combineAllPoints(notCombined); //combined points
+	//queue<Data>* temp = notCombined; //not combined points
 	int SIZE = temp->size();
 	float mean[SIZE]; 
 	float sigma[SIZE]; 
@@ -344,7 +346,7 @@ void resolution(queue<Data>* notCombined){
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,mean[SIZE-1]);
 	eF->SetLineColor(kRed);
 	TGraphErrors* ehist = new TGraphErrors(SIZE,energy,relativeE,ex,relativeU);
-	ehist->Fit(eF);
+	ehist->Fit(eF,"M");
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
 	float errors[2];
@@ -367,6 +369,74 @@ void resolution(queue<Data>* notCombined){
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
 	myText(.24,.85,kRed,Form("Stochastic: %0.6f#pm%0.6f ",eA,errors[0]),.05);
 	myText(.24,.8,kRed,Form("Constant: %0.6f#pm%0.6f",eB,errors[1]),.05);
+}
+
+void resolutionAnabel(queue<Data>* notCombined) //doing resolution vs 1/sqrt(E)
+{
+	queue<Data>* temp = combineAllPoints(notCombined); //combined points
+	//queue<Data>* temp = notCombined; //not combined points
+	int SIZE = temp->size();
+	float mean[SIZE]; 
+	float sigma[SIZE]; 
+	float meanerror[SIZE]; 
+	float sigmaerror[SIZE];
+	float energy[SIZE];
+	float ex[SIZE];
+
+	for (int i = 0; i < SIZE; ++i)
+	{
+		ex[i] = 0;
+		mean[i] = temp->front().mean.value;
+		meanerror[i] = temp->front().mean.uncertainty;
+		sigma[i] = temp->front().sigma.value;
+		sigmaerror[i] = temp->front().sigma.uncertainty;
+		energy[i] = temp->front().energy;
+		temp->pop();
+	}
+
+	TCanvas *canvas1 = new TCanvas();
+	float relativeE[SIZE];
+	float relativeU[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		relativeE[i] = sigma[i]/energy[i];
+		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],energy[i],meanerror[i]);
+		//cout<<relativeU[i]<<endl;
+	}
+
+	for (int i = 0; i < SIZE; ++i)
+	{
+		energy[i] = 1/sqrt(energy[i]);
+		
+	}
+
+	TF1* eF = new TF1("eF","[0]*x+[1]",0,1);
+	eF->SetLineColor(kRed);
+	eF->SetRange(0,1);
+	TGraphErrors* ehist = new TGraphErrors(SIZE,energy,relativeE,ex,relativeU);
+	ehist->Fit(eF,"M");
+	float eA = eF->GetParameter(0);
+	float eB = eF->GetParameter(1);
+	float errors[2];
+	errors[0] = eF->GetParError(0);
+	errors[1] = eF->GetParError(1);
+	//makeMarkerNice(&ehist, 1);
+	ehist->SetMarkerSize(2);
+	ehist->SetMarkerStyle(41);
+	ehist->SetMarkerColor(4);
+	ehist->SetLineColor(4);
+	ehist->SetMinimum(0);
+	ehist->SetMaximum(0.1);
+	ehist->GetXaxis()->SetLimits(0,1);
+	gPad->SetTicks();
+	ehist->Draw("AP");
+	axisTitles(ehist,"1/#sqrt{GeV}","#sigma/mean");
+	float chi = eF->GetChisquare();
+	int ndf = eF->GetNDF();
+	myText(.3,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05);
+	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
+	myText(.24,.85,kRed,Form("Slope: %0.6f#pm%0.6f ",eA,errors[0]),.05);
+	myText(.24,.8,kRed,Form("Intercept: %0.6f#pm%0.6f",eB,errors[1]),.05);
 }
 
 void combinedResolution(string filename1, string filename2){
@@ -443,9 +513,10 @@ void combinedResolution(string filename1, string filename2){
 	//inFile2.close();
 	queue<Data>* rdata = sortcombine(rdata1, rdata2);
 	resolution(rdata);
+	//resolutionAnabel(rdata);
 }
 
 void Part2B(){
-	combinedplot(sortcombine(singlefileAnalysis("PbGlA12008x8.txt"),singlefileAnalysis("PbGlA11008x8.txt")));
-	combinedResolution("PbGlA12008x8.txt","PbGlA11008x8.txt");
+	combinedplot(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
+	combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
 }
