@@ -220,7 +220,7 @@ public:
 	inline bool passHodoH2x2(double* hodo){ //exclusive or 
 		return hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4];
 	}
-	//must be called before getting gaussian data returns the gaussian fit 
+	//run be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
 		made=true;
 		int maxbin = pbglPlot->GetMaximumBin();
@@ -2484,8 +2484,8 @@ int runToVoltage(int run){
 			r=1100;
 			break;
         default:
-            r=-1;
-            cout<<"Error in runToVoltage line:"<<__LINE__<<std::endl;
+            r=2;
+            cout<<"warning voltage not found "<<std::endl;
             break;
     }
     return r;
