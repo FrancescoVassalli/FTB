@@ -15,4 +15,6 @@ After this point new calibrated analysis was made.
 Part2A.C - does what BeamAna1 did but outputs to PbGlA.txt with the beam energy intead of the numentries.  Set the input files in the main. More useful if only a single set of voltage files is used
 Part2B.C - does what BeamAna2 did 
 PbGlA.txt - records run,mean,meanU,sigmaU,energy more useful if only a single set of voltage files are used 
+----------------------------------------------------------------------------------------------------
+John Haggerty Pointed me to the new data.
 vassalli@rssh.rcf.bnl.gov
