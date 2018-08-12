@@ -3,7 +3,7 @@
 // This script takes beam data files in DSTReader format and plots the PbGl energy after making 
 // hodoscope and cherenkov radiation cuts. It then fits a gaussian to the energy to get 
 // mean energy as well as the sigma on the energies gaussian distribution.
-
+#include <Scalar.h>
 #include <sstream>
 #include <queue>
 #include "TH1D.h"
@@ -16,18 +16,25 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+#include "NicePlots.C"
 // Header file for the classes stored in the TTree if any.
 #include "TClonesArray.h"
 #include "TObject.h"
 //#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
-/*void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
   	l.SetTextSize(tsize); 
   	l.SetNDC();
  	l.SetTextColor(color);
   	l.DrawLatex(x,y,text);
-}	*/
-
+}
+	template<class T>
+void oleSwitcheroo(T* xp, T* yp)
+{
+	T temp = *xp;
+	*xp = *yp;
+	*yp = temp;
+}
 
 using namespace std;
 
@@ -37,6 +44,61 @@ namespace {
 
 int runToVoltage(int run);
 int runToEnergy(int run);
+//classes from NiceHist
+ 
+class PlotWithLine
+{
+public:
+	virtual void Draw(){
+		main->Draw();
+	}
+	~PlotWithLine(){ // there might be some mem leakage here 
+	}
+protected:
+	TH1 *main;
+	
+};
+
+class CutPlot :public PlotWithLine{
+public:
+	CutPlot(TH1 *main, TLine* cut) : cut(cut){
+		this->main  = main;
+	}
+	~CutPlot(){
+		delete cut;
+		cut=NULL;
+	}
+	void Draw(){
+		main->Draw();
+		cut->Draw("same");
+	}
+private:
+	TLine *cut;
+};
+
+class GausPlot :public PlotWithLine
+{
+public:
+	GausPlot(TH1* main, TF1* gaus,double lowBound,double upBound) : gaus(gaus),lowBound(lowBound), upBound(upBound){
+		this->main  = main;
+	}
+	~GausPlot(){
+		delete gaus;
+		gaus=NULL;
+	}
+	void Draw(){
+		main->Draw();
+		gaus->Draw("same");
+	}
+	double getUpBound(){
+		return upBound;
+	}
+
+private:
+	TF1 *gaus;
+	double lowBound;
+	double upBound;
+};
 
 #ifndef OfficalBeamData_h
 #define OfficalBeamData_h 
@@ -88,6 +150,7 @@ public:
 		{
 			plotsexits[i]=false;
 		}
+		gStyle->SetOptStat(0);
 	}
 	~OfficalBeamData(){ // should delete all the plots 
 		if(mainGaus!=NULL){
@@ -2177,17 +2240,23 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
+	bool checkVoltage=false;
 	bool do1200V=false;
-	string fileLocation = "/home/user/Droptemp/NewBeams/"; //fran
+	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
-	string filename = "beam_00000";
+	string filename = "beam_0000";
+	string filenameleadingzero = "beam_00000";
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
+	filenameleadingzero=fileLocation+filenameleadingzero;
 	//const int totalNUMSIZE=19;
 	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
-	const int totalNUMSIZE=15;
-	int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574}; //all beam files
+	const int totalNUMSIZE=50;
+	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574}; //all beam files
+	//set of all the files including haggerty's unsure of the voltages will do mostly by hand
+	int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1904,1906,1924,1925,1943,1945,2073,2074,2094,2095,2097,2098,2125,2126,2127,2128,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,900,574,567 }; //all,beam,files
 	//573 is saturated I think 572 is as well
+	//I think something werid happened with 1876
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
 	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
@@ -2199,28 +2268,39 @@ void Part2A(){
 	}
 	int NUMSIZE=0;
 	int number[totalNUMSIZE]; //desired beam files
-	if(want1200 == true)
+	if (checkVoltage)
 	{
+		if(want1200 == true)
+		{
+			for(int i = 0; i<totalNUMSIZE; i++)
+			{
+				if(runToVoltage(totalnumber[i]) == 1200)
+				{
+					number[NUMSIZE] = totalnumber[i];
+					NUMSIZE++;
+				}
+			}
+		} 
+		else if(want1100 == true)
+		{
+			for(int i = 0; i<totalNUMSIZE; i++)
+			{
+				if(runToVoltage(totalnumber[i]) == 1100)
+				{
+					number[NUMSIZE] = totalnumber[i];
+					NUMSIZE++;
+				}
+			}
+		} 
+	}
+	else{
 		for(int i = 0; i<totalNUMSIZE; i++)
 		{
-			if(runToVoltage(totalnumber[i]) == 1200)
-			{
-				number[NUMSIZE] = totalnumber[i];
-				NUMSIZE++;
-			}
+			number[NUMSIZE] = totalnumber[i];
+			NUMSIZE++;
 		}
-	} 
-	else if(want1100 == true)
-	{
-		for(int i = 0; i<totalNUMSIZE; i++)
-		{
-			if(runToVoltage(totalnumber[i]) == 1100)
-			{
-				number[NUMSIZE] = totalnumber[i];
-				NUMSIZE++;
-			}
-		}
-	} 
+	}
+	
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -2231,7 +2311,12 @@ void Part2A(){
 	float energy[NUMSIZE];
 	for (int i = 0; i < NUMSIZE; ++i)//loop over beam files
 	{
-		fileLocation = filename+to_string(number[i])+extension;
+		if(number[i]>1000){
+			fileLocation = filename+to_string(number[i])+extension;
+		}
+		else{
+			fileLocation = filenameleadingzero+to_string(number[i])+extension;
+		}
 		file = new TFile(fileLocation.c_str());
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
@@ -2242,8 +2327,8 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-		//string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
-		//data->makeBigPlot(bigname);
+		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
+		data->makeBigPlot(bigname);
 		//data->compareHodo(number[i]);
 		cout<<"Energy:"<<energy[i]<<'\n';
 		data->plot();
@@ -2255,9 +2340,15 @@ void Part2A(){
 	}
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
-
-	if(want1200 == true){outFile.open("PbGlA12004x4.txt");} //1200V data
-	else if(want1100 == true){outFile.open("PbGlA11004x4.txt");} //1100V data
+	if (checkVoltage)
+	{
+		if(want1200 == true){outFile.open("PbGlA12004x4.txt");} //1200V data
+		else if(want1100 == true){outFile.open("PbGlA11004x4.txt");} //1100V data
+	}
+	else{
+		outFile.open("unknownvoltages.txt");
+	}
+	
 	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
@@ -2359,6 +2450,9 @@ int runToEnergy(int run){
 		case 631:
 			r=8;
 			break;
+		case 632:
+			r=12;
+			break;
 		case 544:
 			r= 8;
 			break;
@@ -2392,6 +2486,68 @@ int runToEnergy(int run){
 		case 580:
 			r=2;
 			break;
+		case 1876:
+			r=8; break;
+		case 1879:
+			r=8; break;
+		case 1882:
+			r=8; break;
+		case 1883:
+			r=8; break;
+		case 1888:
+			r=8; break;
+		case 1890:
+			r=6; break;
+		case 2128:
+			r=16; break;
+		case 2125:
+			r=12; break;
+		case 2126:
+			r=12; break;
+		case 2127:
+			r=16; break;
+		case 1889:
+			r=6; break;
+		case 1901:
+			r=4; break;
+		case 1902:
+			r=4; break;
+		case 1904:
+			r=2; break;
+		case 1906:
+			r=2; break;
+		case 1924:
+			r=12; break;
+		case 1925:
+			r=12; break;
+		case 1943:
+			r=24; break;
+		case 1945:
+			r=28; break;
+		case 2073:
+			r=3; break;
+		case 2074:
+			r=4; break;
+		case 2094:
+			r=6; break;
+		case 2095:
+			r=6; break;
+		case 2097:
+			r=8; break;
+		case 2098:
+			r=8; break;
+		case 2149:
+			r=20; break;
+		case 2150:
+			r=24; break;
+		case 2167:
+			r=28; break;
+		case 773:
+			r=10;
+			break;
+		case 772:
+			r=10;
+			break;
         default:
             r=-1;
             cout<<"Error in runToEnergy line:"<<__LINE__<<std::endl;
@@ -2405,6 +2561,99 @@ int runToVoltage(int run){
     int s = (int) run;
 
     switch (s){
+    	case 1945:
+			r=1000; 
+			break;
+    	case 2150:
+			r=1000;
+			break;
+    	case 1943:
+			r=1000;
+			break;
+    	case 2149:
+			r=1100;
+			break;
+    	case 1924:
+			r=1200;
+			break;
+    	case 1925:
+			r=1100;
+			break;
+    	case 2125:
+			r=1200;
+			break;
+    	case 2126:
+			r=1100;
+			break;
+    	case 632:
+			r=1100;
+			break;
+    	case 773:
+			r=1200;
+			break;
+		case 772:
+			r=1200;
+			break;
+    	case 1901:
+            r=1200;
+            break;
+        case 2074:
+            r=1200;
+            break;
+        case 2094:
+            r=1200;
+            break;
+        case 2095:
+            r=1100;
+            break;
+        case 1889:
+            r=1100;
+            break;
+        case 2127:
+            r=1100;
+            break;
+        case 2128: // probably saturated 
+            r=1200;
+            break;
+        case 2098:
+            r=1200;
+            break;
+        case 1883:
+            r=1200;
+            break;
+        case 1882:
+            r=1200;
+            break;
+        case 1879:
+            r=1200;
+            break;
+        case 1906:
+            r=1200;
+            break;
+        case 900:
+            r=1100;
+            break;
+        case 1904:
+            r=1100;
+            break;
+        case 2073:
+            r=1100;
+            break;
+        case 2097:
+            r=1100;
+            break;
+        case 1888:
+            r=1100;
+            break;
+         case 1890:
+            r=1200;
+            break;
+        case 1902:
+            r=1100;
+            break;
+        case 558:
+            r=1200;
+            break;
         case 558:
             r=1200;
             break;

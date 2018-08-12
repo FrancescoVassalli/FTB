@@ -3,8 +3,24 @@
 // This script takes the mean, sigma, mean error, and sigma error from Part2A.C's
 // 2 output files and plots the 1200V and 1100V data trendline together. 
 // It will also plot the combined resolution of each data set
+#include <Scalar.h>
+#include <sstream>
+#include "TH1D.h"
+#include "TChain.h"
+#include <iostream>
+#include "TF1.h"
+#include <TH2.h>
+#include <TStyle.h>
+#include <TCanvas.h>
+#include <TROOT.h>
+#include <TChain.h>
+#include <TFile.h>
+#include "NicePlots.C"
+// Header file for the classes stored in the TTree if any.
+#include "TClonesArray.h"
+#include "TObject.h"
 #include <queue>
-#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+//#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
 
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
