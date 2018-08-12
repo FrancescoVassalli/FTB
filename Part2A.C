@@ -2240,8 +2240,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool checkVoltage=false;
-	bool do1200V=false;
+	bool checkVoltage=true;
+	bool do1200V=true;
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_0000";
@@ -2561,8 +2561,11 @@ int runToVoltage(int run){
     int s = (int) run;
 
     switch (s){
+    	case 2167:
+			r=-1; 
+			break;
     	case 1945:
-			r=1000; 
+			r=-1; 
 			break;
     	case 2150:
 			r=1000;
@@ -2571,7 +2574,7 @@ int runToVoltage(int run){
 			r=1000;
 			break;
     	case 2149:
-			r=1100;
+			r=-1;
 			break;
     	case 1924:
 			r=1200;
@@ -2589,10 +2592,10 @@ int runToVoltage(int run){
 			r=1100;
 			break;
     	case 773:
-			r=1200;
+			r=-1;
 			break;
 		case 772:
-			r=1200;
+			r=-1;
 			break;
     	case 1901:
             r=1200;
@@ -2630,14 +2633,14 @@ int runToVoltage(int run){
         case 1906:
             r=1200;
             break;
-        case 900:
-            r=1100;
+        case 900: //may need to test this at 1100V 
+            r=1200;
             break;
         case 1904:
             r=1100;
             break;
         case 2073:
-            r=1100;
+            r=1200;
             break;
         case 2097:
             r=1100;
@@ -2650,9 +2653,6 @@ int runToVoltage(int run){
             break;
         case 1902:
             r=1100;
-            break;
-        case 558:
-            r=1200;
             break;
         case 558:
             r=1200;
@@ -2711,8 +2711,8 @@ int runToVoltage(int run){
 		case 654:
 			r= 1000;
 			break;
-		case 687: // not in list 
-			r= 1100;
+		case 687: // saturated 1100V run  28GeV
+			r= -1;
 			break;
 		case 572:
 			r= 0;
@@ -2733,8 +2733,8 @@ int runToVoltage(int run){
 			r=1100;
 			break;
         default:
-            r=2;
-            cout<<"warning voltage not found "<<std::endl;
+            r=0;
+            cout<<"warning voltage not found for run:"<<run<<std::endl;
             break;
     }
     return r;

@@ -3,10 +3,11 @@
 #include "TLegend.h"
 #include "TH1F.h"
 #include <limits.h>
+#include <Scalar.h>
 namespace Frannamespace{
 
 	short colors[7]={kRed,kBlue,kGreen+2,kMagenta+3,kOrange+4,kCyan+1,kMagenta-7};
-	short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar,kOpenFourTrianglesX};
+	short styles[7]={kFullCircle,kOpenSquare,kFullTriangleUp,kFullDiamond,kFullCross,kFullStar};
 	
 	void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize, double angle) {
 	  	TLatex l; //l.SetTextAlign(12); 
@@ -407,7 +408,7 @@ namespace Frannamespace{
 
 	}
 
-template<class T>
+/*template<class T>
 class Scalar
 {
 public:
@@ -487,7 +488,7 @@ private:
 	T value;
 	T uncertainty;
 	
-};
+};*/
 	/*template<class T>
 	Scalar<T> systematicError(const int SIZE, Scalar<T>* means){ // by extreme - mean over sqrt(3)
 		Scalar<T> max = max(SIZE,means);

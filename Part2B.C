@@ -15,7 +15,8 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
-#include "NicePlots.C"
+//#include "NicePlots.C"
+#include "Frannamespace.C"
 // Header file for the classes stored in the TTree if any.
 #include "TClonesArray.h"
 #include "TObject.h"
@@ -32,6 +33,7 @@ void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsiz
 
 
 using namespace std;
+using namespace Frannamespace;
 
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -533,6 +535,7 @@ void combinedResolution(string filename1, string filename2){
 }
 
 void Part2B(){
-	combinedplot(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
-	combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
+	singlefileAnalysis("PbGlA11004x4.txt");
+	//combinedplot(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
+	//combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
 }
