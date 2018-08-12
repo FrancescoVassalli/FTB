@@ -2241,7 +2241,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	bool checkVoltage=true;
-	bool do1200V=true;
+	int runVoltage=0;  //0 for 1000V 1 for 1100V and 2 for 1200V
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_0000";
@@ -2260,11 +2260,21 @@ void Part2A(){
 	// 1000V: 653,654
 	// 1100V: 652,544,574,577,578,580,579,572
 	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
-	bool want1200 = true;
+	bool want1200 = false;
 	bool want1100 = false;
-	if(!do1200V){
-		want1100=!want1100;
-		want1200=!want1200;
+	bool want1000 = false;
+	switch(runVoltage){
+		case 0:
+			want1000=true;
+			break;
+		case 1:
+			want1100=true;
+			break;
+		case 2:
+			want1200=true;
+			break;
+		default:
+			cout<<"Invalid runVoltage"<<std::endl;
 	}
 	int NUMSIZE=0;
 	int number[totalNUMSIZE]; //desired beam files
@@ -2292,6 +2302,16 @@ void Part2A(){
 				}
 			}
 		} 
+		else if(want1000 == true){
+			for(int i = 0; i<totalNUMSIZE; i++)
+			{
+				if(runToVoltage(totalnumber[i]) == 1000)
+				{
+					number[NUMSIZE] = totalnumber[i];
+					NUMSIZE++;
+				}
+			}
+		}
 	}
 	else{
 		for(int i = 0; i<totalNUMSIZE; i++)
@@ -2344,6 +2364,7 @@ void Part2A(){
 	{
 		if(want1200 == true){outFile.open("PbGlA12004x4.txt");} //1200V data
 		else if(want1100 == true){outFile.open("PbGlA11004x4.txt");} //1100V data
+		else if(want1000 ==true){outFile.open("PbGlA10004x4.txt");} //1000V data
 	}
 	else{
 		outFile.open("unknownvoltages.txt");

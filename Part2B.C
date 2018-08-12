@@ -70,6 +70,8 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	myText(.5,.37,kRed,Form("Linear = %0.4f #pm %0.4f",linearFactor,linearError),.05);
 	myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
 	myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
+	//canvas1->Close();
+	//delete canvas1;
 	return Scalar(linearFactor,linearError);
 }
 Scalar trendForcedQuiet(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -114,6 +116,9 @@ struct Data
 	Scalar mean;
 	Scalar sigma;
 	int energy;
+	inline friend std::ostream& operator<<(std::ostream& os, Data const & tc) {
+       return os <<"Data:"<<tc.energy<<"GeV \n\tmean:" << tc.mean <<"\t sigma:"<<tc.sigma;
+    }
 };
 
 queue<Data>* singlefileAnalysis(string filename){
@@ -159,12 +164,9 @@ queue<Data>* singlefileAnalysis(string filename){
 }
 
 void combinedplot(queue<Data>* data){
-	cout<<"Enter plot"<<endl;
+	cout<<"Enter plot data size:"<<data->size()<<endl;
 	const int SIZE = data->size();
-	float *ex;
-	ex= zeroArray(SIZE,ex);
 	TCanvas *canvas1 = new TCanvas();
-	cout<<"The main canvas"<<endl;
 	float energy[SIZE];
 	float mean[SIZE];
 	float meanerror[SIZE];
@@ -177,7 +179,7 @@ void combinedplot(queue<Data>* data){
 		i++;
 	}
 	cout<<"data arrays made"<<endl;
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,ex,meanerror); // how to set the uncertainty
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[SIZE-1]);
 	axisTitles(p_mean,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -213,7 +215,7 @@ void combinedplot(queue<Data>* data){
 }
 
 queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2){
-	cout<<"Enter combine"<<endl;
+	cout<<"Enter sort combine"<<endl;
 	queue<Data> *rdata = new queue<Data>();
 	while (!d1->empty()||!d2->empty())
 	{
@@ -249,7 +251,6 @@ queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2){
 			}
 		}
 	}
-	cout<<"Exit Combine"<<endl;
 	delete d1;
 	delete d2;
 	return rdata;
@@ -302,68 +303,47 @@ Data combinePoint(queue<Data>* temp)
 
 queue<Data>* combineAllPoints(queue<Data>* temp)
 {
-	queue<Data>* newData = new queue<Data>();
-	queue<Data>* currentpoints = new queue<Data>(); //queue for 'to be combined' particles
-	Data tempdata;
-	for (int i = 0; i < 7; ++i)
+	cout<<"Enter combineAll"<<'\n';
+	const int kTotalPoints = temp->size();
+	queue<Data>* rdata = new queue<Data>();
+	Data *working = queueToArray(*temp);
+	int bigI=0;
+	while(bigI < kTotalPoints)
 	{
-		tempdata.mean = temp->front().mean;
-		tempdata.sigma= temp->front().sigma;
-		tempdata.energy = temp->front().energy;
-		currentpoints->push(temp->front()); //put first point in queue where 'to be combined' particles are stored
-		cout<<"Energy"<<temp->front().energy<<endl;
-		temp->pop();
-		for (int j = 0; j < temp->size(); ++j)
-		{
-			if(temp->front().energy == tempdata.energy)
-			{
-				currentpoints->push(temp->front()); //put next point in queue where 'to be combined' particles are stored
-				temp->pop();
-			}
-			else{break;} //break if no more same energy points, they are sorted so this will work correctly
-		}
-		newData->push(combinePoint(currentpoints));
-		while(!currentpoints->empty())
-		{
-			currentpoints->pop();
-		}
+		int nextPoint=bigI;
+		queue<Data>* currentpoints = new queue<Data>(); //queue to be combined
+		while(nextPoint<=kTotalPoints&&working[nextPoint].energy==working[bigI].energy){
+			currentpoints->push(working[nextPoint]);
+			nextPoint++;
+		} 
+		cout<<bigI<<"-"<<nextPoint<<'\n';
+		cout<<"Energy"<<working[bigI].energy<<endl;
+		rdata->push(combinePoint(currentpoints));
+		bigI=nextPoint;
+		delete currentpoints;
 	}
-	return newData;
+	return rdata;
 }
 
-void resolution(queue<Data>* notCombined){
-	queue<Data>* temp = combineAllPoints(notCombined); //combined points
-	//queue<Data>* temp = notCombined; //not combined points
+void resolution(queue<Data>* temp){
 	int SIZE = temp->size();
-	float mean[SIZE]; 
-	float sigma[SIZE]; 
-	float meanerror[SIZE]; 
-	float sigmaerror[SIZE];
 	float energy[SIZE];
-	float ex[SIZE];
-	for (int i = 0; i < SIZE; ++i)
-	{
-		ex[i] = 0;
-		mean[i] = temp->front().mean.value;
-		meanerror[i] = temp->front().mean.uncertainty;
-		sigma[i] = temp->front().sigma.value;
-		sigmaerror[i] = temp->front().sigma.uncertainty;
-		energy[i] = temp->front().energy;
-		temp->pop();
-	}
-
-	TCanvas *canvas1 = new TCanvas();
 	float relativeE[SIZE];
 	float relativeU[SIZE];
-	for (int i = 0; i < SIZE; ++i)
+	int loopi = 0;
+	while (!temp->empty())
 	{
-		relativeE[i] = sigma[i]/energy[i];
-		relativeU[i]= errorDivide(sigma[i],sigmaerror[i],energy[i],meanerror[i]);
-		//cout<<relativeU[i]<<endl;
+		energy[loopi] = temp->front().energy;
+		Scalar res = temp->front().sigma/temp->front().mean;
+		relativeE[loopi] = res.value;
+		relativeU[loopi]= res.uncertainty;
+		loopi++;
+		temp->pop();
 	}
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,mean[SIZE-1]);
+	TCanvas *canvas1 = new TCanvas();
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,energy[SIZE-1]);
 	eF->SetLineColor(kRed);
-	TGraphErrors* ehist = new TGraphErrors(SIZE,energy,relativeE,ex,relativeU);
+	TGraphErrors* ehist = new TGraphErrors(SIZE,energy,relativeE,nullptr,relativeU);
 	ehist->Fit(eF,"M");
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
@@ -375,9 +355,7 @@ void resolution(queue<Data>* notCombined){
 	ehist->SetMarkerStyle(41);
 	ehist->SetMarkerColor(4);
 	ehist->SetLineColor(4);
-	ehist->SetMinimum(0);
-	ehist->SetMaximum(0.1);
-	ehist->GetXaxis()->SetLimits(0,18);
+	ehist->GetXaxis()->SetLimits(0,energy[SIZE-1]+1);
 	gPad->SetTicks();
 	ehist->Draw("AP");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
@@ -535,7 +513,13 @@ void combinedResolution(string filename1, string filename2){
 }
 
 void Part2B(){
-	singlefileAnalysis("PbGlA11004x4.txt");
-	//combinedplot(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
+	//singlefileAnalysis("PbGlA10004x4.txt");
+	queue<Data>* data = combineAllPoints(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
+	/*while(!data->empty()){
+		cout<<data->front();
+		data->pop();
+	}*/
+	//combinedplot(data);
+	resolution(data);
 	//combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
 }
