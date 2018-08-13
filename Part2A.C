@@ -2589,10 +2589,10 @@ int runToVoltage(int run){
 			r=-1; 
 			break;
     	case 2150:
-			r=1000;
+			r=-1;
 			break;
     	case 1943:
-			r=1000;
+			r=-1;
 			break;
     	case 2149:
 			r=-1;
