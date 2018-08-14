@@ -1,5 +1,8 @@
 
-#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+//#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+#include "Frannamespace.C"
+
+using namespace Frannamespace;
 
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
@@ -14,6 +17,9 @@ struct Data
 	Scalar mean;
 	Scalar sigma;
 	int energy;
+	inline friend std::ostream& operator<<(std::ostream& os, Data const & tc) {
+       return os <<"Data:"<<tc.energy<<"GeV \n\tmean:" << tc.mean <<"\t sigma:"<<tc.sigma;
+    }
 };
 
 namespace {
@@ -35,6 +41,7 @@ TGraphErrors* makePlots(queue<Data> data, TGraphErrors* lin, TGraphErrors* quad)
 	float meanerror[kSIZE];
 	int i=0;
 	while(!data.empty()){
+		cout<<data.front();
 		energy[i] = data.front().energy;
 		mean[i] = data.front().mean.value;
 		meanerror[i] = data.front().mean.uncertainty;
@@ -95,7 +102,7 @@ void linearity(queue<Data> data){
 	TF1* lin = new TF1("lin","[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(lin,"0");
 }
-Poly2 quadratic(queue<Data> data){
+/*Poly2 quadratic(queue<Data> data){
 	const int kSIZE = data.size();
 	float energy[kSIZE];
 	float mean[kSIZE];
@@ -112,7 +119,7 @@ Poly2 quadratic(queue<Data> data){
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[kSIZE-1]);
 	p_mean->Fit(poly,"0");
 	return Poly2(Scalar(0.),Scalar(poly->GetParameter(0),poly->GetParError(0)),Scalar(poly->GetParameter(1),poly->GetParError(1)));
-}
+}*/
 
 queue<Data>* singlefileAnalysis(string filename){
 	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
@@ -245,33 +252,26 @@ Data combinePoint(queue<Data>* temp)
 
 queue<Data>* combineAllPoints(queue<Data>* temp)
 {
-	queue<Data>* newData = new queue<Data>();
-	queue<Data>* currentpoints = new queue<Data>(); //queue for 'to be combined' particles
-	Data tempdata;
-	for (int i = 0; i < 7; ++i)
+	cout<<"Enter combineAll"<<'\n';
+	const int kTotalPoints = temp->size();
+	queue<Data>* rdata = new queue<Data>();
+	Data *working = queueToArray(*temp);
+	int bigI=0;
+	while(bigI < kTotalPoints)
 	{
-		tempdata.mean = temp->front().mean;
-		tempdata.sigma= temp->front().sigma;
-		tempdata.energy = temp->front().energy;
-		currentpoints->push(temp->front()); //put first point in queue where 'to be combined' particles are stored
-		cout<<"Energy"<<temp->front().energy<<endl;
-		temp->pop();
-		for (int j = 0; j < temp->size(); ++j)
-		{
-			if(temp->front().energy == tempdata.energy)
-			{
-				currentpoints->push(temp->front()); //put next point in queue where 'to be combined' particles are stored
-				temp->pop();
-			}
-			else{break;} //break if no more same energy points, they are sorted so this will work correctly
-		}
-		newData->push(combinePoint(currentpoints));
-		while(!currentpoints->empty())
-		{
-			currentpoints->pop();
-		}
+		int nextPoint=bigI;
+		queue<Data>* currentpoints = new queue<Data>(); //queue to be combined
+		while(nextPoint<=kTotalPoints&&working[nextPoint].energy==working[bigI].energy){
+			currentpoints->push(working[nextPoint]);
+			nextPoint++;
+		} 
+		cout<<bigI<<"-"<<nextPoint<<'\n';
+		cout<<"Energy"<<working[bigI].energy<<endl;
+		rdata->push(combinePoint(currentpoints));
+		bigI=nextPoint;
+		delete currentpoints;
 	}
-	return newData;
+	return rdata;
 }
 
 void plotCorrection(queue<Data> *data,Scalar m){
@@ -361,7 +361,7 @@ void plotCorrection(queue<Data> *data){
 }
 
 void EnergyCorrection(){
-	queue<Data> *data = combineAllPoints(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")));
+	queue<Data>* data =combineAllPoints(sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt")));
 	TGraphErrors *lin = new TGraphErrors(kANABELMAX);
 	TGraphErrors *quad = new TGraphErrors(kANABELMAX);
 	makePlots(*data,lin,quad);

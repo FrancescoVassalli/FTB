@@ -1,5 +1,4 @@
 // Taken from Francescos Git on 4/17/18 
-
 #include "TLegend.h"
 #include "TH1F.h"
 #include <limits.h>

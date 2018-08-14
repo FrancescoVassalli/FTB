@@ -513,13 +513,13 @@ void combinedResolution(string filename1, string filename2){
 }
 
 void Part2B(){
-	//singlefileAnalysis("PbGlA10004x4.txt");
-	queue<Data>* data =sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt"));
+	singlefileAnalysis("PbGlA10004x4.txt");
+	//queue<Data>* data =sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt"));
 	/*while(!data->empty()){
 		cout<<data->front();
 		data->pop();
 	}*/
-	combinedplot(data);
+	//combinedplot(data);
 	//resolution(data);
 	//combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
 }
