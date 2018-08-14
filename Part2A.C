@@ -54,6 +54,10 @@ public:
 	}
 	~PlotWithLine(){ // there might be some mem leakage here 
 	}
+	virtual TH1* get_main(){
+		return main;
+	}
+
 protected:
 	TH1 *main;
 	
@@ -89,6 +93,9 @@ public:
 	void Draw(){
 		main->Draw();
 		gaus->Draw("same");
+	}
+	TF1* get_gaus(){
+		return gaus;
 	}
 	double getUpBound(){
 		return upBound;
@@ -311,7 +318,6 @@ public:
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		plotsexits[0]=true;
-		tc->Draw();
 		pbglPlot->Draw();
 		TF1 *gaus = makeGaus();
 		gaus->Draw("same");
@@ -815,12 +821,24 @@ public:
 		getHodoH(7);
 		getHodoH(8);
 	}
+	void fitPlot(string name){
+		TCanvas *tc = new TCanvas();
+		TH1 *p_fit = mainGaus->get_main();
+		p_fit->Divide(mainGaus->get_gaus());
+		p_fit->Draw();
+		name+=".pdf";
+		tc->Print(name.c_str());
+	}
 	void makeBigPlot(string name){
 		makeAllPlots();
 		TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
 		tc->Divide(5,5,0.01,0.01);
 		tc->cd(23); 
-		mainGaus->Draw();
+		TH1F *fii = (TH1F*)pbglPlot->Clone();
+		fii->Divide(mainGaus->get_gaus());
+		fii->Draw();
+		fii->GetYaxis()	->SetRangeUser(0,5);
+		fii->GetXaxis()	->SetRangeUser(2000,2400);
 		myText(.6,.8,kBlack,"PbGl E",.16);
 		tc->cd(24); 
 		pbglCCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
@@ -2241,7 +2259,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	bool checkVoltage=true;
-	int runVoltage=0;  //0 for 1000V 1 for 1100V and 2 for 1200V
+	int runVoltage=2;  //0 for 1000V 1 for 1100V and 2 for 1200V
+	bool special =true;
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_0000";
@@ -2251,10 +2270,11 @@ void Part2A(){
 	filenameleadingzero=fileLocation+filenameleadingzero;
 	//const int totalNUMSIZE=19;
 	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
-	const int totalNUMSIZE=50;
+	const int totalNUMSIZE=1;
 	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574}; //all beam files
 	//set of all the files including haggerty's unsure of the voltages will do mostly by hand
-	int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1904,1906,1924,1925,1943,1945,2073,2074,2094,2095,2097,2098,2125,2126,2127,2128,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,900,574,567 }; //all,beam,files
+	//int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1904,1906,1924,1925,1943,1945,2073,2074,2094,2095,2097,2098,2125,2126,2127,2128,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,900,574,567 }; //all,beam,files
+	int totalnumber[] = {2073};
 	//573 is saturated I think 572 is as well
 	//I think something werid happened with 1876
 	// 1000V: 653,654
@@ -2349,6 +2369,7 @@ void Part2A(){
 		energy[i]=data->getEnergy();
 		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		data->makeBigPlot(bigname);
+		//data->fitPlot("fit3");
 		//data->compareHodo(number[i]);
 		cout<<"Energy:"<<energy[i]<<'\n';
 		data->plot();
