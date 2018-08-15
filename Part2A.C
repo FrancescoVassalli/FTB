@@ -116,6 +116,7 @@ public:
 	//this constructor makes the TH1Ds and tracks the voltage and energy
 	//descriptions of the plots are in the declarations 
 	OfficalBeamData(string name, int voltage, float beamEnergy) : beamVoltage(voltage), name(name), beamEnergy(beamEnergy){
+		runNumber = atoi(name.c_str());
 		pbglPlot = new TH1D(name.c_str(),"",800,0,10000); // note the bounds are weird
 		pbglPlot->Sumw2();
 		pbglUnFit = new TH1D(string(name+" no fit").c_str(),"",200,0,10000); 
@@ -270,7 +271,13 @@ public:
 		return cerenkov>CERENKOVcut && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
 	}
 	inline bool noVeto(double* veto){
-		return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
+		if(runNumber<1000){
+			return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<VETOcut;
+		}
+		else{ // the secod data set has runnumber >1000 and the 4th veto was moved slightly
+			return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<.25;
+
+		}
 	}
 	inline bool passHodoV(double* hodo){
 		return hodo[0]>HODOVcut[0] ^ hodo[1]>HODOVcut[1] ^ hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5] ^ hodo[6]>HODOVcut[6] ^ hodo[7]>HODOVcut[7];
@@ -1014,6 +1021,7 @@ private:
 	CutPlot *cut_veto4=NULL;
 
 	string name; // a descriptive class name used for printing 
+	int runNumber=0;
 	
 	//internal booleans for tracking what values have been initialized 
 	bool made=false; 
@@ -2260,7 +2268,7 @@ void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	bool checkVoltage=true;
 	int runVoltage=2;  //0 for 1000V 1 for 1100V and 2 for 1200V
-	bool special =true;
+	bool special =false;
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_0000";
@@ -2268,18 +2276,11 @@ void Part2A(){
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
 	filenameleadingzero=fileLocation+filenameleadingzero;
-	//const int totalNUMSIZE=19;
-	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574,577,578,579,580}; //all beam files
-	const int totalNUMSIZE=1;
-	//int totalnumber[] = {551,558,563,567,652,776,777,809,810,829,830,849,859,544,574}; //all beam files
-	//set of all the files including haggerty's unsure of the voltages will do mostly by hand
-	//int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1904,1906,1924,1925,1943,1945,2073,2074,2094,2095,2097,2098,2125,2126,2127,2128,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,900,574,567 }; //all,beam,files
-	int totalnumber[] = {2073};
-	//573 is saturated I think 572 is as well
-	//I think something werid happened with 1876
-	// 1000V: 653,654
-	// 1100V: 652,544,574,577,578,580,579,572
-	// 1200V: 563,776,777,830,849,551,810,859,558,809,829,567
+	const int totalNUMSIZE=46;
+	//set of all the unsaturated files including haggerty's unsure of the voltages will do mostly by hand
+	int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1906,1925,1943,1945,2073,2074,2094,2095,2097,2098,2126,2127,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,900,574,567 }; //all,beam,files
+	//saturated : 573 572 2125 2128 1924 
+	//undersaturated: 578 579 580 1904 
 	bool want1200 = false;
 	bool want1100 = false;
 	bool want1000 = false;
@@ -2590,6 +2591,12 @@ int runToEnergy(int run){
 		case 772:
 			r=10;
 			break;
+		case 1926:
+			r=16; 
+			break;
+		case 2045:
+			r=2; 
+			break;
         default:
             r=-1;
             cout<<"Error in runToEnergy line:"<<__LINE__<<std::endl;
@@ -2603,6 +2610,12 @@ int runToVoltage(int run){
     int s = (int) run;
 
     switch (s){
+    	case 2045:
+			r=1200; 
+			break;
+    	case 1926:
+			r=1100; 
+			break;
     	case 2167:
 			r=-1; 
 			break;
