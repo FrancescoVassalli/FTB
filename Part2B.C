@@ -96,7 +96,7 @@ TGraphErrors* unitConverter(TGraphErrors* graph, const Scalar& scale,const int k
 		values[i]=temp.value;
 		errors[i]=temp.uncertainty;
 	}
-	TGraphErrors *r =new TGraphErrors(graph->GetX(),values,graph->GetEX(),errors);
+	TGraphErrors *r =new TGraphErrors(kSIZE,graph->GetX(),values,graph->GetEX(),errors);
 	delete graph;
 	return r;
 }
@@ -125,9 +125,7 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* sigm
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	p_mean->Fit(lin,"M0");
 	Scalar slope(lin->GetParameter(0),lin->GetParError(0));
-	cout<<slope;
-	cout<<slope.pow(-1);
-	return unitConverter(p_mean,slope.pow(-1),0,energy[SIZE-1]);
+	return unitConverter(p_mean,slope,SIZE);
 }
 
 struct Data
@@ -185,11 +183,39 @@ TGraphErrors* singlefileConverter(string filename){
 	return r;
 }
 
+queue<Data>* combineAllPoints(queue<Data> *temp);
+
+void combineAllPoints(TGraphErrors* graph){
+	const int kSIZE=graph->GetXaxis()->GetLast();
+	queue<Data> *temp = new queue<Data>();
+	double *y = graph->GetY();
+	double *energy = graph->GetX();
+	double *yu = graph->GetEY();
+	delete graph;
+	for (int i = 0; i < kSIZE; ++i)
+	{
+		Data dtemp;
+		dtemp.energy=energy[i];
+		dtemp.mean=(y[i],yu[i]);
+		dtemp.sigma=Scalar(1,1);
+		temp->push(dtemp);
+	}
+	temp = combineAllPoints(temp);
+	for (int i = 0; i < temp->size(); ++i)
+	{
+		energy[i] = temp.front().energy;
+		y[i] = temp.front().mean.value;
+		yu[i] = temp.front().mean.uncertainty;
+	}
+	graph=new TGraphErrors(energy,y,nullptr,yu);
+}
+
 TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
 	TCanvas* tc = new TCanvas();
 	TObjArray colleciton;
 	colleciton.Add(g2);
 	g1->Merge(&colleciton);
+	combineAllPoints(g1);
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -383,11 +409,10 @@ Data weightedAverage(queue<Data>* temp)
 	return tempdata;
 }
 
+
 Data combinePoint(queue<Data>* temp)
 {
 	Data tempdata;
-	int tempenergy = temp->front().energy;
-	int size = temp->size();
 	if(temp->size() == 1) //only one point, return this point
 	{
 		tempdata.mean = temp->front().mean;
