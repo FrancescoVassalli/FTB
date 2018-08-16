@@ -15,6 +15,7 @@
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
+#include <TMap.h>
 //#include "NicePlots.C"
 #include "Frannamespace.C"
 // Header file for the classes stored in the TTree if any.
@@ -22,6 +23,16 @@
 #include "TObject.h"
 #include <queue>
 //#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
+
+namespace {
+	int nameCount=0;
+}
+
+char* namer(int* count){
+	std::string r= std::to_string(*count);
+	*count=*count+1;
+	return r.c_str();
+}
 
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
@@ -41,15 +52,15 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	ex= zeroArray(SIZE,ex);
 	TCanvas *canvas1 = new TCanvas();
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,ex,meanerror); // how to set the uncertainty
-	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
-	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[SIZE-1]);
+	TF1* lin = new TF1(namer(&nameCount),"[0]*x",0,energy[SIZE-1]);
+	TF1* poly = new TF1(namer(&nameCount),"[1]*x*x+[0]*x",0,energy[SIZE-1]);
 	axisTitles(p_mean,"Beam Energy GeV","Mean PbGl");
 	//gNice();
 	p_mean->Fit(poly);
 	double nonLinearFactor = poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(1);
 	float chi2 = poly->GetChisquare();
-	p_mean->Fit(lin,"0");
+	p_mean->Fit(lin,"M0");
 	lin->SetLineColor(kRed);
 	double linearFactor = lin->GetParameter(0);
 	//cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
@@ -74,6 +85,19 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	//delete canvas1;
 	return Scalar(linearFactor,linearError);
 }
+
+void unitConverter(TGraphErrors* graph, const Scalar& scale,double lowRange=0,double highrange=0){
+	if (highrange==0&&lowRange==0)
+	{
+		highrange=graph->GetXaxis()->GetBinUpEdge(graph->GetXaxis()->GetLast());
+	}
+	TF1* converter = new TF1(namer(&nameCount),"[0]+[1]x",0,highrange);
+	converter->SetParameter(0,scale.value);
+	converter->SetParError(0,scale.uncertainty);
+	converter->SetParameter(1,0);
+	graph->Apply(converter);
+}
+
 Scalar trendForcedQuiet(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
 	float *ex;
 	ex= zeroArray(SIZE,ex);
@@ -82,33 +106,26 @@ Scalar trendForcedQuiet(const int SIZE,float*energy, float* mean, float* sigma, 
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,energy[SIZE-1]);
 	axisTitles(p_mean,"Beam Energy GeV","Mean PbGl");
-	//gNice();
 	p_mean->Fit(poly);
 	double nonLinearFactor = poly->GetParameter(1);
 	double nonLinearError = poly->GetParError(1);
 	float chi2 = poly->GetChisquare();
-	p_mean->Fit(lin,"0");
-	lin->SetLineColor(kRed);
+	p_mean->Fit(lin,"M0");
 	double linearFactor = lin->GetParameter(0);
-	//cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
 	double linearError = lin->GetParError(0);
-	float chi = lin->GetChisquare();
-	int ndf = lin->GetNDF();
 	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
-	//cout<<"Ratio: "<<ratiouncertainty<<endl;
-	p_mean->SetMarkerStyle(kOpenCircle);
-	//doubleZero(p_mean,mean[SIZE-1]+1000,energy[SIZE-1]+1);
-	//p_mean->Draw("AP");
-	//p_mean->GetXaxis()->SetLimits(0,energy[SIZE-1]+1);
-	//poly->SetLineColor(kBlue);
-	//poly->Draw("same");
-	//lin->Draw("same");
-	//myText(.5,.27,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.05);
-	//myText(.5,.22,kRed,Form("Linear #chi^{2}/NDF: %0.2f",chi/ndf),.05);
-	//myText(.5,.37,kRed,Form("C1 = %0.4f #pm %0.2f",linearFactor,linearError),.05);
-	//myText(.5,.32,kRed,Form("C2: %0.3f#pm %0.3f",nonLinearFactor,nonLinearError),.05);
-	//myText(.5,.17,kRed,Form("Quad #chi^{2}/NDF: %0.2f",chi2/ndf),.05);
 	return Scalar(linearFactor,linearError);
+}
+
+TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
+	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
+	p_mean->Fit(lin,"M0");
+	Scalar slope(lin->GetParameter(0),lin->GetParError(0));
+	cout<<slope;
+	cout<<slope.pow(-1);
+	unitConverter(p_mean,slope.pow(-1),0,energy[SIZE-1]);
+	return p_mean;	
 }
 
 struct Data
@@ -116,10 +133,89 @@ struct Data
 	Scalar mean;
 	Scalar sigma;
 	int energy;
+	Data operator /(Data& in){
+		Scalar scale = in.mean/Scalar(in.energy);
+		mean/=scale;
+		sigma/=scale;
+		return *this;
+	}
 	inline friend std::ostream& operator<<(std::ostream& os, Data const & tc) {
        return os <<"Data:"<<tc.energy<<"GeV \n\tmean:" << tc.mean <<"\t sigma:"<<tc.sigma;
     }
 };
+
+queue<Data>* pointScaling(queue<Data>* inData){
+	const int kSIZE=inData->size();
+	Data* points = queueToArray(*inData);
+	int i=0;
+	while (points[i].energy!=4&&i < kSIZE) i++;
+	Data scale = points[i];
+	i=0;
+	delete inData;
+	cout<<"Scaling with: \n \t"<<scale;
+	queue<Data> *rdata = new queue<Data>;
+	while(i<kSIZE){
+		rdata->push(points[i]/scale);
+		i++;
+	}
+	delete [] points;
+	return rdata;
+}
+
+TGraphErrors* singlefileConverter(string filename){
+	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
+	cout<<"Opened file!"<<endl;
+	const int LINES = 6;
+	queue<float> input[LINES]; //create array of queues
+	string intemp;
+	stringstream ss;
+	for (int i = 0; i < LINES; ++i) //loop over each beam files data
+	{
+		inFile>>intemp;
+		ss<<intemp;
+		getline(ss,intemp,',');
+		while(getline(ss,intemp,',')){   //loop to put data from each line into each queue at the same place in the arrays
+			input[i].push(stof(intemp));
+		}
+		ss.clear();
+	}
+	TGraphErrors* r =graphConvert(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
+	TCanvas *tc = new TCanvas();
+	r->Draw("AP";)
+}
+
+TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
+	TCanvas* tc = new TCanvas();
+	TObjArray colleciton;
+	colleciton.Add(g2);
+	g1->Merge(&colleciton);
+	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
+	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
+	g1->Fit(poly);
+	double nonLinearFactor = poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(1);
+	double polylinear = poly->GetParameter(0);
+	double polylinearError = poly->GetParError(0);
+	float chi2 = poly->GetChisquare();
+	g1->Fit(lin,"M0");
+	lin->SetLineColor(kRed);
+	double linearFactor = lin->GetParameter(0);
+	double linearError = lin->GetParError(0);
+	float chi = lin->GetChisquare();
+	int ndf = lin->GetNDF();
+	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	g1->SetMarkerStyle(kOpenCircle);
+	g1->Draw("AP");
+	poly->SetLineColor(kBlue);
+	poly->Draw("same");
+	lin->Draw("same");
+	myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
+	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
+	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	return g1;
+}
 
 queue<Data>* singlefileAnalysis(string filename){
 	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
@@ -148,7 +244,8 @@ queue<Data>* singlefileAnalysis(string filename){
 	Data temp;
 	while (!input[5].empty())
 	{
-		temp.mean = Scalar(input[1].front(),input[2].front())/slope; //these Q's might be empty b/c of the queueToarray
+		//use TGraph->Apply(TF1) here insted
+		temp.mean = Scalar(input[1].front(),input[2].front())/slope; //DANGER DANGER there is unaccounted covariance in this calculation
 		temp.sigma = Scalar(input[3].front(),input[4].front())/slope;
 		temp.energy = input[5].front();
 		rdata->push(temp);
@@ -158,24 +255,25 @@ queue<Data>* singlefileAnalysis(string filename){
 		input[4].pop();
 		input[5].pop();
 	}
+	//rdata=pointScaling(rdata);
 	//return all the arrays in terms of energy 
-	cout<<slope;
+	//cout<<slope;
 	return rdata;
 }
 
-void combinedplot(queue<Data>* data){
-	cout<<"Enter plot data size:"<<data->size()<<endl;
-	const int SIZE = data->size();
+TF1* combinedplot(queue<Data> data){
+	cout<<"Enter plot data size:"<<data.size()<<endl;
+	const int SIZE = data.size();
 	TCanvas *canvas1 = new TCanvas();
 	float energy[SIZE];
 	float mean[SIZE];
 	float meanerror[SIZE];
 	int i=0;
-	while(!data->empty()){
-		energy[i] = data->front().energy;
-		mean[i] = data->front().mean.value;
-		meanerror[i] = data->front().mean.uncertainty;
-		data->pop();
+	while(!data.empty()){
+		energy[i] = data.front().energy;
+		mean[i] = data.front().mean.value;
+		meanerror[i] = data.front().mean.uncertainty;
+		data.pop();
 		i++;
 	}
 	cout<<"data arrays made"<<endl;
@@ -190,7 +288,7 @@ void combinedplot(queue<Data>* data){
 	double polylinear = poly->GetParameter(0);
 	double polylinearError = poly->GetParError(0);
 	float chi2 = poly->GetChisquare();
-	p_mean->Fit(lin,"0");
+	p_mean->Fit(lin,"M0");
 	lin->SetLineColor(kRed);
 	double linearFactor = lin->GetParameter(0);
 	//cout<<"C2/C1: "<<nonLinearFactor<<" / "<<linearFactor<<" = "<<nonLinearFactor/linearFactor<<endl;
@@ -211,6 +309,7 @@ void combinedplot(queue<Data>* data){
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
 	//myText(.15,.77,kRed,Form("Linear #chi^{2}: %0.2f NDF: %i",chi,ndf),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	return lin;
 
 }
 
@@ -322,6 +421,7 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 		bigI=nextPoint;
 		delete currentpoints;
 	}
+	delete temp;
 	return rdata;
 }
 
@@ -343,8 +443,10 @@ void resolution(queue<Data>* temp){
 	TCanvas *canvas1 = new TCanvas();
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,energy[SIZE-1]);
 	eF->SetLineColor(kRed);
+	eF->SetParLimits(0,0,1000);
+	eF->SetParLimits(0,0,1000);
 	TGraphErrors* ehist = new TGraphErrors(SIZE,energy,relativeE,nullptr,relativeU);
-	ehist->Fit(eF,"M");
+	ehist->Fit(eF,"MBI");
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
 	float errors[2];
@@ -435,93 +537,38 @@ void resolutionAnabel(queue<Data>* notCombined) //doing resolution vs 1/sqrt(E)
 	myText(.24,.8,kRed,Form("Intercept: %0.6f#pm%0.6f",eB,errors[1]),.05);
 }
 
-void combinedResolution(string filename1, string filename2){
-	cout<<"Started Resolution!"<<endl;
-	ifstream inFile1 (filename1.c_str()); //txt file containing the first data file from Part2A
-	cout<<"Opened file2!"<<endl;
-	const int LINES = 6;
-	queue<float> input1[LINES]; //create array of queues
-	string intemp1;
-	stringstream ss1;
-	for (int i = 0; i < LINES; ++i) //loop over each beam files data
-	{
-		inFile1>>intemp1;
-		ss1<<intemp1;
-		getline(ss1,intemp1,',');
-		//cout<<intemp<<":\n";
-		while(getline(ss1,intemp1,',')){   //loop to put data from each line into each queue at the same place in the arrays
-			input1[i].push(stof(intemp1));
-			//cout<<intemp<<endl;
-		}
-		ss1.clear();
+/*void chiAnalysis(queue<Data> data, TF1* lin){
+	const int SIZE = data.size();
+	TCanvas *canvas1 = new TCanvas();
+	float x[SIZE];
+	float y[SIZE];
+	float yu[SIZE];
+	int i=0;
+	while(!data.empty()){
+		x[i] = data.front().energy;
+		Scalar temp = data.front().mean-lin(data.front().energy);
+		temp/=data.front().sigma;
+		y[i] = temp.value;
+		yu[i] = temp.uncertainty;
+		data.pop();
+		i++;
 	}
-	Scalar slope1 = trendForcedQuiet(input1[5].size(),queueToArray(input1[5]),queueToArray(input1[1]),queueToArray(input1[2]),queueToArray(input1[3]),queueToArray(input1[4]));
-	queue<Data>* rdata1= new queue<Data>();
-	Data temp1;
-	cout<<"Reading Into Data Queue"<<endl;
-	while (!input1[5].empty())
-	{
-		temp1.mean = Scalar(input1[1].front(),input1[2].front())/slope1; //these Q's might be empty b/c of the queueToarray
-		temp1.sigma = Scalar(input1[3].front(),input1[4].front())/slope1;
-		temp1.energy = input1[5].front();
-		rdata1->push(temp1);
-		input1[1].pop();
-		input1[2].pop();
-		input1[3].pop();
-		input1[4].pop();
-		input1[5].pop();
-		//cout<<"work"<<i<<'\n';
-	}
-	//inFile1.close();
-	ifstream inFile2 (filename2.c_str()); //txt file containing the 2nd data file from Part2A
-	cout<<"Opened file3!"<<endl;
-	queue<float> input2[LINES]; //create array of queues
-	string intemp2;
-	stringstream ss2;
-	for (int i = 0; i < LINES; ++i) //loop over each beam files data
-	{
-		inFile2>>intemp2;
-		ss2<<intemp2;
-		getline(ss2,intemp2,',');
-		//cout<<intemp<<":\n";
-		while(getline(ss2,intemp2,',')){   //loop to put data from each line into each queue at the same place in the arrays
-			input2[i].push(stof(intemp2));
-			//cout<<intemp<<endl;
-		}
-		ss2.clear();
-	}
-	Scalar slope2 = trendForcedQuiet(input2[5].size(),queueToArray(input2[5]),queueToArray(input2[1]),queueToArray(input2[2]),queueToArray(input2[3]),queueToArray(input2[4]));
-	queue<Data>* rdata2 = new queue<Data>();
-	Data temp2;
-	while (!input2[5].empty())
-	{
-		temp2.mean = Scalar(input2[1].front(),input2[2].front())/slope2; //these Q's might be empty b/c of the queueToarray
-		temp2.sigma = Scalar(input2[3].front(),input2[4].front())/slope2;
-		temp2.energy = input2[5].front();
-		rdata2->push(temp2);
-		input2[1].pop();
-		input2[2].pop();
-		input2[3].pop();
-		input2[4].pop();
-		input2[5].pop();
-		//cout<<"work"<<i<<'\n';
-	}
-	//inFile2.close();
-	queue<Data>* rdata = sortcombine(rdata1, rdata2);
-	resolution(rdata);
-	//resolutionAnabel(rdata);
-}
+	cout<<"data arrays made"<<endl;
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
+	//plot 
+}*/
 
 void Part2B(){
-	//singlefileAnalysis("PbGlA10004x4.txt");
+	//singlefileAnalysis("PbGlA12004x4.txt");
 	//queue<Data>* data =sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt"));
-	queue<Data>* data =sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt"));
+	doubleFileAnalysis(singlefileConverter("PbGlA12004x4.txt"),singlefileConverter("PbGlA11004x4.txt"));
+	//queue<Data>* data =sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt"));
 	/*while(!data->empty()){
 		cout<<data->front();
 		data->pop();
 	}*/
-	data = combineAllPoints(data);
-	combinedplot(data);
+	//data = combineAllPoints(data);
+	//combinedplot(data);
 	//resolution(data);
 	//combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
 }
