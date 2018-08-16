@@ -162,7 +162,20 @@ queue<Data>* pointScaling(queue<Data>* inData){
 	return rdata;
 }
 
-TGraphErrors* singlefileConverter(string filename){
+TGraphErrors* makeResolutionFromArrays(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
+	float y[SIZE];
+	float yu[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		Scalar tmean(mean[i],meanerror[i]);
+		Scalar tsigma(sigma[i],sigmaerror[i]);
+		y=(tsigma/tmean).value;
+		yu=(tsigma/tmean).uncertainty;
+	}
+	return new TGraphErrors(SIZE,energy,y,nullptr,yu); // how to set the uncertainty
+}
+
+pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
 	cout<<"Opened file!"<<endl;
 	const int LINES = 6;
@@ -179,8 +192,9 @@ TGraphErrors* singlefileConverter(string filename){
 		}
 		ss.clear();
 	}
-	TGraphErrors* r =graphConvert(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
-	return r;
+	TGraphErrors* lin =graphConvert(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
+	TGraphErrors* res = makeResolutionFromArrays(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
+	return pair(res);
 }
 
 queue<Data>* combineAllPoints(queue<Data>* temp);
@@ -214,6 +228,41 @@ void combineAllPoints(TGraphErrors* graph){
 }
 
 TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
+	TCanvas* tc = new TCanvas();
+	TObjArray colleciton;
+	colleciton.Add(g2);
+	g1->Merge(&colleciton);
+	combineAllPoints(g1);
+	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
+	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
+	g1->Fit(poly);
+	double nonLinearFactor = poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(1);
+	double polylinear = poly->GetParameter(0);
+	double polylinearError = poly->GetParError(0);
+	float chi2 = poly->GetChisquare();
+	g1->Fit(lin,"M0");
+	lin->SetLineColor(kRed);
+	double linearFactor = lin->GetParameter(0);
+	double linearError = lin->GetParError(0);
+	float chi = lin->GetChisquare();
+	int ndf = lin->GetNDF();
+	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	g1->SetMarkerStyle(kOpenCircle);
+	g1->Draw("AP");
+	poly->SetLineColor(kBlue);
+	poly->Draw("same");
+	lin->Draw("same");
+	myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
+	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
+	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	return g1;
+}
+
+
+TGraphErrors* doubleFileAnalysisResolution(TGraphErrors* g1, TGraphErrors *g2){
 	TCanvas* tc = new TCanvas();
 	TObjArray colleciton;
 	colleciton.Add(g2);
@@ -616,14 +665,10 @@ void resolutionAnabel(queue<Data>* notCombined) //doing resolution vs 1/sqrt(E)
 void Part2B(){
 	//singlefileAnalysis("PbGlA12004x4.txt");
 	//queue<Data>* data =sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt"));
-	doubleFileAnalysis(singlefileConverter("PbGlA12004x4.txt"),singlefileConverter("PbGlA11004x4.txt"));
-	//queue<Data>* data =sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt"));
-	/*while(!data->empty()){
-		cout<<data->front();
-		data->pop();
-	}*/
-	//data = combineAllPoints(data);
-	//combinedplot(data);
-	//resolution(data);
-	//combinedResolution("PbGlA12004x4.txt","PbGlA11004x4.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGlA11004x4.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGlA12004x4.txt");
+
+	doubleFileAnalysis(lin1.first,lin2.first);
+	//doubleFileAnalysisResolusion(lin1.second,lin2.second);
+	
 }
