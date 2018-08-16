@@ -183,29 +183,34 @@ TGraphErrors* singlefileConverter(string filename){
 	return r;
 }
 
-int combineAllPoints(Data *temp);
+queue<Data>* combineAllPoints(queue<Data>* temp);
 
-TGraphErrors* combineAllPoints(TGraphErrors* graph){
+void combineAllPoints(TGraphErrors* graph){
 	int SIZE=graph->GetN();
 	double *y = graph->GetY();
 	double *energy = graph->GetX();
 	double *yu = graph->GetEY();
-	Data temp[SIZE];
-	delete graph;
+	queue<Data> *temp = new queue<Data>();
 	for (int i = 0; i < SIZE; ++i)
 	{
-		temp[i].energy=energy[i];
-		temp[i].mean=(y[i],yu[i]);
-		temp[i].sigma=Scalar(1,1);
+		Data dtemp;
+		dtemp.energy=energy[i];
+		dtemp.mean=Scalar(y[i],yu[i]);
+		dtemp.sigma=Scalar(1,1);
+		temp->push(dtemp);
 	}
-	SIZE= combineAllPoints(temp);
+	temp= combineAllPoints(temp);
+	SIZE = temp->size();
 	for (int i = 0; i < SIZE; ++i)
 	{
-		energy[i] = temp[i].energy;
-		y[i] = temp[i].mean.value;
-		yu[i] = temp[i].mean.uncertainty;
+		energy[i] = temp->front().energy;
+		y[i] = temp->front().mean.value;
+		cout<<temp->front().mean;
+		yu[i] = temp->front().mean.uncertainty;
+		temp->pop();
 	}
-	return new TGraphErrors(SIZE,energy,y,nullptr,yu);
+	graph->Set(SIZE);
+	delete temp;
 }
 
 TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
@@ -213,7 +218,7 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
 	TObjArray colleciton;
 	colleciton.Add(g2);
 	g1->Merge(&colleciton);
-	g1=combineAllPoints(g1);
+	combineAllPoints(g1);
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -471,7 +476,7 @@ int combineAllPoints(Data* working, int SIZE)
 	}
 	delete [] working;
 	SIZE = rdata->size();
-	working=queueToArray(rdata);
+	working=queueToArray(*rdata);
 	return SIZE;
 }
 
