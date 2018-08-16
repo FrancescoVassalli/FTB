@@ -183,31 +183,29 @@ TGraphErrors* singlefileConverter(string filename){
 	return r;
 }
 
-queue<Data>* combineAllPoints(queue<Data> *temp);
+int combineAllPoints(Data *temp);
 
-void combineAllPoints(TGraphErrors* graph){
-	const int kSIZE=graph->GetXaxis()->GetLast();
-	queue<Data> *temp = new queue<Data>();
+TGraphErrors* combineAllPoints(TGraphErrors* graph){
+	int SIZE=graph->GetN();
 	double *y = graph->GetY();
 	double *energy = graph->GetX();
 	double *yu = graph->GetEY();
+	Data temp[SIZE];
 	delete graph;
-	for (int i = 0; i < kSIZE; ++i)
+	for (int i = 0; i < SIZE; ++i)
 	{
-		Data dtemp;
-		dtemp.energy=energy[i];
-		dtemp.mean=(y[i],yu[i]);
-		dtemp.sigma=Scalar(1,1);
-		temp->push(dtemp);
+		temp[i].energy=energy[i];
+		temp[i].mean=(y[i],yu[i]);
+		temp[i].sigma=Scalar(1,1);
 	}
-	temp = combineAllPoints(temp);
-	for (int i = 0; i < temp->size(); ++i)
+	SIZE= combineAllPoints(temp);
+	for (int i = 0; i < SIZE; ++i)
 	{
-		energy[i] = temp.front().energy;
-		y[i] = temp.front().mean.value;
-		yu[i] = temp.front().mean.uncertainty;
+		energy[i] = temp[i].energy;
+		y[i] = temp[i].mean.value;
+		yu[i] = temp[i].mean.uncertainty;
 	}
-	graph=new TGraphErrors(energy,y,nullptr,yu);
+	return new TGraphErrors(SIZE,energy,y,nullptr,yu);
 }
 
 TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
@@ -215,7 +213,7 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
 	TObjArray colleciton;
 	colleciton.Add(g2);
 	g1->Merge(&colleciton);
-	combineAllPoints(g1);
+	g1=combineAllPoints(g1);
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -449,6 +447,32 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 	}
 	delete temp;
 	return rdata;
+}
+
+int combineAllPoints(Data* working, int SIZE)
+{
+	cout<<"Enter combineAll"<<'\n';
+	const int kTotalPoints = SIZE;
+	int bigI=0;
+	queue<Data>* rdata = new queue<Data>();
+	while(bigI < kTotalPoints)
+	{
+		int nextPoint=bigI;
+		queue<Data>* currentpoints = new queue<Data>(); //queue to be combined
+		while(nextPoint<=kTotalPoints&&working[nextPoint].energy==working[bigI].energy){
+			currentpoints->push(working[nextPoint]);
+			nextPoint++;
+		} 
+		cout<<"Energy"<<working[bigI].energy<<'\n';
+		cout<<bigI<<"-"<<nextPoint<<'\n';
+		rdata->push(combinePoint(currentpoints));
+		bigI=nextPoint;
+		delete currentpoints;
+	}
+	delete [] working;
+	SIZE = rdata->size();
+	working=queueToArray(rdata);
+	return SIZE;
 }
 
 void resolution(queue<Data>* temp){
