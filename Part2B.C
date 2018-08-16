@@ -28,7 +28,7 @@ namespace {
 	int nameCount=0;
 }
 
-char* namer(int* count){
+const char* namer(int* count){
 	std::string r= std::to_string(*count);
 	*count=*count+1;
 	return r.c_str();
@@ -86,16 +86,19 @@ Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float
 	return Scalar(linearFactor,linearError);
 }
 
-void unitConverter(TGraphErrors* graph, const Scalar& scale,double lowRange=0,double highrange=0){
-	if (highrange==0&&lowRange==0)
+TGraphErrors* unitConverter(TGraphErrors* graph, const Scalar& scale,const int kSIZE){
+	double *values = graph->GetY();
+	double *errors = graph->GetEY();
+	for (int i = 0; i < kSIZE; ++i)
 	{
-		highrange=graph->GetXaxis()->GetBinUpEdge(graph->GetXaxis()->GetLast());
+		Scalar temp(values[i],errors[i]); //unaccounted covariance 
+		temp/=scale;
+		values[i]=temp.value;
+		errors[i]=temp.uncertainty;
 	}
-	TF1* converter = new TF1(namer(&nameCount),"[0]+[1]x",0,highrange);
-	converter->SetParameter(0,scale.value);
-	converter->SetParError(0,scale.uncertainty);
-	converter->SetParameter(1,0);
-	graph->Apply(converter);
+	TGraphErrors *r =new TGraphErrors(graph->GetX(),values,graph->GetEX(),errors);
+	delete graph;
+	return r;
 }
 
 Scalar trendForcedQuiet(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -124,8 +127,7 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* sigm
 	Scalar slope(lin->GetParameter(0),lin->GetParError(0));
 	cout<<slope;
 	cout<<slope.pow(-1);
-	unitConverter(p_mean,slope.pow(-1),0,energy[SIZE-1]);
-	return p_mean;	
+	return unitConverter(p_mean,slope.pow(-1),0,energy[SIZE-1]);
 }
 
 struct Data
@@ -180,8 +182,7 @@ TGraphErrors* singlefileConverter(string filename){
 		ss.clear();
 	}
 	TGraphErrors* r =graphConvert(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]),queueToArray(input[3]),queueToArray(input[4]));
-	TCanvas *tc = new TCanvas();
-	r->Draw("AP";)
+	return r;
 }
 
 TGraphErrors* doubleFileAnalysis(TGraphErrors* g1, TGraphErrors *g2){
