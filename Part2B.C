@@ -61,6 +61,7 @@ void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsiz
 using namespace std;
 using namespace Frannamespace;
 queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2);
+void chiAnalysis(TGraphErrors* graph, Scalar slope, int n,float* runNum);
 
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -107,13 +108,15 @@ TGraphErrors* unitConverter(TGraphErrors* graph, const Scalar& scale,const int k
 	double *errors = graph->GetEY();
 	for (int i = 0; i < kSIZE; ++i)
 	{
+		cout<<"Before:"<<values[i]<<":"<<errors[i]<<"="<<errors[i]/values[i]<<'\n';
 		Scalar temp(values[i],errors[i]); //unaccounted covariance 
 		temp/=scale;//.value; //approximate accounting for the covariance assuming the uncertainty on the slope and the covariance have the same order of magnitude
 		values[i]=temp.value;
 		errors[i]=temp.uncertainty;
+		//cout<<"After:"<<values[i]<<":"<<errors[i]<<"="<<errors[i]/values[i]<<'\n';
 	}
 	TGraphErrors *r =new TGraphErrors(kSIZE,graph->GetX(),values,graph->GetEX(),errors);
-	delete graph;
+	//delete graph;
 	return r;
 }
 
@@ -138,12 +141,19 @@ Scalar trendForcedQuiet(const int SIZE,float*energy, float* mean, float* sigma, 
 
 float getPointCoVarience(TGraphErrors* data, int i, double slope);
 
-TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* meanerror){
+TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* meanerror,float* runNum){
+	TCanvas *tc = new TCanvas();
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
 	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
-	p_mean->Fit(lin,"M0");
+	p_mean->Fit(lin,"M");
+	p_mean->Draw("AP");
+	p_mean->SetMarkerStyle(kPlus);
+	//lin->Draw();
+	cout<<"Fit is chi2:"<<lin->GetChisquare()/lin->GetNDF()<<'\n';
 	Scalar slope(lin->GetParameter(0),lin->GetParError(0));
-	return unitConverter(p_mean,slope,SIZE); //unaccounted covariance
+	chiAnalysis(p_mean,slope,lin->GetNDF(),runNum);
+	return p_mean;
+	//return unitConverter(p_mean,slope,SIZE); //unaccounted covariance
 }
 
 /*TGraphErrors* graphConvertCoVarience(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -177,8 +187,10 @@ queue<Data>* pointScaling(queue<Data>* inData){
 TGraphErrors* makeResolutionFromArrays(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
 	float y[SIZE];
 	float yu[SIZE];
+	//cout<<"Res:\n";
 	for (int i = 0; i < SIZE; ++i)
 	{
+		//cout<<sigma[i]<<"/"<<mean[i]<<'\n';
 		Scalar tmean(mean[i],meanerror[i]);
 		Scalar tsigma(sigma[i],sigmaerror[i]);
 		Scalar temp = tsigma/tmean;
@@ -205,9 +217,25 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 		}
 		ss.clear();
 	}
-	TGraphErrors* lin =graphConvert(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[2]));
-	TGraphErrors* res = makeResolutionFromArrays(input[5].size(),queueToArray(input[5]),queueToArray(input[1]),queueToArray(input[3]),queueToArray(input[2]),queueToArray(input[4]));
-	//res->Draw("AP");
+	const int SIZE = input[5].size();
+	float* runNum = queueToArray(input[0]);
+	float* energy = queueToArray(input[5]);
+	float* mean = queueToArray(input[1]);
+	float* meanError = queueToArray(input[2]);
+	float* sigma = queueToArray(input[3]);
+	float* sigmaError = queueToArray(input[4]);
+	TGraphErrors* lin =graphConvert(SIZE,energy,mean,meanError,runNum);
+	TGraphErrors* res = new TGraphErrors();
+	/*TGraphErrors* res = makeResolutionFromArrays(SIZE,energy,mean,sigma,meanError,sigmaError);
+	double* errors = lin->GetEY();
+	double* values = lin->GetY();
+	for (int i = 0; i < SIZE; ++i)
+	{
+		cout<<"After:"<<values[i]<<":"<<errors[i]<<"="<<errors[i]/values[i]<<'\n';
+	}
+	TCanvas *tc = new TCanvas();
+	lin->Draw("AP");
+	lin->SetMarkerStyle(kOpenCircle);*/
 	return pair<TGraphErrors*,TGraphErrors*>(lin,res);
 }
 
@@ -661,26 +689,37 @@ void resolutionAnabel(queue<Data>* notCombined) //doing resolution vs 1/sqrt(E)
 	myText(.24,.8,kRed,Form("Intercept: %0.6f#pm%0.6f",eB,errors[1]),.05);
 }
 
-/*void chiAnalysis(TGraphErrors* graph){
-	const int SIZE = data.size();
+
+void chiAnalysis(TGraphErrors* graph, Scalar slope, int NDF,float* runNum=nullptr){
 	TCanvas *canvas1 = new TCanvas();
-	float x[SIZE];
-	float y[SIZE];
-	float yu[SIZE];
-	int i=0;
-	while(!data.empty()){
-		x[i] = data.front().energy;
-		Scalar temp = data.front().mean-lin(data.front().energy);
-		temp/=data.front().sigma;
-		y[i] = temp.value;
-		yu[i] = temp.uncertainty;
-		data.pop();
-		i++;
+	const int SIZE = graph->GetN();
+	double *gx = graph->GetX();
+	double *gy = graph->GetY();
+	double* gye = graph->GetEY();
+	double y[SIZE];
+	double yu[SIZE];
+	double labely[SIZE];
+	double labelx[SIZE];
+	string *labels = new string[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		Scalar point(gy[i],gye[i]);
+		Scalar residual = (point - slope*gx[i])*(point - slope*gx[i]);
+		residual/=(gye[i]*gye[i]);
+		residual/=NDF;
+		y[i] = residual.value;
+		yu[i] = residual.uncertainty;
 	}
-	cout<<"data arrays made"<<endl;
-	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
-	//plot 
-}*/
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,graph->GetX(),y,graph->GetEX(),yu);
+	p_mean->Draw("AP");
+	for (int i = 0; i < SIZE; ++i)
+	{
+		labely[i] = .8*y[i]/40+.1;
+		labelx[i] = .8*gx[i]/9+.075;
+		if(runNum!=nullptr)labels[i] = to_string((int)runNum[i]);
+		myText(labelx[i],labely[i],kBlue,labels[i].c_str(),.04);
+	}
+}
 
 class coFunctor
 {
@@ -728,10 +767,10 @@ float getPointCoVarience(TGraphErrors* data, int i, double slope){
 void Part2B(){
 	//singlefileAnalysis("PbGlA12004x4.txt");
 	//queue<Data>* data =sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt"));
-	pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGlA11004x4.txt");
+	//pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGlA11004x4.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGlA12n1.txt");
 
-	doubleFileAnalysis(lin1.first,lin2.first);
-	doubleFileAnalysisResolution(lin1.second,lin2.second);
+	//doubleFileAnalysis(lin1.first,lin2.first);
+	//doubleFileAnalysisResolution(lin1.second,lin2.second);
 	
 }
