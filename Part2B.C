@@ -61,7 +61,7 @@ void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsiz
 using namespace std;
 using namespace Frannamespace;
 queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2);
-void chiAnalysis(TGraphErrors* graph, Scalar slope, int n,float* runNum);
+void chiAnalysis(TGraphErrors* graph, TF1* lin,float* runNum);
 
 
 Scalar trendForced(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror){
@@ -142,16 +142,16 @@ Scalar trendForcedQuiet(const int SIZE,float*energy, float* mean, float* sigma, 
 float getPointCoVarience(TGraphErrors* data, int i, double slope);
 
 TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* meanerror,float* runNum){
-	TCanvas *tc = new TCanvas();
+	//TCanvas *tc = new TCanvas();
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
-	TF1* lin = new TF1("lin","[0]*x",0,energy[SIZE-1]);
-	p_mean->Fit(lin,"M");
-	p_mean->Draw("AP");
-	p_mean->SetMarkerStyle(kPlus);
+	TF1* lin = new TF1("lin","[0]*x+[1]",0,energy[SIZE-1]);
+	p_mean->Fit(lin,"M0");
+	//p_mean->Draw("AP");
+	p_mean->SetMarkerStyle(kOpenCircle);
 	//lin->Draw();
-	cout<<"Fit is chi2:"<<lin->GetChisquare()/lin->GetNDF()<<'\n';
+	cout<<"Fit is chi2:"<<lin->GetChisquare()<<" NDF:"<<lin->GetNDF()<<"="<<lin->GetChisquare()/lin->GetNDF()<<'\n';
 	Scalar slope(lin->GetParameter(0),lin->GetParError(0));
-	chiAnalysis(p_mean,slope,lin->GetNDF(),runNum);
+	//chiAnalysis(p_mean,lin,runNum);
 	return p_mean;
 	//return unitConverter(p_mean,slope,SIZE); //unaccounted covariance
 }
@@ -214,6 +214,10 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 		getline(ss,intemp,',');
 		while(getline(ss,intemp,',')){   //loop to put data from each line into each queue at the same place in the arrays
 			input[i].push(stof(intemp));
+			if (i==5)
+			{
+				cout<<intemp<<endl;
+			}
 		}
 		ss.clear();
 	}
@@ -690,7 +694,8 @@ void resolutionAnabel(queue<Data>* notCombined) //doing resolution vs 1/sqrt(E)
 }
 
 
-void chiAnalysis(TGraphErrors* graph, Scalar slope, int NDF,float* runNum=nullptr){
+void chiAnalysis(TGraphErrors* graph, TF1* fit, float* runNum=nullptr){
+	const int NDF = fit->GetNDF();
 	TCanvas *canvas1 = new TCanvas();
 	const int SIZE = graph->GetN();
 	double *gx = graph->GetX();
@@ -704,18 +709,19 @@ void chiAnalysis(TGraphErrors* graph, Scalar slope, int NDF,float* runNum=nullpt
 	for (int i = 0; i < SIZE; ++i)
 	{
 		Scalar point(gy[i],gye[i]);
-		Scalar residual = (point - slope*gx[i])*(point - slope*gx[i]);
-		residual/=(gye[i]*gye[i]);
-		residual/=NDF;
+		Scalar residual = (point - ((float)fit->Eval(gx[i])))*(point - ((float)fit->Eval(gx[i])));
+		residual/=(gye[i]);
+		residual/=(float)NDF;
 		y[i] = residual.value;
 		yu[i] = residual.uncertainty;
 	}
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,graph->GetX(),y,graph->GetEX(),yu);
 	p_mean->Draw("AP");
+	p_mean->SetMarkerStyle(27);
 	for (int i = 0; i < SIZE; ++i)
 	{
-		labely[i] = .8*y[i]/40+.1;
-		labelx[i] = .8*gx[i]/9+.075;
+		labely[i] = .8*y[i]/16+.1;
+		labelx[i] = .8*gx[i]/17+.075;
 		if(runNum!=nullptr)labels[i] = to_string((int)runNum[i]);
 		myText(labelx[i],labely[i],kBlue,labels[i].c_str(),.04);
 	}
@@ -768,8 +774,13 @@ void Part2B(){
 	//singlefileAnalysis("PbGlA12004x4.txt");
 	//queue<Data>* data =sortcombine(sortcombine(singlefileAnalysis("PbGlA12004x4.txt"),singlefileAnalysis("PbGlA11004x4.txt")),singlefileAnalysis("PbGlA10004x4.txt"));
 	//pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGlA11004x4.txt");
-	pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGlA12n1.txt");
-
+	//pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGl1100.txt");
+	//pair<TGraphErrors*,TGraphErrors*> lin1new =singlefileConverter("PbGl1100new.txt");
+	//pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGl1200.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin2new =singlefileConverter("PbGl1200new.txt");
+	TGraphErrors* interest = lin2new.first;
+	interest->Draw("AP");
+	interest->FindObject("lin")->Draw("same");
 	//doubleFileAnalysis(lin1.first,lin2.first);
 	//doubleFileAnalysisResolution(lin1.second,lin2.second);
 	

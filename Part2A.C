@@ -107,6 +107,413 @@ private:
 	double upBound;
 };
 
+class RunSelecTOR
+{
+public:
+	RunSelecTOR(bool newData, bool checkVoltage, int voltage){
+		this->voltage=voltage;
+		this->newData=newData;
+		this->checkVoltage=checkVoltage;
+	}
+	~RunSelecTOR(){}
+
+ int* operator()(int *runNumber, int* SIZE){
+ 	int *r = new int[*SIZE];
+ 	int j=0;
+ 	if (newData)
+ 	{
+ 		for (int i = 0; i < *SIZE; ++i)
+ 		{
+ 			if ((!checkVoltage||runToVoltage(runNumber[i])==voltage)&&runNumber[i]>1000)
+ 			{
+ 				r[j] = runNumber[i];
+ 				j++;
+ 			}
+ 		}
+ 	}
+ 	else{
+ 		for (int i = 0; i < *SIZE; ++i)
+ 		{
+ 			if ((!checkVoltage||runToVoltage(runNumber[i])==voltage)&&runNumber[i]<1000)
+ 			{
+ 				r[j] = runNumber[i];
+ 				j++;
+ 			}
+ 		}
+ 	}
+ 	*SIZE = j;
+ 	return r;
+ }
+ std::string getName(){
+ 	if (newData)
+ 	{
+ 		return "PbGl"+std::to_string(voltage)+"new.txt";
+ 	}
+ 	else{
+ 		return "PbGl"+std::to_string(voltage)+".txt";
+ 	}
+ }
+
+
+private:
+	int voltage;
+	bool newData;
+	bool checkVoltage;
+	int runToEnergy(int run){
+    int r;
+    int s = (int) run;
+    switch (s){
+        case 558:
+            r=6;
+            break;
+        case 551:
+            r= 4;
+            break;
+        case 563:
+            r= 2;
+            break;
+        case 573:
+            r= 12;
+            break;
+        case 567:
+            r= 8;
+            break;
+        case 776:
+        	r=2;
+        	break;
+    	case 777:
+    		r=2;
+    		break;
+		case 809:
+			r=6;
+			break;
+		case 810:
+			r=4;
+			break;
+		case 816:
+			r=2;
+			break;
+		case 829:
+			r=6;
+			break;
+		case 830:
+			r=2;
+			break;
+		case 849:
+			r=2;
+			break;
+		case 859:
+			r=5;
+			break;
+		case 900:
+			r=1;
+			break;
+		case 631:
+			r=8;
+			break;
+		case 632:
+			r=12;
+			break;
+		case 544:
+			r= 8;
+			break;
+		case 652:
+			r= 16;
+			break;
+		case 653:
+			r= 16;
+			break;
+		case 654:
+			r= 24;
+			break;
+		case 687:
+			r= 28;
+			break;
+		case 572:
+			r= 12;
+			break;
+		case 574:
+			r= 12;
+			break;
+		case 577:
+			r= 2;
+			break;
+		case 578:
+			r= 2;
+			break;
+		case 579:
+			r= 2;
+			break;	
+		case 580:
+			r=2;
+			break;
+		case 1876:
+			r=8; break;
+		case 1879:
+			r=8; break;
+		case 1882:
+			r=8; break;
+		case 1883:
+			r=8; break;
+		case 1888:
+			r=8; break;
+		case 1890:
+			r=6; break;
+		case 2128:
+			r=16; break;
+		case 2125:
+			r=12; break;
+		case 2126:
+			r=12; break;
+		case 2127:
+			r=16; break;
+		case 1889:
+			r=6; break;
+		case 1901:
+			r=4; break;
+		case 1902:
+			r=4; break;
+		case 1904:
+			r=2; break;
+		case 1906:
+			r=2; break;
+		case 1924:
+			r=12; break;
+		case 1925:
+			r=12; break;
+		case 1943:
+			r=24; break;
+		case 1945:
+			r=28; break;
+		case 2073:
+			r=3; break;
+		case 2074:
+			r=4; break;
+		case 2094:
+			r=6; break;
+		case 2095:
+			r=6; break;
+		case 2097:
+			r=8; break;
+		case 2098:
+			r=8; break;
+		case 2149:
+			r=20; break;
+		case 2150:
+			r=24; break;
+		case 2167:
+			r=28; break;
+		case 773:
+			r=10;
+			break;
+		case 772:
+			r=10;
+			break;
+		case 1926:
+			r=16; 
+			break;
+		case 2045:
+			r=2; 
+			break;
+        default:
+            r=-1;
+            cout<<"Error in runToEnergy line:"<<__LINE__<<std::endl;
+            break;
+    }
+    return r;
+}
+
+int runToVoltage(int run){
+    int r;
+    int s = (int) run;
+
+    switch (s){
+    	case 2045:
+			r=1200; 
+			break;
+    	case 1926:
+			r=1100; 
+			break;
+    	case 2167:
+			r=-1; 
+			break;
+    	case 1945:
+			r=-1; 
+			break;
+    	case 2150:
+			r=-1;
+			break;
+    	case 1943:
+			r=-1;
+			break;
+    	case 2149:
+			r=-1;
+			break;
+    	case 1924:
+			r=1200;
+			break;
+    	case 1925:
+			r=1100;
+			break;
+    	case 2125:
+			r=1200;
+			break;
+    	case 2126:
+			r=1100;
+			break;
+    	case 632:
+			r=1100;
+			break;
+    	case 773:
+			r=-1;
+			break;
+		case 772:
+			r=-1;
+			break;
+    	case 1901:
+            r=1200;
+            break;
+        case 2074:
+            r=1200;
+            break;
+        case 2094:
+            r=1200;
+            break;
+        case 2095:
+            r=1100;
+            break;
+        case 1889:
+            r=1100;
+            break;
+        case 2127:
+            r=1100;
+            break;
+        case 2128: // probably saturated 
+            r=1200;
+            break;
+        case 2098:
+            r=1200;
+            break;
+        case 1883:
+            r=1200;
+            break;
+        case 1882:
+            r=1200;
+            break;
+        case 1879:
+            r=1200;
+            break;
+        case 1906:
+            r=1200;
+            break;
+        case 900: //may need to test this at 1100V 
+            r=1200;
+            break;
+        case 1904:
+            r=1100;
+            break;
+        case 2073:
+            r=1200;
+            break;
+        case 2097:
+            r=1100;
+            break;
+        case 1888:
+            r=1100;
+            break;
+         case 1890:
+            r=1200;
+            break;
+        case 1902:
+            r=1100;
+            break;
+        case 558:
+            r=1200;
+            break;
+        case 551:
+            r= 1200;
+            break;
+        case 563:
+            r= 1200;
+            break;
+        case 573: //saturated
+            r= 00;
+            break;
+        case 567:
+            r= 1200;
+            break;
+        case 776:
+        	r=1200;
+        	break;
+    	case 777:
+    		r=1200;
+    		break;
+		case 809:
+			r=1200;
+			break;
+		case 810:
+			r=1200;
+			break;
+		case 816: // double check this 
+			r=1200;
+			break;
+		case 829:
+			r=1200;
+			break;
+		case 830:
+			r=1200;
+			break;
+		case 849:
+			r=1200;
+			break;
+		case 859:
+			r=1200;
+			break;
+		case 631: // not in list 
+			r=1100; 
+			break;
+		case 544:
+			r= 1100;
+			break;
+		case 652:
+			r= 1100;
+			break;
+		case 653:
+			r= 1000;
+			break;
+		case 654:
+			r= 1000;
+			break;
+		case 687: // saturated 1100V run  28GeV
+			r= -1;
+			break;
+		case 572:
+			r= 0;
+			break;
+		case 574:
+			r= 1100;
+			break;
+		case 577:
+			r= 1100;
+			break;
+		case 578:
+			r= 1100;
+			break;
+		case 579:
+			r= 1100;
+			break;	
+		case 580:
+			r=1100;
+			break;
+        default:
+            r=0;
+            cout<<"warning voltage not found for run:"<<run<<std::endl;
+            break;
+    }
+    return r;
+}
+};
+
 #ifndef OfficalBeamData_h
 #define OfficalBeamData_h 
 class OfficalBeamData
@@ -117,7 +524,10 @@ public:
 	//descriptions of the plots are in the declarations 
 	OfficalBeamData(string name, int voltage, float beamEnergy) : beamVoltage(voltage), name(name), beamEnergy(beamEnergy){
 		runNumber = atoi(name.c_str());
-		pbglPlot = new TH1D(name.c_str(),"",800,0,10000); // note the bounds are weird
+		const float kMAX = 10000;
+		const float kMainBins = 1600;
+		mainBinWidth = kMAX/kMainBins;
+		pbglPlot = new TH1D(name.c_str(),"",kMainBins,0,kMAX); 
 		pbglPlot->Sumw2();
 		pbglUnFit = new TH1D(string(name+" no fit").c_str(),"",200,0,10000); 
 		pbglNoCut= new TH1D(string(name+"NoCUT").c_str(),"",200,0,10000);
@@ -791,7 +1201,7 @@ public:
 	}
 	double getMeanUncertainty(){
 		if(!made) makeGaus();
-		return mean.uncertainty;
+		return TMath::Sqrt(mean.uncertainty*mean.uncertainty+mainBinWidth*mainBinWidth);
 	}
 	double getSigmaUncertainty(){
 		if(!made) makeGaus();
@@ -841,11 +1251,7 @@ public:
 		TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
 		tc->Divide(5,5,0.01,0.01);
 		tc->cd(23); 
-		TH1F *fii = (TH1F*)pbglPlot->Clone();
-		fii->Divide(mainGaus->get_gaus());
-		fii->Draw();
-		fii->GetYaxis()	->SetRangeUser(0,5);
-		fii->GetXaxis()	->SetRangeUser(2000,2400);
+		mainGaus->Draw();
 		myText(.6,.8,kBlack,"PbGl E",.16);
 		tc->cd(24); 
 		pbglCCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
@@ -1022,6 +1428,7 @@ private:
 
 	string name; // a descriptive class name used for printing 
 	int runNumber=0;
+	float mainBinWidth;
 	
 	//internal booleans for tracking what values have been initialized 
 	bool made=false; 
@@ -2266,9 +2673,9 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	bool checkVoltage=true;
-	int runVoltage=2;  //0 for 1000V 1 for 1100V and 2 for 1200V
-	bool special =false;
+	int voltageSelection=1200;
+	bool newData=false;
+	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
 	string filename = "beam_0000";
@@ -2276,72 +2683,13 @@ void Part2A(){
 	string extension = "-0000_DSTReader.root";
 	filename = fileLocation+filename;
 	filenameleadingzero=fileLocation+filenameleadingzero;
-	const int totalNUMSIZE=46;
+	const int totalNUMSIZE=45;
 	//set of all the unsaturated files including haggerty's unsure of the voltages will do mostly by hand
-	int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1906,1925,1943,1945,2073,2074,2094,2095,2097,2098,2126,2127,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,900,574,567 }; //all,beam,files
+	int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1906,1925,1943,1945,2073,2074,2094,2095,2097,2098,2126,2127,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,574,567 }; //all,beam,files
 	//saturated : 573 572 2125 2128 1924 
 	//undersaturated: 578 579 580 1904 
-	bool want1200 = false;
-	bool want1100 = false;
-	bool want1000 = false;
-	switch(runVoltage){
-		case 0:
-			want1000=true;
-			break;
-		case 1:
-			want1100=true;
-			break;
-		case 2:
-			want1200=true;
-			break;
-		default:
-			cout<<"Invalid runVoltage"<<std::endl;
-	}
-	int NUMSIZE=0;
-	int number[totalNUMSIZE]; //desired beam files
-	if (checkVoltage)
-	{
-		if(want1200 == true)
-		{
-			for(int i = 0; i<totalNUMSIZE; i++)
-			{
-				if(runToVoltage(totalnumber[i]) == 1200)
-				{
-					number[NUMSIZE] = totalnumber[i];
-					NUMSIZE++;
-				}
-			}
-		} 
-		else if(want1100 == true)
-		{
-			for(int i = 0; i<totalNUMSIZE; i++)
-			{
-				if(runToVoltage(totalnumber[i]) == 1100)
-				{
-					number[NUMSIZE] = totalnumber[i];
-					NUMSIZE++;
-				}
-			}
-		} 
-		else if(want1000 == true){
-			for(int i = 0; i<totalNUMSIZE; i++)
-			{
-				if(runToVoltage(totalnumber[i]) == 1000)
-				{
-					number[NUMSIZE] = totalnumber[i];
-					NUMSIZE++;
-				}
-			}
-		}
-	}
-	else{
-		for(int i = 0; i<totalNUMSIZE; i++)
-		{
-			number[NUMSIZE] = totalnumber[i];
-			NUMSIZE++;
-		}
-	}
-	
+	int NUMSIZE= totalNUMSIZE;
+	int* number = selecTOR(&totalnumber[0],&NUMSIZE);
 	DSTReader551 *reader; //get the root made class to process the tree from the beam you want
 	TFile *file;
 	stringstream ss;
@@ -2382,16 +2730,7 @@ void Part2A(){
 	}
 	superArraySorter5000(energy,mean,meanU,sigma,sigmaU,number,NUMSIZE); //sort all arrays so that it goes in ascending energy order
 	ofstream outFile;
-	if (checkVoltage)
-	{
-		if(want1200 == true){outFile.open("PbGlA12004x4.txt");} //1200V data
-		else if(want1100 == true){outFile.open("PbGlA11004x4.txt");} //1100V data
-		else if(want1000 ==true){outFile.open("PbGlA10004x4.txt");} //1000V data
-	}
-	else{
-		outFile.open("unknownvoltages.txt");
-	}
-	
+	outFile.open(selecTOR.getName().c_str());
 	
 	if(outFile.is_open()) //read info out to txt file if it opens
 	{
@@ -2794,3 +3133,7 @@ int runToVoltage(int run){
     }
     return r;
 }
+
+
+
+
