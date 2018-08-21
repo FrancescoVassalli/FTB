@@ -212,10 +212,23 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	TF1* lin = new TF1("lin","[0]*x+[1]",0,energy[SIZE-1]);
 	p_mean->Fit(lin,"M0");
 	p_mean->SetMarkerStyle(kDot);
-	cout<<"Fit is chi2:"<<lin->GetChisquare()<<" NDF:"<<lin->GetNDF()<<"="<<lin->GetChisquare()/lin->GetNDF()<<'\n';
+	axisTitles(p_mean,"Beam Energy [GeV]","Signal");
+	p_mean->Fit(lin,"M0");
+	lin->SetLineColor(kRed);
+	double linearFactor = lin->GetParameter(0);
+	double linearError = lin->GetParError(0);
+	double bterm=lin->GetParameter(1);
+	float chi = lin->GetChisquare();
+	int ndf = lin->GetNDF();
+	p_mean->SetMarkerStyle(kOpenCircle);
+	p_mean->Draw("AP");
+	p_mean->SetMarkerStyle(27);
+	lin->Draw("same");
+	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}+%0.3f",linearFactor,linearError,bterm),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
 	//chiAnalysis(p_mean,lin,runNum);
-	//return p_mean;
-	return unitConverter(p_mean); //unaccounted covariance
+	//return unitConverter(p_mean); //unaccounted covariance
+	return p_mean;
 }
 
 queue<Data>* pointScaling(queue<Data>* inData){
@@ -287,17 +300,11 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 	float* sigma = queueToArray(input[3]);
 	float* sigmaError = queueToArray(input[4]);
 	TGraphErrors* lin =graphConvert(SIZE,energy,mean,meanError,runNum);
-	cout<<"here"<<endl;
 	TGraphErrors* res = makeResolutionFromArrays(SIZE,energy,mean,sigma,meanError,sigmaError,lin);
 	return pair<TGraphErrors*,TGraphErrors*>(lin,res);
 }
 
-
-
-TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2){
-	cout<<"Starting double file analysis"<<endl;
-	TGraphErrors* g1= combineAllPoints(i1,i2);
-	cout<<"double plotting"<<endl;
+TGraphErrors* doubleFileAnalysis(TGraphErrors* g1){
 	TCanvas* tc = new TCanvas();
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
@@ -326,6 +333,39 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2){
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
 	cout<<"Returning combined double"<<endl;
+	return g1;
+}
+
+TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2){
+	cout<<"Starting double file analysis"<<endl;
+	TGraphErrors* g1= combineAllPoints(i1,i2);
+	TCanvas* tc = new TCanvas();
+	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
+	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
+	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
+	g1->Fit(poly);
+	double nonLinearFactor = poly->GetParameter(1);
+	double nonLinearError = poly->GetParError(1);
+	double polylinear = poly->GetParameter(0);
+	double polylinearError = poly->GetParError(0);
+	float chi2 = poly->GetChisquare();
+	g1->Fit(lin,"M0");
+	lin->SetLineColor(kRed);
+	double linearFactor = lin->GetParameter(0);
+	double linearError = lin->GetParError(0);
+	float chi = lin->GetChisquare();
+	int ndf = lin->GetNDF();
+	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	g1->SetMarkerStyle(kOpenCircle);
+	g1->Draw("AP");
+	g1->SetMarkerStyle(27);
+	poly->SetLineColor(kBlue);
+	poly->Draw("same");
+	lin->Draw("same");
+	myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
+	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
+	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
 	return g1;
 }
 
@@ -788,12 +828,12 @@ float getPointCoVarience(TGraphErrors* data, int i, double slope){
 }
 
 void Part2B(){
-	pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGl1100.txt");
-	pair<TGraphErrors*,TGraphErrors*> lin1new =singlefileConverter("PbGl1100new.txt");
+	//pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGl1100.txt");
+	//pair<TGraphErrors*,TGraphErrors*> lin1new =singlefileConverter("PbGl1100new.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGl1200.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin2new =singlefileConverter("PbGl1200new.txt");
-	doubleFileAnalysis(doubleFileAnalysis(lin2.first,lin2new.first),doubleFileAnalysis(lin1.first,lin1new.first));
-	doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin1new.second,lin1.second),doubleFileAnalysisResolution(lin2new.second,lin2.second));
+	//doubleFileAnalysis(doubleFileAnalysis(lin2.first,lin2new.first),doubleFileAnalysis(lin1.first,lin1new.first));
+	//doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin1new.second,lin1.second),doubleFileAnalysisResolution(lin2new.second,lin2.second));
 	//doubleFileAnalysis(lin1.first,lin2.first);
 	//doubleFileAnalysisResolution(lin1.second,lin2.second);
 	
