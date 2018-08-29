@@ -524,6 +524,7 @@ public:
 	//descriptions of the plots are in the declarations 
 	OfficalBeamData(string name, int voltage, float beamEnergy) : beamVoltage(voltage), name(name), beamEnergy(beamEnergy){
 		runNumber = atoi(name.c_str());
+		setHighMultiplicity();
 		const float kMAX = 10000;
 		const float kMainBins = 1600;
 		mainBinWidth = kMAX/kMainBins;
@@ -661,13 +662,21 @@ public:
 						hodo8->Fill(pbgl);
 						if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
 						{	
-							pbglPlot->Fill(pbgl);
+							if(!highMultiplicity)
+							{
+								pbglPlot->Fill(pbgl);
+							}
 							pbglUnFit->Fill(pbgl);
 							hodo4->Fill(pbgl);
 							r=true;
 							if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
 							{
 								hodo2->Fill(pbgl);
+								if (highMultiplicity)
+								{
+									pbglPlot->Fill(pbgl);
+								}
+
 							}
 						}
 					}
@@ -688,6 +697,10 @@ public:
 			return veto[0]<VETOcut && veto[1]<VETOcut && veto[2]<VETOcut && veto[3]<.25;
 
 		}
+	}
+	inline bool passCerenkov(float cerenkov){
+		if(beamEnergy>=24) return true;
+		return cerenkov>CERENKOVcut;
 	}
 	inline bool passHodoV(double* hodo){
 		return hodo[0]>HODOVcut[0] ^ hodo[1]>HODOVcut[1] ^ hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5] ^ hodo[6]>HODOVcut[6] ^ hodo[7]>HODOVcut[7];
@@ -1371,6 +1384,7 @@ private:
 
 	int beamVoltage;
 	int beamEnergy;
+	bool highMultiplicity;
 
 	TH1D *pbglPlot=NULL; // the main data plot that gets fit 
 	TH1D *cerenkov=NULL; // the signal from the cherenkov counter 
@@ -1439,6 +1453,10 @@ private:
 	//the important results of the class 
 	Scalar mean;
 	Scalar sigma;
+
+	inline void setHighMultiplicity(){
+		highMultiplicity= beamEnergy==8&&beamVoltage==1200;
+	}
 
 	void recursiveGaus(TH1* h, TF1* gaus, Scalar* data, float sigmadistance,int lazyMan=0){
 	    h->Fit(gaus,"QN","",data[0]-data[1]*sigmadistance,data[0]+data[1]*sigmadistance);
