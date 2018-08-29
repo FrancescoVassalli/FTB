@@ -654,7 +654,7 @@ public:
 		if (pbgl>pbglCUT)
 		{
 			pbglNoCut->Fill(pbgl);
-			if(cerenkov>CERENKOVcut){
+			if(passCerenkov((float)cerenkov)){
 				pbglCCut->Fill(pbgl);
 				if(noVeto(veto)){
 					pbglCVCut->Fill(pbgl);
@@ -687,7 +687,7 @@ public:
 		return r;
 	}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
-		return cerenkov>CERENKOVcut && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
+		return passCerenkov((float)cerenkov) && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
 	}
 	inline bool noVeto(double* veto){
 		if(runNumber<1000){
@@ -699,7 +699,10 @@ public:
 		}
 	}
 	inline bool passCerenkov(float cerenkov){
-		if(beamEnergy>=24) return true;
+		if(beamEnergy>=24){
+			cout<<"High Energy return true"<<endl;
+			return true;
+		} 
 		return cerenkov>CERENKOVcut;
 	}
 	inline bool passHodoV(double* hodo){
