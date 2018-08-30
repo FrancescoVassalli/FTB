@@ -335,19 +335,19 @@ int runToVoltage(int run){
 			r=1100; 
 			break;
     	case 2167:
-			r=-1; 
+			r=1000; 
 			break;
     	case 1945:
-			r=-1; 
+			r=1000; 
 			break;
     	case 2150:
-			r=-1;
+			r=1000;
 			break;
     	case 1943:
-			r=-1;
+			r=1000;
 			break;
     	case 2149:
-			r=-1;
+			r=1000;
 			break;
     	case 1924:
 			r=1200;
@@ -485,7 +485,7 @@ int runToVoltage(int run){
 			r= 1000;
 			break;
 		case 687: // saturated 1100V run  28GeV
-			r= -1;
+			r= 1000;
 			break;
 		case 572:
 			r= 0;
@@ -647,10 +647,20 @@ public:
 		p_veto3->Fill(veto[2]);
 		p_veto4->Fill(veto[3]);
 		int pbglCUT;
-		if(beamEnergy>8){
-			pbglCUT=1000;
+		switch(beamEnergy){
+			case beamEnergy>8 &&beamEnergy<28:
+				pbglCUT=1000;
+				break;
+			case beamEnergy>=28:
+				pbglCUT=4000;
+				break;
+			case beamEnergy<=8:
+				pbglCUT=100;
+				break;
+			default:
+				cout<<"PbGl cut WARNING"<<endl;
+				break;
 		}
-		else pbglCUT=100;
 		if (pbgl>pbglCUT)
 		{
 			pbglNoCut->Fill(pbgl);
@@ -699,8 +709,8 @@ public:
 		}
 	}
 	inline bool passCerenkov(float cerenkov){
-		if(beamEnergy>=24){
-			cout<<"High Energy return true"<<endl;
+		if(beamEnergy>=20){
+			//cout<<"High Energy return true"<<endl;
 			return true;
 		} 
 		return cerenkov>CERENKOVcut;
@@ -1458,7 +1468,7 @@ private:
 	Scalar sigma;
 
 	inline void setHighMultiplicity(){
-		highMultiplicity= beamEnergy==8&&beamVoltage==1200;
+		highMultiplicity= (beamEnergy==8&&beamVoltage==1200) || (beamEnergy>=12&&beamVoltage==1100);
 	}
 
 	void recursiveGaus(TH1* h, TF1* gaus, Scalar* data, float sigmadistance,int lazyMan=0){
@@ -2695,7 +2705,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	int voltageSelection=1000;
-	bool newData=false;
+	bool newData=true;
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
@@ -2977,19 +2987,19 @@ int runToVoltage(int run){
 			r=1100; 
 			break;
     	case 2167:
-			r=-1; 
+			r=1000; 
 			break;
     	case 1945:
-			r=-1; 
+			r=1000; 
 			break;
     	case 2150:
-			r=-1;
+			r=1000;
 			break;
     	case 1943:
-			r=-1;
+			r=1000;
 			break;
     	case 2149:
-			r=-1;
+			r=1000;
 			break;
     	case 1924:
 			r=1200;
@@ -3127,7 +3137,7 @@ int runToVoltage(int run){
 			r= 1000;
 			break;
 		case 687: // saturated 1100V run  28GeV
-			r= -1;
+			r= 1000;
 			break;
 		case 572:
 			r= 0;
