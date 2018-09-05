@@ -720,6 +720,7 @@ public:
 		}
 		return r;
 }
+	//deprecated beacause I cut one at a time 
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
 		return passCerenkov((float)cerenkov) && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
 	}
@@ -740,11 +741,22 @@ public:
 		return cerenkov>CERENKOVcut;
 	}
 	inline bool passHodoV(double* hodo){
-		return hodo[0]>HODOVcut[0] ^ hodo[1]>HODOVcut[1] ^ hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5] ^ hodo[6]>HODOVcut[6] ^ hodo[7]>HODOVcut[7];
+		if (beamEnergy>2)
+		{
+			return hodo[0]>HODOVcut[0] ^ hodo[1]>HODOVcut[1] ^ hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5] ^ hodo[6]>HODOVcut[6] ^ hodo[7]>HODOVcut[7];
+		}
+		else{
+			return hodo[0]>HODOVcut[0]+.05 ^ hodo[1]>HODOVcut[1]+.05 ^ hodo[2]>HODOVcut[2]+.05 ^ hodo[3]>HODOVcut[3]+.05 ^ hodo[4]>HODOVcut[4]+.05 ^ hodo[5]>HODOVcut[5]+.05 ^ hodo[6]>HODOVcut[6]+.05 ^ hodo[7]>HODOVcut[7]+.05;
+		}
 	}
 	inline bool passHodoH(double* hodo){ 
-		return hodo[0]>HODOHcut[0] ^ hodo[1]>HODOHcut[1] ^ hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5] ^ hodo[6]>HODOHcut[6] ^ hodo[7]>HODOHcut[7];
-	}
+		if (beamEnergy>2)
+		{
+			return hodo[0]>HODOHcut[0] ^ hodo[1]>HODOHcut[1] ^ hodo[2]>HODOHcut[2] ^ hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4] ^ hodo[5]>HODOHcut[5] ^ hodo[6]>HODOHcut[6] ^ hodo[7]>HODOHcut[7];
+		}
+		else{
+			return hodo[0]>HODOHcut[0]+.05 ^ hodo[1]>HODOHcut[1]+.05 ^ hodo[2]>HODOHcut[2]+.05 ^ hodo[3]>HODOHcut[3]+.05 ^ hodo[4]>HODOHcut[4]+.05 ^ hodo[5]>HODOHcut[5]+.05 ^ hodo[6]>HODOHcut[6]+.05 ^ hodo[7]>HODOHcut[7]+.05;
+		}	}
 	inline bool passHodoV4x4(double* hodo){ //exclusive or 
 		return hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5];
 	}
@@ -917,7 +929,14 @@ public:
 				if (!plotsexits[5])
 				{
 					plotsexits[5]=true;
-					TLine *cut = new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+					TLine *cut;
+					if (runNumber<1000)
+					{
+						cut=new TLine(VETOcut,0,VETOcut+1,DBL_MAX);
+					}
+					else{
+						cut=new TLine(.25,0,VETOcut+1,DBL_MAX);
+					}
 					cut->SetLineWidth(2); cut->SetLineColor(kBlue) ; cut->SetLineColor(kBlue) ;
 					cut->SetLineStyle(9);
 					cut_veto4 = new CutPlot(p_veto4,cut);
@@ -1421,7 +1440,7 @@ private:
 	const double CERENKOVcut = 1400; 
 	const float VETOcut = .35; 
 	const float HODOHcut[8] = {.45,.55,.45,.5,.5,.55,.45,.45}; 
-	const float HODOVcut[8] = {.65,.66,.70,.65,.65,.55,.60,.60}; 
+	const float HODOVcut[8] = {.65,.66,.70,.65,.65,.55,.60,.60};
 	const int VETOSIZE = 4;
 	const int HODOSIZE = 8;
 
@@ -2746,7 +2765,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	int voltageSelection=1200;
-	bool newData=true;
+	bool newData=false;
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
