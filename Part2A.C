@@ -647,19 +647,18 @@ public:
 		p_veto3->Fill(veto[2]);
 		p_veto4->Fill(veto[3]);
 		int pbglCUT;
-		switch(beamEnergy){
-			case beamEnergy>8 &&beamEnergy<28:
-				pbglCUT=1000;
-				break;
-			case beamEnergy>=28:
-				pbglCUT=4000;
-				break;
-			case beamEnergy<=8:
-				pbglCUT=100;
-				break;
-			default:
-				cout<<"PbGl cut WARNING"<<endl;
-				break;
+		if (beamEnergy>8)
+		{
+			if (beamEnergy>=24)
+			{
+				pbglCUT=5000;
+			}
+			else{
+				pbglCUT=1000;				
+			}
+		}
+		else{
+			pbglCUT=100;
 		}
 		if (pbgl>pbglCUT)
 		{
@@ -670,32 +669,57 @@ public:
 					pbglCVCut->Fill(pbgl);
 					if (passHodoH(hhodo)&&passHodoV(vhodo)){
 						hodo8->Fill(pbgl);
-						if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
-						{	
-							if(!highMultiplicity)
-							{
+						switch(multiplicityType){
+							case 0:
 								pbglPlot->Fill(pbgl);
-							}
-							pbglUnFit->Fill(pbgl);
-							hodo4->Fill(pbgl);
-							r=true;
-							if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
-							{
-								hodo2->Fill(pbgl);
-								if (highMultiplicity)
-								{
-									pbglPlot->Fill(pbgl);
+								pbglUnFit->Fill(pbgl);
+								r=true;
+								if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
+								{	
+									hodo4->Fill(pbgl);
+									if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
+									{
+										hodo2->Fill(pbgl);
+									}
 								}
-
-							}
+								break;
+							case 1:
+								if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
+								{	
+									pbglPlot->Fill(pbgl);
+									pbglUnFit->Fill(pbgl);
+									hodo4->Fill(pbgl);
+									r=true;
+									if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
+									{
+										hodo2->Fill(pbgl);
+									}
+								}
+								break;
+							case 2:
+								if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
+								{	
+									hodo4->Fill(pbgl);
+									if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
+									{
+										hodo2->Fill(pbgl);
+										pbglUnFit->Fill(pbgl);
+										pbglPlot->Fill(pbgl);
+										r=true;
+									}
+								}
+								break;
+							default:
+								cout<<"Error multiplicityType"<<endl;
+								exit(2);
+								break;
 						}
 					}
 				}
 			}
 		}
-		
 		return r;
-	}
+}
 	inline bool passCuts(double cerenkov, double* veto, double* vhodo, double* hhodo){
 		return passCerenkov((float)cerenkov) && noVeto(veto),passHodoV(vhodo),passHodoH(hhodo);
 	}
@@ -742,6 +766,7 @@ public:
 		double gausUpbound = gausLowBound +temp;
 		if(gausUpbound >10000){gausUpbound=10000;} //so that fit doesn't exceed range of histogram
 		gausLowBound -= temp; 
+		
 		TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
 		gaus->SetLineStyle(1);
 		gaus->SetLineWidth(2);
@@ -750,10 +775,15 @@ public:
 		Scalar mygaus[2];
 		mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
 		mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
-		recursiveGaus(pbglPlot, gaus, mygaus, 1.5,10);
+		if (beamEnergy<24)
+		{
+			recursiveGaus(pbglPlot, gaus, mygaus, 1.5,97);
+		} 
 		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
+		gausLowBound=mygaus[0]-(mygaus[1]*5.0);
+		gausUpbound=mygaus[0]+mygaus[1]*5.0;
 		mainGaus = new GausPlot(pbglPlot,gaus,mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		return gaus;
 	}	
@@ -1397,7 +1427,7 @@ private:
 
 	int beamVoltage;
 	int beamEnergy;
-	bool highMultiplicity;
+	int multiplicityType;
 
 	TH1D *pbglPlot=NULL; // the main data plot that gets fit 
 	TH1D *cerenkov=NULL; // the signal from the cherenkov counter 
@@ -1468,7 +1498,18 @@ private:
 	Scalar sigma;
 
 	inline void setHighMultiplicity(){
-		highMultiplicity= (beamEnergy==8&&beamVoltage==1200) || (beamEnergy>=12&&beamVoltage==1100);
+		if(beamEnergy>2){
+			if (beamEnergy>12)
+			{
+				multiplicityType=2;
+			}
+			else{
+				multiplicityType=1;
+			}
+		}
+		else{
+			multiplicityType=0;
+		}
 	}
 
 	void recursiveGaus(TH1* h, TF1* gaus, Scalar* data, float sigmadistance,int lazyMan=0){
@@ -2704,7 +2745,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
-	int voltageSelection=1000;
+	int voltageSelection=1200;
 	bool newData=true;
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
