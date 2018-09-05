@@ -227,6 +227,7 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	lin->Draw("same");
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}+%0.3f",linearFactor,linearError,bterm),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	//chiAnalysis(p_mean,lin,runNum);
 	return unitConverter(p_mean); //unaccounted covariance
 	//return p_mean;
 }
@@ -355,23 +356,26 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2,bool runChi=
 	double polylinear = poly->GetParameter(0);
 	double polylinearError = poly->GetParError(0);
 	float chi2 = poly->GetChisquare();
+	int pndf = poly->GetNDF();
 	g1->Fit(lin,"M0");
 	lin->SetLineColor(kRed);
 	double linearFactor = lin->GetParameter(0);
 	double linearError = lin->GetParError(0);
 	float chi = lin->GetChisquare();
-	int ndf = lin->GetNDF();
-	double ratiouncertainty = errorDivide(nonLinearFactor,nonLinearError,linearFactor,linearError);
+	int lndf = lin->GetNDF();
 	g1->SetMarkerStyle(kOpenCircle);
 	g1->Draw("AP");
 	g1->SetMarkerStyle(27);
 	poly->SetLineColor(kBlue);
 	poly->Draw("same");
 	lin->Draw("same");
-	myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
-	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
+	if (TMath::Abs(nonLinearFactor)-nonLinearError>0)
+	{
+		myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
+		myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/pndf),.04);
+	}
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
-	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/lndf),.04);
 	if (runChi)
 	{
 		chiAnalysis(g1,lin);
@@ -413,10 +417,13 @@ queue<Data>* singlefileAnalysis(string filename){
 	while (!input[5].empty())
 	{
 		//use TGraph->Apply(TF1) here insted
-		temp.mean = Scalar(input[1].front(),input[2].front())/slope; //DANGER DANGER there is unaccounted covariance in this calculation
-		temp.sigma = Scalar(input[3].front(),input[4].front())/slope;
-		temp.energy = input[5].front();
-		rdata->push(temp);
+		if (input[5].front()>2)
+		{
+			temp.energy = input[5].front();
+			temp.mean = Scalar(input[1].front(),input[2].front())/slope; //DANGER DANGER there is unaccounted covariance in this calculation
+			temp.sigma = Scalar(input[3].front(),input[4].front())/slope;
+			rdata->push(temp);
+		}
 		input[1].pop();
 		input[2].pop();
 		input[3].pop();
@@ -784,7 +791,7 @@ void chiAnalysis(TGraphErrors* graph, TF1* fit){
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,graph->GetX(),y,graph->GetEX(),yu);
 	p_mean->Draw("AP");
 	p_mean->SetMarkerStyle(27);
-	p_mean->SetTitle("Fit Comparison;point x;#Chi^{2} contribution");
+	p_mean->SetTitle("Fit Comparison;point x;#Chi^{2}/NDF contribution");
 }
 
 
@@ -814,7 +821,7 @@ void chiAnalysis(TGraphErrors* graph, TF1* fit, float* runNum=nullptr){
 	p_mean->SetMarkerStyle(27);
 	for (int i = 0; i < SIZE; ++i)
 	{
-		labely[i] = .8*TMath::Abs(y[i])/4+.1;
+		labely[i] = .8*TMath::Abs(y[i])/14+.1;
 		labelx[i] = .8*gx[i]/9+.075;
 		if(runNum!=nullptr)labels[i] = to_string((int)runNum[i]);
 		myText(labelx[i],labely[i],kBlue,labels[i].c_str(),.04);
@@ -876,5 +883,4 @@ void Part2B(){
 	doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin1new.second,lin1.second),doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin2new.second,lin2.second),lin0new.second));
 	//doubleFileAnalysis(lin1.first,lin2.first);
 	//doubleFileAnalysisResolution(lin1.second,lin2.second);
-	
 }
