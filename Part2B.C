@@ -47,6 +47,7 @@ using namespace std;
 using namespace Frannamespace;
 queue<Data>* sortcombine(queue<Data>* d1, queue<Data>* d2);
 void chiAnalysis(TGraphErrors* graph, TF1* lin,float* runNum);
+void chiAnalysis(TGraphErrors* graph, TF1* lin);
 
 const char* namer(int* count){
 	std::string r= std::to_string(*count);
@@ -89,10 +90,10 @@ TGraphErrors* combineAllPoints(TGraphErrors* g1, TGraphErrors* g2){
 	float yu[SIZE];
 	for (int i = 0; i < SIZE; ++i)
 	{
-		cout<<temp->front();
+		//cout<<temp->front();
 		energy[i] = (float)temp->front().energy;
 		y[i] = temp->front().mean.value;
-		cout<<temp->front().mean;
+		//cout<<temp->front().mean;
 		yu[i] = temp->front().mean.uncertainty;
 		temp->pop();
 	}
@@ -109,10 +110,10 @@ TGraphErrors* combineAllPoints(TGraphErrors* g1){
 	float yu[SIZE];
 	for (int i = 0; i < SIZE; ++i)
 	{
-		cout<<temp->front();
+		//cout<<temp->front();
 		energy[i] = (float)temp->front().energy;
 		y[i] = temp->front().mean.value;
-		cout<<temp->front().mean;
+		//cout<<temp->front().mean;
 		yu[i] = temp->front().mean.uncertainty;
 		temp->pop();
 	}
@@ -167,7 +168,7 @@ TGraphErrors* unitConverter(TGraphErrors* graph){
 	double *values = graph->GetY();
 	double *errors = graph->GetEY();
 	const int kSIZE = graph->GetN();
-	cout<<"SIZE:"<<kSIZE<<endl;
+	//cout<<"SIZE:"<<kSIZE<<endl;
 	for (int i = 0; i < kSIZE; ++i)
 	{
 		cout<<"Before:"<<values[i]<<":"<<errors[i]<<"="<<errors[i]/values[i]<<'\n';
@@ -180,7 +181,7 @@ TGraphErrors* unitConverter(TGraphErrors* graph){
 	}
 	//TGraphErrors *r =new TGraphErrors(kSIZE,graph->GetX(),values,graph->GetEX(),errors);
 	//delete graph;
-	cout<<"Done converting"<<endl;
+	//cout<<"Done converting"<<endl;
 	return graph;
 }
 
@@ -226,9 +227,8 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	lin->Draw("same");
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}+%0.3f",linearFactor,linearError,bterm),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
-	//chiAnalysis(p_mean,lin,runNum);
-	//return unitConverter(p_mean); //unaccounted covariance
-	return p_mean;
+	return unitConverter(p_mean); //unaccounted covariance
+	//return p_mean;
 }
 
 queue<Data>* pointScaling(queue<Data>* inData){
@@ -249,16 +249,21 @@ queue<Data>* pointScaling(queue<Data>* inData){
 	return rdata;
 }
 
-TGraphErrors* makeResolutionFromArrays(const int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror,TGraphErrors* graph){
+TGraphErrors* makeResolutionFromArrays(int SIZE,float*energy, float* mean, float* sigma, float* meanerror, float* sigmaerror,TGraphErrors* graph){
 	float y[SIZE];
 	float yu[SIZE];
 	TF1* lin = (TF1*)graph->FindObject("lin");	
 	Scalar yInt(lin->GetParameter(1),lin->GetParError(1));
 	Scalar scale(lin->GetParameter(0),lin->GetParError(0));
 	cout<<"Making resolusion with y="<<scale<<"x+"<<yInt<<endl;
+	int noChrenkov=0;
 	for (int i = 0; i < SIZE; ++i)
 	{
-		//cout<<sigma[i]<<"/"<<mean[i]<<'\n';
+		if (energy[i]>=24)
+		{
+			noChrenkov++;
+			continue;
+		}
 		Scalar tmean(mean[i],meanerror[i]);
 		Scalar tsigma(sigma[i],sigmaerror[i]);
 		tmean-= yInt;
@@ -268,6 +273,7 @@ TGraphErrors* makeResolutionFromArrays(const int SIZE,float*energy, float* mean,
 		y[i] = temp.value;
 		yu[i]= temp.uncertainty;
 	}
+	SIZE-=noChrenkov;
 	return new TGraphErrors(SIZE,energy,y,nullptr,yu);
 }
 
@@ -336,10 +342,10 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* g1){
 	return g1;
 }
 
-TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2){
+TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2,bool runChi=false){
 	cout<<"Starting double file analysis"<<endl;
-	TGraphErrors* g1= combineAllPoints(i1,i2);
 	TCanvas* tc = new TCanvas();
+	TGraphErrors* g1= combineAllPoints(i1,i2);
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -366,8 +372,13 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2){
 	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	if (runChi)
+	{
+		chiAnalysis(g1,lin);
+	}
 	return g1;
 }
+
 
 TGraphErrors* resolution(TGraphErrors* ehist);
 TGraphErrors* doubleFileAnalysisResolution(TGraphErrors* i1, TGraphErrors *i2){
@@ -558,7 +569,7 @@ Data combinePoint(queue<Data>* temp)
 
 queue<Data>* combineAllPoints(queue<Data>* temp)
 {
-	cout<<"Enter combineAll"<<'\n';
+	//cout<<"Enter combineAll"<<'\n';
 	const int kTotalPoints = temp->size();
 	queue<Data>* rdata = new queue<Data>();
 	Data *working = queueToArray(*temp);
@@ -571,8 +582,8 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 			currentpoints->push(working[nextPoint]);
 			nextPoint++;
 		} 
-		cout<<bigI<<"-"<<nextPoint<<'\n';
-		cout<<"Energy"<<working[bigI].energy<<endl;
+		//cout<<bigI<<"-"<<nextPoint<<'\n';
+		//cout<<"Energy"<<working[bigI].energy<<endl;
 		rdata->push(combinePoint(currentpoints));
 		bigI=nextPoint;
 		delete currentpoints;
@@ -583,7 +594,7 @@ queue<Data>* combineAllPoints(queue<Data>* temp)
 
 int combineAllPoints(Data* working, int SIZE)
 {
-	cout<<"Enter combineAll"<<'\n';
+	//cout<<"Enter combineAll"<<'\n';
 	const int kTotalPoints = SIZE;
 	int bigI=0;
 	queue<Data>* rdata = new queue<Data>();
@@ -595,8 +606,8 @@ int combineAllPoints(Data* working, int SIZE)
 			currentpoints->push(working[nextPoint]);
 			nextPoint++;
 		} 
-		cout<<"Energy"<<working[bigI].energy<<'\n';
-		cout<<bigI<<"-"<<nextPoint<<'\n';
+		//cout<<"Energy"<<working[bigI].energy<<'\n';
+		//cout<<bigI<<"-"<<nextPoint<<'\n';
 		rdata->push(combinePoint(currentpoints));
 		bigI=nextPoint;
 		delete currentpoints;
@@ -657,7 +668,7 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,ehist->GetXaxis()->GetBinUpEdge(ehist->GetXaxis()->GetLast()));
 	eF->SetLineColor(kRed);
 	eF->SetParLimits(0,0,1000);
-	eF->SetParLimits(0,0,1000);
+	eF->SetParLimits(1,0,1000);
 	ehist->Fit(eF,"MBI");
 	float eA = eF->GetParameter(0);
 	float eB = eF->GetParameter(1);
@@ -750,6 +761,32 @@ void resolutionAnabel(queue<Data>* notCombined) //doing resolution vs 1/sqrt(E)
 	myText(.24,.8,kRed,Form("Intercept: %0.6f#pm%0.6f",eB,errors[1]),.05);
 }
 
+void chiAnalysis(TGraphErrors* graph, TF1* fit){
+	const int NDF = fit->GetNDF();
+	TCanvas *canvas1 = new TCanvas();
+	const int SIZE = graph->GetN();
+	double *gx = graph->GetX();
+	double *gy = graph->GetY();
+	double* gye = graph->GetEY();
+	double y[SIZE];
+	double yu[SIZE];
+	for (int i = 0; i < SIZE; ++i)
+	{
+		cout<<gy[i]<<'\n';
+		Scalar point(gy[i],gye[i]);
+		Scalar residual = (point - ((float)fit->Eval(gx[i])))*(point - ((float)fit->Eval(gx[i])));
+		residual/=(gye[i])*(gye[i]);
+		cout<<residual<<'\n';
+		residual/=(float)NDF;
+		y[i] = residual.value;
+		yu[i] = residual.uncertainty;
+	}
+	TGraphErrors* p_mean = new TGraphErrors(SIZE,graph->GetX(),y,graph->GetEX(),yu);
+	p_mean->Draw("AP");
+	p_mean->SetMarkerStyle(27);
+	p_mean->SetTitle("Fit Comparison;point x;#Chi^{2} contribution");
+}
+
 
 void chiAnalysis(TGraphErrors* graph, TF1* fit, float* runNum=nullptr){
 	const int NDF = fit->GetNDF();
@@ -828,12 +865,15 @@ float getPointCoVarience(TGraphErrors* data, int i, double slope){
 }
 
 void Part2B(){
-	//pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGl1100.txt");
-	//pair<TGraphErrors*,TGraphErrors*> lin1new =singlefileConverter("PbGl1100new.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGl1100.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin1new =singlefileConverter("PbGl1100new.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGl1200.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin2new =singlefileConverter("PbGl1200new.txt");
-	//doubleFileAnalysis(doubleFileAnalysis(lin2.first,lin2new.first),doubleFileAnalysis(lin1.first,lin1new.first));
-	//doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin1new.second,lin1.second),doubleFileAnalysisResolution(lin2new.second,lin2.second));
+	//pair<TGraphErrors*,TGraphErrors*> lin0 =singlefileConverter("PbGl1000.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin0new =singlefileConverter("PbGl1000new.txt");	
+	//doubleFileAnalysis(lin0.first,lin0new.first);
+	doubleFileAnalysis(doubleFileAnalysis(lin2.first,lin2new.first),doubleFileAnalysis(doubleFileAnalysis(lin1.first,lin1new.first),lin0new.first),true);
+	doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin1new.second,lin1.second),doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin2new.second,lin2.second),lin0new.second));
 	//doubleFileAnalysis(lin1.first,lin2.first);
 	//doubleFileAnalysisResolution(lin1.second,lin2.second);
 	
