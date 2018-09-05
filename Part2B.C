@@ -213,7 +213,6 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	TF1* lin = new TF1("lin","[0]*x+[1]",0,energy[SIZE-1]);
 	p_mean->Fit(lin,"M0");
 	p_mean->SetMarkerStyle(kDot);
-	axisTitles(p_mean,"Beam Energy [GeV]","Signal");
 	p_mean->Fit(lin,"M0");
 	lin->SetLineColor(kRed);
 	double linearFactor = lin->GetParameter(0);
@@ -292,10 +291,10 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 		getline(ss,intemp,',');
 		while(getline(ss,intemp,',')){   //loop to put data from each line into each queue at the same place in the arrays
 			input[i].push(stof(intemp));
-			if (i==5)
+			/*if (i==5) //print the energies 
 			{
 				cout<<intemp<<endl;
-			}
+			}*/
 		}
 		ss.clear();
 	}
@@ -307,7 +306,11 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 	float* sigma = queueToArray(input[3]);
 	float* sigmaError = queueToArray(input[4]);
 	TGraphErrors* lin =graphConvert(SIZE,energy,mean,meanError,runNum);
+	string title = filename+";Beam Energy [GeV];Measured Energy [GeV]";
+	lin->SetTitle(title.c_str());
 	TGraphErrors* res = makeResolutionFromArrays(SIZE,energy,mean,sigma,meanError,sigmaError,lin);
+	title=filename+";resolution;Beam Energy [GeV]";
+	res->SetTitle(title.c_str());
 	return pair<TGraphErrors*,TGraphErrors*>(lin,res);
 }
 
@@ -343,10 +346,38 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* g1){
 	return g1;
 }
 
+TGraphErrors* remove2G(TGraphErrors* gin){
+	double* x = gin->GetX();
+	double* y = gin->GetY();
+	double* ey = gin->GetEY();
+	double* ex=gin->GetEX();
+	const int kNIN = gin->GetN();
+	int NOUT=kNIN;
+	double xout[kNIN];
+	double yout[kNIN];
+	double yeout[kNIN];
+	double xeout[kNIN];
+	for (int i = 0; i < kNIN; ++i)
+	{
+		if (x[i]!=2)
+		{
+			xout[i]=x[i];
+			yout[i]=y[i];
+			yeout[i]=ey[i];
+			xeout[i]=ex[i];
+		}
+		else{
+			NOUT--;
+		}
+	}
+	return new TGraphErrors(NOUT,xout,yout,xeout,yeout);
+}
+
 TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2,bool runChi=false){
 	cout<<"Starting double file analysis"<<endl;
 	TCanvas* tc = new TCanvas();
-	TGraphErrors* g1= combineAllPoints(i1,i2);
+	TGraphErrors* g1= combineAllPoints(i1,i2);//probably leaky 
+	g1=remove2G(g1);//leaaky
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -417,13 +448,10 @@ queue<Data>* singlefileAnalysis(string filename){
 	while (!input[5].empty())
 	{
 		//use TGraph->Apply(TF1) here insted
-		if (input[5].front()>2)
-		{
-			temp.energy = input[5].front();
-			temp.mean = Scalar(input[1].front(),input[2].front())/slope; //DANGER DANGER there is unaccounted covariance in this calculation
-			temp.sigma = Scalar(input[3].front(),input[4].front())/slope;
-			rdata->push(temp);
-		}
+		temp.mean = Scalar(input[1].front(),input[2].front())/slope; //DANGER DANGER there is unaccounted covariance in this calculation
+		temp.sigma = Scalar(input[3].front(),input[4].front())/slope;
+		temp.energy = input[5].front();
+		rdata->push(temp);
 		input[1].pop();
 		input[2].pop();
 		input[3].pop();
