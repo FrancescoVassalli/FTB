@@ -277,7 +277,7 @@ TGraphErrors* makeResolutionFromArrays(int SIZE,float*energy, float* mean, float
 	return new TGraphErrors(SIZE,energy,y,nullptr,yu);
 }
 
-pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
+pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename,bool removeF=false){
 	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
 	cout<<"Opened file!"<<endl;
 	const int LINES = 6;
@@ -309,6 +309,11 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename){
 	string title = filename+";Beam Energy [GeV];Measured Energy [GeV]";
 	lin->SetTitle(title.c_str());
 	TGraphErrors* res = makeResolutionFromArrays(SIZE,energy,mean,sigma,meanError,sigmaError,lin);
+	if (removeF)
+	{
+		lin->RemovePoint(0);
+		res->RemovePoint(0);
+	}
 	title=filename+";resolution;Beam Energy [GeV]";
 	res->SetTitle(title.c_str());
 	return pair<TGraphErrors*,TGraphErrors*>(lin,res);
@@ -346,38 +351,14 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* g1){
 	return g1;
 }
 
-TGraphErrors* remove2G(TGraphErrors* gin){
-	double* x = gin->GetX();
-	double* y = gin->GetY();
-	double* ey = gin->GetEY();
-	double* ex=gin->GetEX();
-	const int kNIN = gin->GetN();
-	int NOUT=kNIN;
-	double xout[kNIN];
-	double yout[kNIN];
-	double yeout[kNIN];
-	double xeout[kNIN];
-	for (int i = 0; i < kNIN; ++i)
-	{
-		if (x[i]!=2)
-		{
-			xout[i]=x[i];
-			yout[i]=y[i];
-			yeout[i]=ey[i];
-			xeout[i]=ex[i];
-		}
-		else{
-			NOUT--;
-		}
-	}
-	return new TGraphErrors(NOUT,xout,yout,xeout,yeout);
-}
-
 TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2,bool runChi=false){
 	cout<<"Starting double file analysis"<<endl;
 	TCanvas* tc = new TCanvas();
 	TGraphErrors* g1= combineAllPoints(i1,i2);//probably leaky 
-	g1=remove2G(g1);//leaaky
+	if (runChi)
+	{
+		//g1->RemovePoint(1);
+	}
 	TF1* lin = new TF1("lin","[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	TF1* poly = new TF1("poly","[1]*x*x+[0]*x",0,g1->GetXaxis()->GetBinUpEdge(g1->GetXaxis()->GetLast()));
 	axisTitles(g1,"Beam Energy [GeV]","Measured Energy [GeV]");
@@ -402,7 +383,7 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* i1, TGraphErrors *i2,bool runChi=
 	lin->Draw("same");
 	if (TMath::Abs(nonLinearFactor)-nonLinearError>0)
 	{
-		myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
+		myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.4f#pm %0.4f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
 		myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/pndf),.04);
 	}
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
@@ -820,6 +801,8 @@ void chiAnalysis(TGraphErrors* graph, TF1* fit){
 	p_mean->Draw("AP");
 	p_mean->SetMarkerStyle(27);
 	p_mean->SetTitle("Fit Comparison;point x;#Chi^{2}/NDF contribution");
+	gPad->SetTickx();
+	gPad->SetTicky();
 }
 
 
@@ -845,6 +828,8 @@ void chiAnalysis(TGraphErrors* graph, TF1* fit, float* runNum=nullptr){
 		yu[i] = residual.uncertainty;
 	}
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,graph->GetX(),y,graph->GetEX(),yu);
+	gPad->SetTickx();
+	gPad->SetTicky();
 	p_mean->Draw("AP");
 	p_mean->SetMarkerStyle(27);
 	for (int i = 0; i < SIZE; ++i)
@@ -903,7 +888,7 @@ void Part2B(){
 	pair<TGraphErrors*,TGraphErrors*> lin1 =singlefileConverter("PbGl1100.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin1new =singlefileConverter("PbGl1100new.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin2 =singlefileConverter("PbGl1200.txt");
-	pair<TGraphErrors*,TGraphErrors*> lin2new =singlefileConverter("PbGl1200new.txt");
+	pair<TGraphErrors*,TGraphErrors*> lin2new =singlefileConverter("PbGl1200new.txt",false);
 	//pair<TGraphErrors*,TGraphErrors*> lin0 =singlefileConverter("PbGl1000.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin0new =singlefileConverter("PbGl1000new.txt");	
 	//doubleFileAnalysis(lin0.first,lin0new.first);
