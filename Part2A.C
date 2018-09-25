@@ -526,7 +526,7 @@ public:
 		runNumber = atoi(name.c_str());
 		setHighMultiplicity();
 		const float kMAX = 10000;
-		const float kMainBins = 1600;
+		const float kMainBins = 400;
 		mainBinWidth = kMAX/kMainBins;
 		pbglPlot = new TH1D(name.c_str(),"",kMainBins,0,kMAX); 
 		pbglPlot->Sumw2();
@@ -649,13 +649,7 @@ public:
 		int pbglCUT;
 		if (beamEnergy>8)
 		{
-			if (beamEnergy>=24)
-			{
-				pbglCUT=5000;
-			}
-			else{
-				pbglCUT=1000;				
-			}
+			pbglCUT=500;
 		}
 		else{
 			pbglCUT=100;
@@ -772,33 +766,78 @@ public:
 	//run be called before getting gaussian data returns the gaussian fit 
 	TF1* makeGaus(){
 		made=true;
+		
 		int maxbin = pbglPlot->GetMaximumBin();
 		double gausLowBound = pbglPlot->GetBinLowEdge(maxbin);
 		double temp = gausLowBound*.3; //sometimes this number needs to be ajusted to make the guas fit well
 		double gausUpbound = gausLowBound +temp;
 		if(gausUpbound >10000){gausUpbound=10000;} //so that fit doesn't exceed range of histogram
 		gausLowBound -= temp; 
-		
-		TF1* gaus = new TF1("gaus","gaus",gausLowBound,gausUpbound);
+		Scalar mygaus[2];
+		TF1* gaus; 
+		if (beamEnergy>=20)
+		{
+			mygaus= noCerenkovFit();
+		}
+		else{
+			gaus= new TF1("gaus","gaus",gausLowBound,gausUpbound);
+			pbglPlot->Fit(gaus,"QN","",gausLowBound,gausUpbound);       //“R” Use the range specified in the function range
+			mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
+			mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
+			recursiveGaus(pbglPlot, gaus, mygaus, 1.5,97);
+			pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
+			gausLowBound=mygaus[0]-(mygaus[1]*5.0);
+			gausUpbound=mygaus[0]+mygaus[1]*5.0;
+		}
+		mainGaus = new GausPlot(pbglPlot,gaus,mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		gaus->SetLineStyle(1);
 		gaus->SetLineWidth(2);
 		gaus->SetLineColor(kRed);
-		pbglPlot->Fit(gaus,"QN","",gausLowBound,gausUpbound);       //“R” Use the range specified in the function range
-		Scalar mygaus[2];
-		mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
-		mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
-		if (beamEnergy<24)
-		{
-			recursiveGaus(pbglPlot, gaus, mygaus, 1.5,97);
-		} 
-		pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		mean = mygaus[0];
 		sigma = mygaus[1];
-		gausLowBound=mygaus[0]-(mygaus[1]*5.0);
-		gausUpbound=mygaus[0]+mygaus[1]*5.0;
-		mainGaus = new GausPlot(pbglPlot,gaus,mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 		return gaus;
 	}	
+	Scalar* noCerenkovFit(){
+		//make double gaus and remove the background 
+		TCanvas *tc = new TCanvas();
+		//pbglPlot->Rebin(4);
+		//pbglPlot->Scale(1./4);
+		TH1F *h_work = (TH1F*)pbglPlot->Clone("pbglPlotworking");
+		//make single gausses for the guesses
+		TF1* backgroundGaus = new TF1("background","gaus",500,4000);	
+		TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
+		signalGaus->SetParameter(1,6200);
+		h_work->Fit(backgroundGaus,"RN");
+		h_work->Add(backgroundGaus,-1);
+		h_work->Fit(signalGaus,"RN");	
+		signalGaus->SetLineColor(kBlue);
+		h_work->Draw();
+		backgroundGaus->Draw("same");
+		signalGaus->Draw("same");
+		tc->SaveAs("background1.pdf");
+		//use the guesses to fit a double gaus 
+		TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
+		doubleGaus->SetParameter(1,backgroundGaus->GetParameter(1)); //guess the background peak 
+		doubleGaus->SetParameter(2,backgroundGaus->GetParameter(2)); //guess the background width
+		doubleGaus->SetParameter(0,backgroundGaus->GetParameter(0)); //guess the background area 
+		doubleGaus->SetParameter(3,signalGaus->GetParameter(0)); //guess the signal area 
+		doubleGaus->SetParameter(4,signalGaus->GetParameter(1)); //guess the signal peak
+		doubleGaus->SetParameter(5,signalGaus->GetParameter(2)); //guess the signal width
+		pbglPlot->Fit(doubleGaus,"RMN");
+		pbglPlot->Draw();
+		doubleGaus->Draw("same");
+		tc->SaveAs("background2.pdf");
+		//return the signal
+		delete h_work;
+		delete signalGaus;
+		delete backgroundGaus;
+		Scalar mysignal[2];
+		mysignal[0] = Scalar(signalGaus->GetParameter(4),signalGaus->GetParError(4)); //mean
+		mysignal[1] = Scalar(signalGaus->GetParameter(5),signalGaus->GetParError(5)); //sigma
+		delete doubleGaus;
+		delete tc;
+		return &mysignal[0];
+	}
 	
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
@@ -1329,10 +1368,10 @@ public:
 		mainGaus->Draw();
 		myText(.6,.8,kBlack,"PbGl E",.16);
 		tc->cd(24); 
-		pbglCCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		/*pbglCCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
 		pbglCVCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
 		pbglUnFit->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
-		pbglNoCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);
+		pbglNoCut->GetXaxis()->SetRangeUser(0,mainGaus->getUpBound()*1.25);*/
 		pbglCCut->SetMarkerSize(.03);
 		pbglCVCut->SetMarkerSize(.03);
 		pbglUnFit->SetMarkerSize(.03);
@@ -1518,16 +1557,16 @@ private:
 
 	inline void setHighMultiplicity(){
 		if(beamEnergy>2){
-			if (beamEnergy>12)
+			if (beamEnergy>20)
 			{
-				multiplicityType=2;
+				multiplicityType=1;
 			}
 			else{
 				multiplicityType=1;
 			}
 		}
 		else{
-			multiplicityType=0;
+			multiplicityType=0;	
 		}
 	}
 
@@ -2765,7 +2804,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 void Part2A(){
 	cout<<"Start Here is your code Mr. Stark "<<endl;
 	int voltageSelection=1000;
-	bool newData=false;
+	bool newData=true;
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; //fran
 	//string fileLocation = "springBeamFiles/"; //chase
