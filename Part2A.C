@@ -763,10 +763,9 @@ public:
 	inline bool passHodoH2x2(double* hodo){ //exclusive or 
 		return hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4];
 	}
-	//run be called before getting gaussian data returns the gaussian fit 
+	//returns the fit to the signal after the cuts 
 	TF1* makeGaus(){
 		made=true;
-		
 		int maxbin = pbglPlot->GetMaximumBin();
 		double gausLowBound = pbglPlot->GetBinLowEdge(maxbin);
 		double temp = gausLowBound*.3; //sometimes this number needs to be ajusted to make the guas fit well
@@ -777,7 +776,8 @@ public:
 		TF1* gaus; 
 		if (beamEnergy>=20)
 		{
-			mygaus= noCerenkovFit();
+			gaus= noCerenkovFit();
+			mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
 		}
 		else{
 			gaus= new TF1("gaus","gaus",gausLowBound,gausUpbound);
@@ -798,10 +798,8 @@ public:
 		return gaus;
 	}	
 	Scalar* noCerenkovFit(){
-		//make double gaus and remove the background 
+		//fit double gaus and return signal
 		TCanvas *tc = new TCanvas();
-		//pbglPlot->Rebin(4);
-		//pbglPlot->Scale(1./4);
 		TH1F *h_work = (TH1F*)pbglPlot->Clone("pbglPlotworking");
 		//make single gausses for the guesses
 		TF1* backgroundGaus = new TF1("background","gaus",500,4000);	
@@ -828,18 +826,23 @@ public:
 		doubleGaus->Draw("same");
 		tc->SaveAs("background2.pdf");
 		//return the signal
-		delete h_work;
-		delete signalGaus;
 		delete backgroundGaus;
-		Scalar mysignal[2];
-		mysignal[0] = Scalar(signalGaus->GetParameter(4),signalGaus->GetParError(4)); //mean
-		mysignal[1] = Scalar(signalGaus->GetParameter(5),signalGaus->GetParError(5)); //sigma
+		delete signalGaus;
+		signalGaus = new TF1("rsig","gaus",500,10000);
+		signalGaus->SetParameter(0,doubleGaus->GetParameter(3));
+		signalGaus->SetParError(0,doubleGaus->GetParError(3));
+		signalGaus->SetParameter(1,doubleGaus->GetParameter(4));
+		signalGaus->SetParError(2,doubleGaus->GetParError(4));
+		signalGaus->SetParameter(3,doubleGaus->GetParameter(5));
+		signalGaus->SetParError(3,doubleGaus->GetParError(5));
+		delete h_work;
 		delete doubleGaus;
-		delete tc;
-		return &mysignal[0];
+		delete tc;// the associated TF1s and hists are deleted 
+		return signalGaus;
 	}
 	
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
+		//draws the cut pbgl signal 
 		TCanvas *tc = new TCanvas("tc","tc",800,600);
 		plotsexits[0]=true;
 		pbglPlot->Draw();
@@ -851,10 +854,11 @@ public:
 		delete tc;
 	}
 	TH1D* getPlot(){
+		//just gets the signal 
 		return pbglPlot;
 	}
 	GausPlot* getMainPlot(){
-
+		//gets the signal plus fit 
 		if (!plotsexits[0])
 		{
 			plotsexits[0]=true;
