@@ -526,7 +526,7 @@ public:
 		runNumber = atoi(name.c_str());
 		setHighMultiplicity();
 		const float kMAX = 10000;
-		const float kMainBins = 400;
+		const float kMainBins = 300;
 		mainBinWidth = kMAX/kMainBins;
 		pbglPlot = new TH1D(name.c_str(),"",kMainBins,0,kMAX); 
 		pbglPlot->Sumw2();
@@ -777,7 +777,8 @@ public:
 		if (beamEnergy>=20)
 		{
 			gaus= noCerenkovFit();
-			mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
+			mygaus[0] = Scalar(gaus->GetParameter(4),gaus->GetParError(4)); //sigma
+			mygaus[1] = Scalar(gaus->GetParameter(5),gaus->GetParError(5)); //sigma
 		}
 		else{
 			gaus= new TF1("gaus","gaus",gausLowBound,gausUpbound);
@@ -797,16 +798,26 @@ public:
 		sigma = mygaus[1];
 		return gaus;
 	}	
-	Scalar* noCerenkovFit(){
-		//fit double gaus and return signal
+	TF1* noCerenkovFit(){
+		//fit double gaus 
 		TCanvas *tc = new TCanvas();
 		TH1F *h_work = (TH1F*)pbglPlot->Clone("pbglPlotworking");
 		//make single gausses for the guesses
-		TF1* backgroundGaus = new TF1("background","gaus",500,4000);	
+		h_work->Draw();
+		tc->SaveAs("digbick.pdf");
+		cout<<"Run:"<<runNumber<<endl;
+		TF1* backgroundGaus = new TF1("background","gaus",500,10000);	
 		TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
-		signalGaus->SetParameter(1,6200);
-		h_work->Fit(backgroundGaus,"RN");
+		if(runNumber==1945){
+			signalGaus->SetParLimits(1,6000,7000);
+		}
+		else{
+			signalGaus->SetParLimits(1,500,9000);
+		}
+		backgroundGaus->SetParLimits(1,500,10000);
+		h_work->Fit(backgroundGaus,"N","",500,4000);
 		h_work->Add(backgroundGaus,-1);
+		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
 		signalGaus->SetLineColor(kBlue);
 		h_work->Draw();
@@ -815,6 +826,8 @@ public:
 		tc->SaveAs("background1.pdf");
 		//use the guesses to fit a double gaus 
 		TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
+		doubleGaus->SetParLimits(1,500,10000);
+		doubleGaus->SetParLimits(4,4000,10000);
 		doubleGaus->SetParameter(1,backgroundGaus->GetParameter(1)); //guess the background peak 
 		doubleGaus->SetParameter(2,backgroundGaus->GetParameter(2)); //guess the background width
 		doubleGaus->SetParameter(0,backgroundGaus->GetParameter(0)); //guess the background area 
@@ -828,17 +841,9 @@ public:
 		//return the signal
 		delete backgroundGaus;
 		delete signalGaus;
-		signalGaus = new TF1("rsig","gaus",500,10000);
-		signalGaus->SetParameter(0,doubleGaus->GetParameter(3));
-		signalGaus->SetParError(0,doubleGaus->GetParError(3));
-		signalGaus->SetParameter(1,doubleGaus->GetParameter(4));
-		signalGaus->SetParError(2,doubleGaus->GetParError(4));
-		signalGaus->SetParameter(3,doubleGaus->GetParameter(5));
-		signalGaus->SetParError(3,doubleGaus->GetParError(5));
 		delete h_work;
-		delete doubleGaus;
 		delete tc;// the associated TF1s and hists are deleted 
-		return signalGaus;
+		return doubleGaus;
 	}
 	
 	void plot(){ //note there may be a bug where it does not draw properly but it will save properly
