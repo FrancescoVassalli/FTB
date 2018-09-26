@@ -522,8 +522,10 @@ public:
 	OfficalBeamData(){}
 	//this constructor makes the TH1Ds and tracks the voltage and energy
 	//descriptions of the plots are in the declarations 
-	OfficalBeamData(string name, int voltage, float beamEnergy) : beamVoltage(voltage), name(name), beamEnergy(beamEnergy){
-		runNumber = atoi(name.c_str());
+	OfficalBeamData(int number, int voltage, float beamEnergy) : beamVoltage(voltage), beamEnergy(beamEnergy){
+		runNumber = number;
+		cout<<"Processing run:"<<runNumber<<endl;
+		name = to_string(number);
 		setHighMultiplicity();
 		const float kMAX = 10000;
 		const float kMainBins = 300;
@@ -804,7 +806,6 @@ public:
 		TH1F *h_work = (TH1F*)pbglPlot->Clone("pbglPlotworking");
 		//make single gausses for the guesses
 		h_work->Draw();
-		tc->SaveAs("digbick.pdf");
 		cout<<"Run:"<<runNumber<<endl;
 		TF1* backgroundGaus = new TF1("background","gaus",500,10000);	
 		TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
@@ -816,6 +817,8 @@ public:
 		}
 		backgroundGaus->SetParLimits(1,500,10000);
 		h_work->Fit(backgroundGaus,"N","",500,4000);
+		string outname="background1-"+to_string(runNumber)+".pdf";
+		tc->SaveAs(outname.c_str());
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
@@ -823,7 +826,8 @@ public:
 		h_work->Draw();
 		backgroundGaus->Draw("same");
 		signalGaus->Draw("same");
-		tc->SaveAs("background1.pdf");
+		outname="background2-"+to_string(runNumber)+".pdf";
+		tc->SaveAs(outname.c_str());
 		//use the guesses to fit a double gaus 
 		TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
 		doubleGaus->SetParLimits(1,500,10000);
@@ -837,7 +841,8 @@ public:
 		pbglPlot->Fit(doubleGaus,"RMN");
 		pbglPlot->Draw();
 		doubleGaus->Draw("same");
-		tc->SaveAs("background2.pdf");
+		outname="background3-"+to_string(runNumber)+".pdf";
+		tc->SaveAs(outname.c_str());
 		//return the signal
 		delete backgroundGaus;
 		delete signalGaus;
@@ -2752,12 +2757,9 @@ Int_t DSTReader551::Cut(Long64_t entry)
 OfficalBeamData* DSTReader551::Loop(int number)
 {
 	if (fChain == 0) return NULL;
-	stringstream ss;
-	ss<<number;
-	string name = "data"+ss.str();
 	fChain->GetEntry(1);
 	if(number == 567){beam_MTNRG_GeV = 8;}
-	OfficalBeamData *tally = new OfficalBeamData(name.c_str(),runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
+	OfficalBeamData *tally = new OfficalBeamData(number,runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
 	Long64_t nentries = fChain->GetEntriesFast();
 
     Long64_t nbytes = 0, nb = 0;
