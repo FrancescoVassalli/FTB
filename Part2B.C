@@ -259,14 +259,14 @@ TGraphErrors* makeResolutionFromArrays(int SIZE,float*energy, float* mean, float
 	int noChrenkov=0;
 	for (int i = 0; i < SIZE; ++i)
 	{
-		if (energy[i]>=24)
+		/*if (energy[i]>=20)
 		{
 			noChrenkov++;
 			continue;
-		}
+		}*/
 		Scalar tmean(mean[i],meanerror[i]);
 		Scalar tsigma(sigma[i],sigmaerror[i]);
-		tmean-= yInt;
+		//tmean-= yInt; //remove the yintercept 
 		tmean/=scale;
 		tsigma/=scale;
 		Scalar temp = tsigma/tmean;

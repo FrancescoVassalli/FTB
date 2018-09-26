@@ -817,6 +817,7 @@ public:
 		}
 		backgroundGaus->SetParLimits(1,500,10000);
 		h_work->Fit(backgroundGaus,"N","",500,4000);
+		backgroundGaus->Draw("same");
 		string outname="background1-"+to_string(runNumber)+".pdf";
 		tc->SaveAs(outname.c_str());
 		h_work->Add(backgroundGaus,-1);
