@@ -800,14 +800,23 @@ public:
 		sigma = mygaus[1];
 		return gaus;
 	}	
+	//print a fit to the pbgl and display the parameters indexed in the list
+	void printFit(TF1* fit,string filename,int* parameterNums=NULL, int numParams=0){
+		TCanvas* tc = new TCanvas();
+		TH1* plot = (TH1*)pbglPlot->Clone();
+		plot->SetTitle(";counts;signal");
+		plot->Draw();
+		fit->Draw("same");
+		tc->SaveAs(filename.c_str());
+		delete tc;
+	}
 	TF1* noCerenkovFit(){
 		//fit double gaus 
-		TCanvas *tc = new TCanvas();
 		TH1F *h_work = (TH1F*)pbglPlot->Clone("pbglPlotworking");
+		TH1F *h_work2 = (TH1F*)pbglPlot->Clone("expo");
 		//make single gausses for the guesses
-		h_work->Draw();
-		cout<<"Run:"<<runNumber<<endl;
 		TF1* backgroundGaus = new TF1("background","gaus",500,10000);	
+		TF1* backgroundExpo = new TF1("background2","expo",500,10000);
 		TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
 		if(runNumber==1945){
 			signalGaus->SetParLimits(1,6000,7000);
@@ -816,19 +825,18 @@ public:
 			signalGaus->SetParLimits(1,500,9000);
 		}
 		backgroundGaus->SetParLimits(1,500,10000);
-		h_work->Fit(backgroundGaus,"N","",500,4000);
-		backgroundGaus->Draw("same");
-		string outname="background1-"+to_string(runNumber)+".pdf";
-		tc->SaveAs(outname.c_str());
+		h_work->Fit(backgroundGaus,"NL","",500,4000);
+		h_work->Fit(backgroundExpo,"NL","",backgroundGaus->GetParameter(1),4000);
+		string outname="background1G-"+to_string(runNumber)+".pdf";
+		printFit(backgroundGaus,outname);
+		outname="background1E-"+to_string(runNumber)+".pdf";
+		printFit(backgroundExpo,outname)
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
 		signalGaus->SetLineColor(kBlue);
-		h_work->Draw();
-		backgroundGaus->Draw("same");
-		signalGaus->Draw("same");
 		outname="background2-"+to_string(runNumber)+".pdf";
-		tc->SaveAs(outname.c_str());
+		printFit(signalGaus,outname);
 		//use the guesses to fit a double gaus 
 		TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
 		doubleGaus->SetParLimits(1,500,10000);
@@ -839,11 +847,9 @@ public:
 		doubleGaus->SetParameter(3,signalGaus->GetParameter(0)); //guess the signal area 
 		doubleGaus->SetParameter(4,signalGaus->GetParameter(1)); //guess the signal peak
 		doubleGaus->SetParameter(5,signalGaus->GetParameter(2)); //guess the signal width
-		pbglPlot->Fit(doubleGaus,"RMN");
-		pbglPlot->Draw();
-		doubleGaus->Draw("same");
+		pbglPlot->Fit(doubleGaus,"RMNL");
 		outname="background3-"+to_string(runNumber)+".pdf";
-		tc->SaveAs(outname.c_str());
+		printFit(doubleGaus,outname);
 		//return the signal
 		delete backgroundGaus;
 		delete signalGaus;
