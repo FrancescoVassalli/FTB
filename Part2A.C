@@ -810,8 +810,7 @@ public:
 		TH1* plot = (TH1*)pbglPlot->Clone();
 		if (range)
 		{
-			TF1* functionRange = (TF1*) fit->Clone();
-			functionRange->SetRange(range->first,range->second);
+			fit->SetRange(range->first,range->second);
 		}
 		plot->SetTitle(";counts;signal");
 		plot->Draw();
