@@ -12,7 +12,7 @@ double franCrystalBall(double* x, double* p){
 		double A=TMath::Power(p[1]/TMath::Abs(p[0]),p[1])*TMath::Exp(-1.0*p[0]*p[0]/2.0);
 		double B=p[1]/TMath::Abs(p[0])-TMath::Abs(p[0]);
 		
-		cout<<"A:"<<A<<"\nB:"<<B<<"\nC:"<<C<<"\nD:"<<D<<"\nN:"<<N<<'\n';
+		cout<<"A:"<<A<<"\nB:"<<B<<'\n';
 		if ((x[0]-p[2])/p[3]>=p[0])
 		{
 			return p[4]*A*TMath::Power(B-((x[0]-p[2])/p[3]),-1.0*p[1]);
@@ -28,8 +28,9 @@ int testCB(){
 	double mu=0;
 	double alpha=.3;
 	double n=1.1;
+	double N=500;
 	double in[]={x};
-	double p[]={alpha,n,mu,sig};
+	double p[]={alpha,n,mu,sig,N};
 	std::cout<<franCrystalBall(in,p)<<'\n';
 	return 0;
 }
