@@ -9,26 +9,31 @@ using namespace std;
 	p4: N -normalization */
 double franCrystalBall(double* x, double* p){
 		//factors of the CB
+		double deviation = -1*(x[0]-p[2])/p[3];
 		double A=TMath::Power(p[1]/TMath::Abs(p[0]),p[1])*TMath::Exp(-1.0*p[0]*p[0]/2.0);
 		double B=p[1]/TMath::Abs(p[0])-TMath::Abs(p[0]);
 		
 		cout<<"A:"<<A<<"\nB:"<<B<<'\n';
-		if ((x[0]-p[2])/p[3]>=p[0])
+		cout<<"Deviation:"<<deviation<<'\n';
+		if (deviation>-1*p[0])
 		{
-			return p[4]*A*TMath::Power(B-((x[0]-p[2])/p[3]),-1.0*p[1]);
+			cout<<"gaus\n";
+			return p[4]*TMath::Exp(-1.0*(x[0]-p[2])*(x[0]-p[2])/(2*p[3]*p[3]));
 		}
 		else{
-			return p[4]*TMath::Exp(-1.0*(x[0]-p[2])*(x[0]-p[2])/(2*p[3]*p[3]));
+			cout<<"power\n";
+			cout<<"base:"<<B-((x[0]-p[2])/p[3])<<'\n';
+			return p[4]*A*TMath::Power(B-deviation,-1.0*p[1]);
 		}
 }
 
 int testCB(){
-	double x=.1;
-	double sig=.2;
-	double mu=0;
-	double alpha=.3;
-	double n=1.1;
-	double N=500;
+	double x=500;
+	double sig=100;
+	double mu=1500;
+	double alpha=2;
+	double n=2.1;
+	double N=50;
 	double in[]={x};
 	double p[]={alpha,n,mu,sig,N};
 	std::cout<<franCrystalBall(in,p)<<'\n';
