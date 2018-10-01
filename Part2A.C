@@ -40,6 +40,27 @@ void oleSwitcheroo(T* xp, T* yp)
 	*yp = temp;
 }
 
+/*a 5 parameter function that combines a gaussian and a power law 
+	p0: alpha - the point where the gaussian becomes a power law 
+	p1: n - the power on the power law 
+	p2: mu - the pseudomean 
+	p3: sigma - the width on the gaussian
+	p4: N -normalization */
+double franCrystalBall(double* x, double* p){
+		//factors of the CB
+		double deviation = -1*(x[0]-p[2])/p[3];
+		double A=TMath::Power(p[1]/TMath::Abs(p[0]),p[1])*TMath::Exp(-1.0*p[0]*p[0]/2.0);
+		double B=p[1]/TMath::Abs(p[0])-TMath::Abs(p[0]);
+		
+		if (deviation>-1*p[0])
+		{
+			return p[4]*TMath::Exp(-1.0*(x[0]-p[2])*(x[0]-p[2])/(2*p[3]*p[3]));
+		}
+		else{
+			return p[4]*A*TMath::Power(B-deviation,-1.0*p[1]);
+		}
+}
+
 using namespace std;
 
 namespace {
@@ -804,18 +825,27 @@ public:
 		sigma = mygaus[1];
 		return gaus;
 	}	
+
+	
 	//print a fit to the pbgl and display the parameters indexed in the list
-	void printFit(TF1* fit,string filename,std::pair<float,float>* range=NULL,int* parameterNums=NULL, int numParams=0){
+	void printFit(TF1* fit,string filename,std::pair<float,float>* range=NULL,int* parameterNums=NULL){
 		TCanvas* tc = new TCanvas();
-		TH1* plot = (TH1*)pbglPlot->Clone();
-		if (range)
-		{
-			fit->SetRange(range->first,range->second);
-		}
-		plot->SetTitle(";counts;signal");
+		TH1* plot = (TH1*)pbglPlot->Clone("plot");
+		plot->SetTitle(";signal;counts");
 		plot->Draw();
+		if(range){
+			fit->Clone()->Draw("same");
+			cout<<"drew mains"<<endl;
+			fit->SetRange(range->first,range->second);
+			fit->SetLineColor(kBlue);
+		}
 		fit->Draw("same");
+		cout<<"draw range"<<endl;
 		tc->SaveAs(filename.c_str());
+		if (plot)
+		{
+			delete plot;
+		}
 		delete tc;
 	}
 	TF1* noCerenkovFit(){
@@ -824,6 +854,7 @@ public:
 		//make single gausses for the guesses
 		TF1* backgroundGaus = new TF1("background","gaus",500,10000);	
 		TF1* backgroundExpo = new TF1("background2","expo",500,10000);
+		TF1* backgroundCB = new TF1("backgroundCB",franCrystalBall,500,10000,5);
 		TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
 		if(runNumber==1945){
 			signalGaus->SetParLimits(1,6000,7000);
@@ -832,15 +863,24 @@ public:
 			signalGaus->SetParLimits(1,500,9000);
 		}
 		backgroundGaus->SetParLimits(1,500,10000);
-		h_work->Fit(backgroundGaus,"NL","",500,4000);
+		franCrystalBall->SetParLimits()
+
 		std::pair<float,float> expoRange;
 		expoRange.first=backgroundGaus->GetParameter(1);
-		expoRange.second=4000;
-		h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
+		expoRange.second=4500;
+
+		h_work->Fit(backgroundGaus,"NL","",500,4000);
 		string outname="background1G-"+to_string(runNumber)+".pdf";
 		printFit(backgroundGaus,outname);
+
+		h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
 		outname="background1E-"+to_string(runNumber)+".pdf";
 		printFit(backgroundExpo,outname,&expoRange);
+
+		h_work->Fit(backgroundCB,"NL","",500,expoRange.second);
+		outname="background1CB-"+to_string(runNumber)+".pdf";
+		printFit(backgroundCB,outname,&expoRange);
+
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
@@ -1901,7 +1941,6 @@ private:
 		hv8->Print(out.c_str());
 		hv8->Close();delete hv8;
 	}
-
 };
 #endif
 
