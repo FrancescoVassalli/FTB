@@ -3,23 +3,27 @@
 // This script takes beam data files in DSTReader format and plots the PbGl energy after making 
 // hodoscope and cherenkov radiation cuts. It then fits a gaussian to the energy to get 
 // mean energy as well as the sigma on the energies gaussian distribution.
+#include "NicePlots.C"
 #include <Scalar.h>
-#include <sstream>
-#include <queue>
+
+#include "TClonesArray.h"
+#include "TObject.h"
 #include "TH1D.h"
 #include "TChain.h"
-#include <iostream>
 #include "TF1.h"
+
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
 #include <TROOT.h>
 #include <TChain.h>
 #include <TFile.h>
-#include "NicePlots.C"
+
+#include <sstream>
+#include <queue>
+#include <iostream>
 // Header file for the classes stored in the TTree if any.
-#include "TClonesArray.h"
-#include "TObject.h"
+
 //#include "/Users/Chase/Documents/HeavyIonsResearch/FranTools/Bin/NiceHists.C" //for chase
 void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
   	TLatex l; //l.SetTextAlign(12); 
@@ -801,9 +805,14 @@ public:
 		return gaus;
 	}	
 	//print a fit to the pbgl and display the parameters indexed in the list
-	void printFit(TF1* fit,string filename,int* parameterNums=NULL, int numParams=0){
+	void printFit(TF1* fit,string filename,std::pair<float,float>* range=NULL,int* parameterNums=NULL, int numParams=0){
 		TCanvas* tc = new TCanvas();
 		TH1* plot = (TH1*)pbglPlot->Clone();
+		if (range)
+		{
+			TF1* functionRange = (TF1*) fit->Clone();
+			functionRange->SetRange(range->first,range->second);
+		}
 		plot->SetTitle(";counts;signal");
 		plot->Draw();
 		fit->Draw("same");
@@ -825,11 +834,14 @@ public:
 		}
 		backgroundGaus->SetParLimits(1,500,10000);
 		h_work->Fit(backgroundGaus,"NL","",500,4000);
-		h_work->Fit(backgroundExpo,"NL","",backgroundGaus->GetParameter(1),4000);
+		std::pair<float,float> expoRange;
+		expoRange.first=backgroundGaus->GetParameter(1);
+		expoRange.second=4000;
+		h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
 		string outname="background1G-"+to_string(runNumber)+".pdf";
 		printFit(backgroundGaus,outname);
 		outname="background1E-"+to_string(runNumber)+".pdf";
-		printFit(backgroundExpo,outname);
+		printFit(backgroundExpo,outname,&expoRange);
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
