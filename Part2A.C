@@ -813,7 +813,6 @@ public:
 	TF1* noCerenkovFit(){
 		//fit double gaus 
 		TH1F *h_work = (TH1F*)pbglPlot->Clone("pbglPlotworking");
-		TH1F *h_work2 = (TH1F*)pbglPlot->Clone("expo");
 		//make single gausses for the guesses
 		TF1* backgroundGaus = new TF1("background","gaus",500,10000);	
 		TF1* backgroundExpo = new TF1("background2","expo",500,10000);
@@ -830,7 +829,7 @@ public:
 		string outname="background1G-"+to_string(runNumber)+".pdf";
 		printFit(backgroundGaus,outname);
 		outname="background1E-"+to_string(runNumber)+".pdf";
-		printFit(backgroundExpo,outname)
+		printFit(backgroundExpo,outname);
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
@@ -853,8 +852,8 @@ public:
 		//return the signal
 		delete backgroundGaus;
 		delete signalGaus;
+		delete backgroundExpo;
 		delete h_work;
-		delete tc;// the associated TF1s and hists are deleted 
 		return doubleGaus;
 	}
 	
