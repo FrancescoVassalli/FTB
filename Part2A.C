@@ -846,7 +846,7 @@ public:
 			string title="";
 			for (int i = nTitles-1; i >=0 ; i--)
 			{
-				title = names[i]+":"+Form("%0.3f",fit->GetParameter(i))+'\n';
+				title = names[i]+":"+Form("%0.3f#pm%0.3f",fit->GetParameter(i),fit->GetParError(i))+'\n';
 				tl->AddEntry(fit,title.c_str(),"l");
 			}
 			cout<<"drawing legend"<<endl;
@@ -872,54 +872,45 @@ public:
 		//make single gausses for the guesses
 		TF1* backgroundGaus = new TF1("background","gaus",500,10000);	
 		TF1* backgroundExpo = new TF1("background2","expo",500,10000);
-		TF1* backgroundCB = new TF1("backgroundCB",franCrystalBall,500,10000,5);
 		TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
+		signalGaus->SetLineColor(kBlue);
+		//kinda weird run 
 		if(runNumber==1945){
 			signalGaus->SetParLimits(1,6000,7000);
 		}
 		else{
 			signalGaus->SetParLimits(1,500,9000);
 		}
+
+		//for printing
+		int paramNums[]={1,2};
+
+		//make the initial gaussian background fit 
 		backgroundGaus->SetParLimits(1,500,10000);
-
-		backgroundCB->SetParLimits(0,0,10);
-		backgroundCB->SetParLimits(1,1.00001,10);
-		backgroundCB->SetParLimits(2,500,4000);
-		backgroundCB->SetParLimits(3,0,4000);
-		backgroundCB->SetParameter(0,1);
-		backgroundCB->SetParameter(2,1);
-
-		std::pair<float,float> expoRange;
-		expoRange.second=4500;
-
 		h_work->Fit(backgroundGaus,"NL","",500,4000);
 		string outname="background1G-"+to_string(runNumber)+".pdf";
 		printFit(backgroundGaus,outname);
 		
+		//use it to define the range 
+		std::pair<float,float> expoRange;
+		expoRange.second=4500;
 		expoRange.first=backgroundGaus->GetParameter(1);
 
+		//try and exponential fit
 		h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
 		outname="background1E-"+to_string(runNumber)+".pdf";
 		printFit(backgroundExpo,outname,&expoRange);
 
-		backgroundCB->SetParameter(2,backgroundGaus->GetParameter(1));
-		backgroundCB->SetParameter(3,backgroundGaus->GetParameter(2));
-		h_work->Fit(backgroundCB,"NL","",500,expoRange.second);
-		outname="background1CB-"+to_string(runNumber)+".pdf";
-		printFit(backgroundCB,outname, new pair<float,float>(500,expoRange.second));
-
+		//try fitting the signal with each of the background models 
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
-		signalGaus->SetLineColor(kBlue);
 		outname="background2G-"+to_string(runNumber)+".pdf";
-		int paramNums[]={1,2};
 		printFit(signalGaus,outname,NULL,2,paramNums,titleSigmaMean());
 
 		h_work->Add(backgroundGaus,1);
 		h_work->Add(backgroundExpo,-1);
 		h_work->Fit(signalGaus,"RN");	
-		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		outname="background2E-"+to_string(runNumber)+".pdf";
 		printFit(signalGaus,outname,NULL,2,paramNums,titleSigmaMean());
 
@@ -955,6 +946,10 @@ public:
 		tc->Print(out.c_str());
 		tc->Close();
 		delete tc;
+	}
+	void SaveMainHist(){
+		string outname = name+"MainHist.root";
+		pbglPlot->SaveAs(outname.c_str());
 	}
 	TH1D* getPlot(){
 		//just gets the signal 
@@ -2943,6 +2938,7 @@ void Part2A(){
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
 		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
+		data->SaveMainHist();
 		cout<<"Res:"<<data->getResolution()<<'\n';
 		mean[i] =data->getMean();
 		meanU[i]=data->getMeanUncertainty();
