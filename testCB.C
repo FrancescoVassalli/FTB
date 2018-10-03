@@ -29,22 +29,34 @@ double franCrystalBall(double* x, double* p){
 
 int testCB(){
 	double x=500;
-	double sig=500;
-	double mu=1500;
+	double sig=20;
+	double mu=0;
 	double alpha=2;
-	double n=.9;
+	double n=1.3;
 	double N=1;
 	double in[]={x};
 	double p[]={alpha,n,mu,sig,N};
 	std::cout<<franCrystalBall(in,p)<<'\n';
 	TH1D* plot = new TH1D("plot","",100,0,10000);
 	plot->Draw();
-	TF1* cb = new TF1("func",franCrystalBall,100,10000,5);
+	TF1* cb = new TF1("func",franCrystalBall,-100,100,5);
+	cb->SetParLimits(0,0,3);
+	cb->SetParLimits(1,1.00001,5);
 	cb->SetParameter(0,alpha);
 	cb->SetParameter(1,n);
 	cb->SetParameter(2,mu);
 	cb->SetParameter(3,sig);
 	cb->SetParameter(4,N);
+	//cb->Draw();
+	TH1D *fitplot = new TH1D("final","",100,-100,100);
+	fitplot->FillRandom("func",100000);
+	/*TH1D *work = new TH1D("work","",200,-10,10);
+	for (int i = 100; i < work->GetBbinsX; ++i)
+	{
+		fitplot->SetBinContent(i,fitplot->GetBinContent(i)+2*work->GetBinContent(i));
+	}*/
+	fitplot->Draw();
+	fitplot->Fit(cb,"","",-100,100);
 	cb->Draw("same");
 	return 0;
 }
