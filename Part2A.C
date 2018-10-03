@@ -828,9 +828,10 @@ public:
 
 	
 	//print a fit to the pbgl and display the parameters indexed in the list
-	void printFit(TF1* fit,string filename,std::pair<float,float>* range=NULL,int* parameterNums=NULL){
+	void printFit(TF1* fit,string filename,std::pair<float,float>* range=NULL,int nTitles=0,int* parameterNums=NULL,string* names=NULL){
 		TCanvas* tc = new TCanvas();
 		TH1* plot = (TH1*)pbglPlot->Clone("plot");
+		TLegend* tl = new TLegend(.75,.75,.95,.95);
 		plot->SetTitle(";signal;counts");
 		plot->Draw();
 		if(range){
@@ -840,6 +841,17 @@ public:
 			fit->SetLineColor(kBlue);
 		}
 		fit->Draw("same");
+		if (nTitles>0)
+		{
+			string title="";
+			for (int i = nTitles-1; i >=0 ; i--)
+			{
+				title = names[i]+":"+Form("%0.3f",fit->GetParameter(i))+'\n';
+				tl->AddEntry(fit,title.c_str(),"l");
+			}
+			cout<<"drawing legend"<<endl;
+			tl->Draw();
+		}
 		cout<<"draw range"<<endl;
 		tc->SaveAs(filename.c_str());
 		if (plot)
@@ -847,6 +859,12 @@ public:
 			delete plot;
 		}
 		delete tc;
+	}
+	string* titleSigmaMean(){
+		string *titles = new string[2];
+		titles[0]="#sigma";
+		titles[1]="#mu";
+		return titles;
 	}
 	TF1* noCerenkovFit(){
 		//fit double gaus 
@@ -863,30 +881,48 @@ public:
 			signalGaus->SetParLimits(1,500,9000);
 		}
 		backgroundGaus->SetParLimits(1,500,10000);
-		franCrystalBall->SetParLimits()
+
+		backgroundCB->SetParLimits(0,0,10);
+		backgroundCB->SetParLimits(1,1.00001,10);
+		backgroundCB->SetParLimits(2,500,4000);
+		backgroundCB->SetParLimits(3,0,4000);
+		backgroundCB->SetParameter(0,1);
+		backgroundCB->SetParameter(2,1);
 
 		std::pair<float,float> expoRange;
-		expoRange.first=backgroundGaus->GetParameter(1);
 		expoRange.second=4500;
 
 		h_work->Fit(backgroundGaus,"NL","",500,4000);
 		string outname="background1G-"+to_string(runNumber)+".pdf";
 		printFit(backgroundGaus,outname);
+		
+		expoRange.first=backgroundGaus->GetParameter(1);
 
 		h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
 		outname="background1E-"+to_string(runNumber)+".pdf";
 		printFit(backgroundExpo,outname,&expoRange);
 
+		backgroundCB->SetParameter(2,backgroundGaus->GetParameter(1));
+		backgroundCB->SetParameter(3,backgroundGaus->GetParameter(2));
 		h_work->Fit(backgroundCB,"NL","",500,expoRange.second);
 		outname="background1CB-"+to_string(runNumber)+".pdf";
-		printFit(backgroundCB,outname,&expoRange);
+		printFit(backgroundCB,outname, new pair<float,float>(500,expoRange.second));
 
 		h_work->Add(backgroundGaus,-1);
 		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 		h_work->Fit(signalGaus,"RN");	
 		signalGaus->SetLineColor(kBlue);
-		outname="background2-"+to_string(runNumber)+".pdf";
-		printFit(signalGaus,outname);
+		outname="background2G-"+to_string(runNumber)+".pdf";
+		int paramNums[]={1,2};
+		printFit(signalGaus,outname,NULL,2,paramNums,titleSigmaMean());
+
+		h_work->Add(backgroundGaus,1);
+		h_work->Add(backgroundExpo,-1);
+		h_work->Fit(signalGaus,"RN");	
+		signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
+		outname="background2E-"+to_string(runNumber)+".pdf";
+		printFit(signalGaus,outname,NULL,2,paramNums,titleSigmaMean());
+
 		//use the guesses to fit a double gaus 
 		TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
 		doubleGaus->SetParLimits(1,500,10000);
