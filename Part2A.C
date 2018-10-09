@@ -855,7 +855,8 @@ class OfficalBeamData
 			TCanvas* tc = new TCanvas();
 			TH1* plot = (TH1*)pbglPlot->Clone("plot");
 			TLegend* tl = new TLegend(.75,.75,.95,.95);
-			plot->SetTitle(";signal;counts");
+			string plottitle= "PbGl Signal Run:"+name+" "+to_string(beamEnergy)+"GeV "+to_string(beamVoltage)+"V;ADC signal;N";
+			plot->SetTitle(plottitle.c_str());
 			plot->Draw();
 			if(range){
 				fit->Clone()->Draw("same");
@@ -940,7 +941,12 @@ class OfficalBeamData
 			//use the guesses to fit a double gaus 
 			TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
 			doubleGaus->SetParLimits(1,500,10000);
-			doubleGaus->SetParLimits(4,4000,10000);
+			doubleGaus->SetParLimits(4,signalGaus->GetParameter(1)-2*signalGaus->GetParameter(2),signalGaus->GetParameter(1)+2*signalGaus->GetParameter(2));
+			if (runNumber==1945)
+			{
+				doubleGaus->SetParLimits(4,6000,7000);
+			}
+			doubleGaus->SetParLimits(3,0,500000);
 			doubleGaus->SetParameter(1,backgroundGaus->GetParameter(1)); //guess the background peak 
 			doubleGaus->SetParameter(2,backgroundGaus->GetParameter(2)); //guess the background width
 			doubleGaus->SetParameter(0,backgroundGaus->GetParameter(0)); //guess the background area 
@@ -949,7 +955,7 @@ class OfficalBeamData
 			doubleGaus->SetParameter(5,signalGaus->GetParameter(2)); //guess the signal width
 			pbglPlot->Fit(doubleGaus,"RMNL");
 			outname="background3-"+to_string(runNumber)+".pdf";
-			//printFit(doubleGaus,outname);
+			printFit(doubleGaus,outname);
 			//return the signal
 			delete backgroundGaus;
 			delete signalGaus;
@@ -995,14 +1001,22 @@ class OfficalBeamData
 			gPad->SetLogy();
 			cerenkov->GetXaxis()->SetRangeUser(1,100000);
 			cerenkov->Draw();
+			cerenkov->SetTitle("Cherenkov Signal;ADC signal;N");
+			TLegend *tl = new TLegend(.85,.85,.95,.95);
 			TLine *cut = new TLine(CERENKOVcut,0,CERENKOVcut+1,DBL_MAX);
 			cut->SetLineWidth(2); cut->SetLineColor(kBlue) ;
 			cut->SetLineStyle(9);
 			cut->Draw("same");
-			cut_cerenkov = new CutPlot(cerenkov,cut);
+			tl->AddEntry(cut,"Cut","l");
+			tl->Draw();
+			if (!cut_cerenkov)
+			{
+				cut_cerenkov = new CutPlot(cerenkov,cut);
+			}
 			string out = name+"ceren.pdf";
 			tc->Print(out.c_str());
 			tc->Close();
+			delete tl;
 			delete tc;
 		}
 		//prints what the data would look like for each hodo cut 
@@ -1224,7 +1238,8 @@ class OfficalBeamData
 		void plotHodoH(int i){
 			switch (i){
 				case 1:
-
+					plotsexits[6]=true;
+					plotHodoh1();
 					break;
 				case 2: 
 					plotHodoh2();
@@ -1725,7 +1740,8 @@ class OfficalBeamData
 			cut->Draw("same");
 			cut->SetLineWidth(2); cut->SetLineColor(kBlue) ;
 			cut->SetLineStyle(9);
-			axisTitles(p_veto1,"calibrated veto1 energy","count");
+			string plottitle= "Run:"+name+" veto1 Signal; ADC signal;N";
+			p_veto1->SetTitle(plottitle.c_str());
 			cut_veto1 = new CutPlot(p_veto1,cut);
 			string out = name+"veto1.pdf";
 			v1->Print(out.c_str());
@@ -1740,7 +1756,8 @@ class OfficalBeamData
 			cut->Draw("same");
 			cut->SetLineWidth(2); cut->SetLineColor(kBlue) ;
 			cut->SetLineStyle(9);
-			axisTitles(p_hodoh1,"calibrated hodoscope h1 energy","count");
+			string plottitle= "Run:"+name+" hodoh1 Signal; ADC signal;N";
+			p_hodoh1->SetTitle(plottitle.c_str());
 			cut_hodoh1 = new CutPlot(p_hodoh1 ,cut);
 			string out = name+"hodoh1.pdf";
 			hh1->Print(out.c_str());
@@ -2934,8 +2951,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1000; //choose what voltage to run 
-	bool newData=true;  //do you want the new dataset or the old one 
+	int voltageSelection=1100; //choose what voltage to run 
+	bool newData=false;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; 
@@ -2977,6 +2994,7 @@ void Part2A(){
 		reader = new DSTReader551(orange,fileLocation);  
 		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
 		//decide what data you want from the OfficalBeamData
+		data->plotVeto(1);
 		//data->SaveMainHist();
 		//cout<<"Res:"<<data->getResolution()<<'\n';
 		//use these to make the text file

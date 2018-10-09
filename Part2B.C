@@ -542,6 +542,13 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	ehist->GetXaxis()->SetLimits(0,ehist->GetXaxis()->GetBinUpEdge(ehist->GetXaxis()->GetLast())+1);
 	gPad->SetTicks();
 	ehist->Draw("AP");
+	cout<<"here"<<endl;
+	TF1* fit2016 = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,
+		ehist->GetXaxis()->GetBinUpEdge(ehist->GetXaxis()->GetLast()));
+	fit2016->FixParameter(0,.05);
+	fit2016->FixParameter(1,.0244);
+	fit2016->SetLineColor(kBlue);
+	fit2016->Draw("same");
 	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
@@ -549,6 +556,9 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
 	myText(.24,.85,kRed,Form("Stochastic: %0.6f#pm%0.6f ",eA,errors[0]),.05);
 	myText(.24,.8,kRed,Form("Constant: %0.6f#pm%0.6f",eB,errors[1]),.05);
+	TLegend *tl = new TLegend(.75,.75,.95,.95);
+	tl->AddEntry(fit2016,"2016","l");
+	tl->Draw();
 	return ehist;
 }
 
