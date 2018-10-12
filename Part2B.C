@@ -143,7 +143,7 @@ TGraphErrors* unitConverter(TGraphErrors* graph){
 float getPointCoVarience(TGraphErrors* data, int i, double slope);
 
 //calculates the electronic signal to GeV conversion and calls unitconverter to preform it
-TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* meanerror,float* runNum){
+TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* meanerror,float* runNum,bool convert=true){
 	TCanvas *tc = new TCanvas();
 	TGraphErrors* p_mean = new TGraphErrors(SIZE,energy,mean,nullptr,meanerror); // how to set the uncertainty
 	p_mean=combineAllPoints(p_mean);
@@ -164,7 +164,11 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	lin->Draw("same");
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}+%0.3f",linearFactor,linearError,bterm),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
-	return unitConverter(p_mean);
+	if (convert)
+	{
+		p_mean=unitConverter(p_mean);
+	}
+	return p_mean;
 }
 
 //deprecated way of finding unit convertion more similar to the 2016 analysis 
@@ -210,7 +214,7 @@ TGraphErrors* makeResolutionFromArrays(int SIZE,float*energy, float* mean, float
 }
 
 //reads to data out of the text files and calls the methods to get single voltage graphs in units of GeV
-pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename,bool removeF=false){
+pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename,bool removeF=false,bool convert=true){
 	ifstream inFile (filename.c_str()); //txt file containing the data from Part2A
 	cout<<"Opened file!"<<endl;
 	const int LINES = 6;
@@ -238,7 +242,7 @@ pair<TGraphErrors*, TGraphErrors*> singlefileConverter(string filename,bool remo
 	float* meanError = queueToArray(input[2]);
 	float* sigma = queueToArray(input[3]);
 	float* sigmaError = queueToArray(input[4]);
-	TGraphErrors* lin =graphConvert(SIZE,energy,mean,meanError,runNum);
+	TGraphErrors* lin =graphConvert(SIZE,energy,mean,meanError,runNum,convert);
 	string title = filename+";Beam Energy [GeV];Measured Energy [GeV]";
 	lin->SetTitle(title.c_str());
 	TGraphErrors* res = makeResolutionFromArrays(SIZE,energy,mean,sigma,meanError,sigmaError,lin);
@@ -705,8 +709,9 @@ void Part2B(){
 	//pair<TGraphErrors*,TGraphErrors*> lin0 =singlefileConverter("PbGl1000.txt");
 	pair<TGraphErrors*,TGraphErrors*> lin0new =singlefileConverter("PbGl1000new.txt");	
 	//doubleFileAnalysis(lin0.first,lin0new.first);
-	doubleFileAnalysis(doubleFileAnalysis(lin2.first,lin2new.first),doubleFileAnalysis(doubleFileAnalysis(lin1.first,lin1new.first),lin0new.first),true);
+	doubleFileAnalysis(doubleFileAnalysis(lin2.first,lin2new.first),doubleFileAnalysis(doubleFileAnalysis(lin1.first,lin1new.first),lin0new.first));
 	doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin1new.second,lin1.second),doubleFileAnalysisResolution(doubleFileAnalysisResolution(lin2new.second,lin2.second),lin0new.second));
 	//doubleFileAnalysis(lin1.first,lin2.first);
 	//doubleFileAnalysisResolution(lin1.second,lin2.second);
+	//singlefileConverter("PbGl1200new.txt",false,false);
 }

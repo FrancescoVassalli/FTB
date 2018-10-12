@@ -103,24 +103,42 @@ class GausPlot :public PlotWithLine
 	public:
 		GausPlot(TH1* main, TF1* gaus,double lowBound,double upBound) : gaus(gaus),lowBound(lowBound), upBound(upBound){
 			this->main  = main;
+			fitgaus = new TF1("fitgaus","gaus",lowBound,upBound);
+			fitgaus->SetLineColor(kBlue);
+			fitgaus->FixParameter(0,gaus->GetParameter(0));
+			fitgaus->FixParameter(1,gaus->GetParameter(1));
+			fitgaus->FixParameter(2,gaus->GetParameter(2));
 		}
 		~GausPlot(){
 			delete gaus;
 			gaus=NULL;
+			delete fitgaus;
+			fitgaus=NULL;
 		}
 		void Draw(){
 			main->Draw();
 			gaus->Draw("same");
+			fitgaus->Draw("same");
 		}
 		TF1* get_gaus(){
 			return gaus;
 		}
+		TF1* get_fitGaus(){
+			return fitgaus;
+		}
 		double getUpBound(){
 			return upBound;
+		}
+		double getMean(){
+			return gaus->GetParameter(1);
+		}
+		double getSigma(){
+			return gaus->GetParameter(2);
 		}
 
 	private:
 		TF1 *gaus;
+		TF1 *fitgaus;
 		double lowBound;
 		double upBound;
 };
@@ -424,7 +442,7 @@ class RunSelecTOR
 				case 1906:
 					r=1200;
 					break;
-				case 900: //may need to test this at 1100V 
+				case 900: //undersaturated 
 					r=1200;
 					break;
 				case 1904:
@@ -432,6 +450,9 @@ class RunSelecTOR
 					break;
 				case 2073:
 					r=1200;
+					break;
+				case 1876: //this is a guess 
+					r=1100;
 					break;
 				case 2097:
 					r=1100;
@@ -827,8 +848,10 @@ class OfficalBeamData
 			if (beamEnergy>=20)
 			{
 				gaus= noCerenkovFit();
-				mygaus[0] = Scalar(gaus->GetParameter(4),gaus->GetParError(4)); //sigma
+				mygaus[0] = Scalar(gaus->GetParameter(4),gaus->GetParError(4)); //mean
 				mygaus[1] = Scalar(gaus->GetParameter(5),gaus->GetParError(5)); //sigma
+				if(runNumber!=1945) mainGaus = new GausPlot(pbglPlot,gaus,500,10000);
+				else mainGaus = new GausPlot(pbglPlot,gaus,6000,7000);
 			}
 			else{
 				gaus= new TF1("gaus","gaus",gausLowBound,gausUpbound);
@@ -836,12 +859,12 @@ class OfficalBeamData
 				mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
 				mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
 				recursiveGaus(pbglPlot, gaus, mygaus, 1.5,97);
-				pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
-				gausLowBound=mygaus[0]-(mygaus[1]*5.0);
-				gausUpbound=mygaus[0]+mygaus[1]*5.0;
+				gausLowBound=mygaus[0]-(mygaus[1]*1.5);
+				gausUpbound=mygaus[0]+mygaus[1]*1.5;
+				mainGaus = new GausPlot(pbglPlot,gaus,gausLowBound,gausUpbound);
 			}
 			//I wrap the hist and fit into these PlotWithLine classes 
-			mainGaus = new GausPlot(pbglPlot,gaus,mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
+			pbglPlot->GetXaxis()->SetRangeUser(mygaus[0]-(mygaus[1]*5.0),mygaus[0]+mygaus[1]*5.0);
 			gaus->SetLineStyle(1);
 			gaus->SetLineWidth(2);
 			gaus->SetLineColor(kRed);
@@ -942,18 +965,25 @@ class OfficalBeamData
 			TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
 			doubleGaus->SetParLimits(1,500,10000);
 			doubleGaus->SetParLimits(4,signalGaus->GetParameter(1)-2*signalGaus->GetParameter(2),signalGaus->GetParameter(1)+2*signalGaus->GetParameter(2));
-			if (runNumber==1945)
-			{
-				doubleGaus->SetParLimits(4,6000,7000);
-			}
 			doubleGaus->SetParLimits(3,0,500000);
+			doubleGaus->SetParLimits(5,0,6000);
 			doubleGaus->SetParameter(1,backgroundGaus->GetParameter(1)); //guess the background peak 
 			doubleGaus->SetParameter(2,backgroundGaus->GetParameter(2)); //guess the background width
 			doubleGaus->SetParameter(0,backgroundGaus->GetParameter(0)); //guess the background area 
 			doubleGaus->SetParameter(3,signalGaus->GetParameter(0)); //guess the signal area 
 			doubleGaus->SetParameter(4,signalGaus->GetParameter(1)); //guess the signal peak
 			doubleGaus->SetParameter(5,signalGaus->GetParameter(2)); //guess the signal width
+			if (runNumber==1945) //for some reason this one won't converge but the signal fit looks good.
+			{
+				doubleGaus->FixParameter(3,signalGaus->GetParameter(0));
+				doubleGaus->FixParameter(4,signalGaus->GetParameter(1));
+				doubleGaus->FixParameter(5,signalGaus->GetParameter(2));
+				doubleGaus->SetParError(3,signalGaus->GetParError(0));
+				doubleGaus->SetParError(4,signalGaus->GetParError(1));
+				doubleGaus->SetParError(5,signalGaus->GetParError(2));
+			}
 			pbglPlot->Fit(doubleGaus,"RMNL");
+
 			outname="background3-"+to_string(runNumber)+".pdf";
 			printFit(doubleGaus,outname);
 			//return the signal
@@ -971,11 +1001,16 @@ class OfficalBeamData
 			TCanvas *tc = new TCanvas("tc","tc",800,600);
 			plotsexits[0]=true;
 			pbglPlot->Draw();
-			TF1 *gaus = makeGaus();
-			gaus->Draw("same");
+			if (!made)makeGaus();
+			mainGaus->Draw();
+			TLegend* tl = new TLegend(.75,.75,.9,.9);
+			tl->AddEntry(mainGaus->get_gaus(),Form("#mu:%0.0f #sigma:%0.0f",mainGaus->getMean(),mainGaus->getSigma()),"l");
+			tl->AddEntry(mainGaus->get_fitGaus(),"Fit Range","l");
+			tl->Draw();
 			string out = name+".pdf";
 			tc->Print(out.c_str());
 			tc->Close();
+			delete tl;
 			delete tc;
 		}
 		//saves the histogram of the main plot
@@ -1503,6 +1538,33 @@ class OfficalBeamData
 			p_fit->Draw();
 			name+=".pdf";
 			tc->Print(name.c_str());
+		}
+		void printCutPlot(){
+			TCanvas *tc = new TCanvas(getNextPlotName(&plotcount).c_str(),"",800,600);
+			pbglCCut->SetMarkerSize(.03);
+			pbglCVCut->SetMarkerSize(.03);
+			pbglUnFit->SetMarkerSize(.03);
+			pbglNoCut->SetMarkerSize(.03);
+			makeDifferent(pbglCCut,1); //colors the lines 
+			makeDifferent(pbglCVCut,2);
+			makeDifferent(pbglNoCut,3);
+			gPad->SetLogy();
+			TLegend *cutLegend = new TLegend(.2,.2,.8,.8);
+			cutLegend->SetBorderSize(0);
+			cutLegend->SetFillColorAlpha(kWhite,0);
+			pbglNoCut->Draw();
+			pbglCCut->Draw("same");
+			pbglCVCut->Draw("same");
+			pbglUnFit->Draw("same");
+			cutLegend->AddEntry(pbglNoCut,"No Cuts","l");
+			cutLegend->AddEntry(pbglCCut,"Cherenkov Cut","l");
+			cutLegend->AddEntry(pbglCVCut,"Cherenkov+Veto","l");
+			cutLegend->AddEntry(pbglUnFit,"All Cuts","l");
+			cutLegend->Draw();
+			string outname = name+"cuts.pdf";
+			tc->Print(outname.c_str());
+			delete cutLegend;
+			delete tc;
 		}
 		/*make a 24 panel slide with the signal for each counter and the calorimeter
 		show the cutting process and record the important values*/
@@ -2963,9 +3025,9 @@ void Part2A(){
 	filename = fileLocation+filename;
 	filenameleadingzero=fileLocation+filenameleadingzero;
 	//input the total numbe of data files you have not just the ones you wabt 
-	const int totalNUMSIZE=45;
+	const int totalNUMSIZE=47;
 	//set of all the files
-	int totalnumber[] = {1879,1882,1883,1888,1889,1890,1901,1902,1906,1925,1943,1945,2073,2074,2094,2095,2097,2098,2126,2127,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,574,567 }; //all,beam,files
+	int totalnumber[] = {2045,1879,1882,1883,1888,1889,1890,1901,1902,1906,1925,1926,1943,1945,2073,2074,2094,2095,2097,2098,2126,2127,2149,2150,2167,631,632,558,551,563,544,652,653,654,687,772,773,776,777,809,810,829,830,849,859,574,567 }; //all,beam,files
 	//////////////////////////////////////////////////////////
 	//saturated : 573 572 2125 2128 1924 //don't change this list its for Francesco
 	//undersaturated: 578 579 580 1904   //if you are not fran this is not for you
@@ -2994,7 +3056,7 @@ void Part2A(){
 		reader = new DSTReader551(orange,fileLocation);  
 		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
 		//decide what data you want from the OfficalBeamData
-		data->plotVeto(1);
+		//data->plotVeto(1);
 		//data->SaveMainHist();
 		//cout<<"Res:"<<data->getResolution()<<'\n';
 		//use these to make the text file
@@ -3003,12 +3065,13 @@ void Part2A(){
 		sigma[i]=data->getSigma();
 		sigmaU[i]=data->getSigmaUncertainty();
 		energy[i]=data->getEnergy();
-		//string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
-		//data->makeBigPlot(bigname);
+		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
+		data->makeBigPlot(bigname);
+		data->printCutPlot();
 		//data->fitPlot("fit3");
 		//data->compareHodo(number[i]);
 		//cout<<"Energy:"<<energy[i]<<'\n';
-		//data->plot();
+		data->plot();
 		cout<<fileLocation<<'\n';
 		file->Close();
 		delete file;
@@ -3238,6 +3301,9 @@ int runToVoltage(int run){
 	int s = (int) run;
 
 	switch (s){
+		case 1876:
+			r=1100;//guess
+			break;
 		case 2045:
 			r=1200; 
 			break;
@@ -3364,7 +3430,7 @@ int runToVoltage(int run){
 		case 810:
 			r=1200;
 			break;
-		case 816: // double check this 
+		case 816:  
 			r=1200;
 			break;
 		case 829:
