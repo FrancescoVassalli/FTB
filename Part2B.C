@@ -158,9 +158,10 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	double bterm=lin->GetParameter(1);
 	float chi = lin->GetChisquare();
 	int ndf = lin->GetNDF();
+	p_mean->SetTitle(";Beam Energy [GeV];ADC signal");
 	p_mean->SetMarkerStyle(kOpenCircle);
-	p_mean->Draw("AP");
 	p_mean->SetMarkerStyle(27);
+	p_mean->Clone()->Draw("AP");
 	lin->Draw("same");
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}+%0.3f",linearFactor,linearError,bterm),.04);
 	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
@@ -197,8 +198,6 @@ TGraphErrors* makeResolutionFromArrays(int SIZE,float*energy, float* mean, float
 	TF1* lin = (TF1*)graph->FindObject("lin");	
 	Scalar yInt(lin->GetParameter(1),lin->GetParError(1));
 	Scalar scale(lin->GetParameter(0),lin->GetParError(0));
-	cout<<"Making resolusion with y="<<scale<<"x+"<<yInt<<endl;
-	int noChrenkov=0;
 	for (int i = 0; i < SIZE; ++i)
 	{
 		Scalar tmean(mean[i],meanerror[i]);
@@ -209,7 +208,6 @@ TGraphErrors* makeResolutionFromArrays(int SIZE,float*energy, float* mean, float
 		y[i] = temp.value;
 		yu[i]= temp.uncertainty;
 	}
-	SIZE-=noChrenkov;
 	return new TGraphErrors(SIZE,energy,y,nullptr,yu);
 }
 
@@ -553,13 +551,12 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	fit2016->FixParameter(1,.0244);
 	fit2016->SetLineColor(kBlue);
 	fit2016->Draw("same");
-	axisTitles(ehist,"Beam Energy GeV","#sigma/mean");
+	ehist->SetTitle("4x4;Beam Energy GeV;#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
-	myText(.3,.75,kRed,Form("#chi^{2}:%0.2f NDF:%i",chi,ndf),.05);
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
-	myText(.24,.85,kRed,Form("Stochastic: %0.6f#pm%0.6f ",eA,errors[0]),.05);
-	myText(.24,.8,kRed,Form("Constant: %0.6f#pm%0.6f",eB,errors[1]),.05);
+	myText(.24,.85,kRed,Form("Stochastic: %0.3f#pm%0.3f ",eA,errors[0]),.05);
+	myText(.24,.8,kRed,Form("Constant: %0.3f#pm%0.3f",eB,errors[1]),.05);
 	TLegend *tl = new TLegend(.75,.75,.95,.95);
 	tl->AddEntry(fit2016,"2016","l");
 	tl->Draw();

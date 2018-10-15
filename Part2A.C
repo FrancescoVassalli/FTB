@@ -848,19 +848,19 @@ class OfficalBeamData
 			if (beamEnergy>=20)
 			{
 				gaus= noCerenkovFit();
-				mygaus[0] = Scalar(gaus->GetParameter(4),gaus->GetParError(4)); //mean
-				mygaus[1] = Scalar(gaus->GetParameter(5),gaus->GetParError(5)); //sigma
-				if(runNumber!=1945) mainGaus = new GausPlot(pbglPlot,gaus,500,10000);
-				else mainGaus = new GausPlot(pbglPlot,gaus,6000,7000);
+				mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
+				mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
+				mainGaus = new GausPlot(pbglPlot,gaus,4000,10000);
 			}
 			else{
 				gaus= new TF1("gaus","gaus",gausLowBound,gausUpbound);
+				const float gausRange = 1.5; //how many rigma the gaussian is fit over
 				pbglPlot->Fit(gaus,"QN","",gausLowBound,gausUpbound);       //“R” Use the range specified in the function range
 				mygaus[0] = Scalar(gaus->GetParameter(1),gaus->GetParError(1)); //mean
 				mygaus[1] = Scalar(gaus->GetParameter(2),gaus->GetParError(2)); //sigma
-				recursiveGaus(pbglPlot, gaus, mygaus, 1.5,97);
-				gausLowBound=mygaus[0]-(mygaus[1]*1.5);
-				gausUpbound=mygaus[0]+mygaus[1]*1.5;
+				recursiveGaus(pbglPlot, gaus, mygaus, gausRange,97);
+				gausLowBound=mygaus[0]-(mygaus[1]*gausRange);
+				gausUpbound=mygaus[0]+mygaus[1]*gausRange;
 				mainGaus = new GausPlot(pbglPlot,gaus,gausLowBound,gausUpbound);
 			}
 			//I wrap the hist and fit into these PlotWithLine classes 
@@ -922,47 +922,47 @@ class OfficalBeamData
 			TF1* signalGaus = new TF1("rgaus","gaus",4000,10000);
 			signalGaus->SetLineColor(kBlue);
 			//kinda weird run 
-			if(runNumber==1945){
+			if(beamEnergy==28){
 				signalGaus->SetParLimits(1,6000,7000);
 			}
 			else{
-				signalGaus->SetParLimits(1,500,9000);
+				signalGaus->SetParLimits(1,4000,9000);
 			}
 
 			//for printing
-			int paramNums[]={1,2};
+			//int paramNums[]={1,2};
 
 			//make the initial gaussian background fit 
 			backgroundGaus->SetParLimits(1,500,10000);
 			h_work->Fit(backgroundGaus,"NL","",500,4000);
-			string outname="background1G-"+to_string(runNumber)+".pdf";
+			//string outname="background1G-"+to_string(runNumber)+".pdf";
 			//printFit(backgroundGaus,outname);
 
 			//use it to define the range 
-			std::pair<float,float> expoRange;
-			expoRange.second=4500;
-			expoRange.first=backgroundGaus->GetParameter(1);
+			//std::pair<float,float> expoRange;
+			//expoRange.second=4500;
+			//expoRange.first=backgroundGaus->GetParameter(1);
 
 			//try and exponential fit
-			h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
-			outname="background1E-"+to_string(runNumber)+".pdf";
+			//h_work->Fit(backgroundExpo,"NL","",expoRange.first,expoRange.second);
+			//outname="background1E-"+to_string(runNumber)+".pdf";
 			//printFit(backgroundExpo,outname,&expoRange);
 
 			//try fitting the signal with each of the background models 
 			h_work->Add(backgroundGaus,-1);
 			signalGaus->SetParameter(1,h_work->GetBinLowEdge(h_work->GetMaximumBin()));
 			h_work->Fit(signalGaus,"RN");	
-			outname="background2G-"+to_string(runNumber)+".pdf";
+			//outname="background2G-"+to_string(runNumber)+".pdf";
 			//printFit(signalGaus,outname,NULL,2,paramNums,titleSigmaMean());
 
-			h_work->Add(backgroundGaus,1);
+			/*h_work->Add(backgroundGaus,1);
 			h_work->Add(backgroundExpo,-1);
 			h_work->Fit(signalGaus,"RN");	
-			outname="background2E-"+to_string(runNumber)+".pdf";
+			outname="background2E-"+to_string(runNumber)+".pdf";*/
 			//printFit(signalGaus,outname,NULL,2,paramNums,titleSigmaMean());
 
 			//use the guesses to fit a double gaus 
-			TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
+			/*TF1* doubleGaus = new TF1("doubleGaus","[0]*TMath::Exp(-(x-[1])*(x-[1])/(2*[2]*[2]))+[3]*TMath::Exp(-(x-[4])*(x-[4])	/(2*[5]*[5]))",500,10000);
 			doubleGaus->SetParLimits(1,500,10000);
 			doubleGaus->SetParLimits(4,signalGaus->GetParameter(1)-2*signalGaus->GetParameter(2),signalGaus->GetParameter(1)+2*signalGaus->GetParameter(2));
 			doubleGaus->SetParLimits(3,0,500000);
@@ -985,13 +985,13 @@ class OfficalBeamData
 			pbglPlot->Fit(doubleGaus,"RMNL");
 
 			outname="background3-"+to_string(runNumber)+".pdf";
-			printFit(doubleGaus,outname);
+			printFit(doubleGaus,outname);*/
+
 			//return the signal
 			delete backgroundGaus;
-			delete signalGaus;
 			delete backgroundExpo;
 			delete h_work;
-			return doubleGaus;
+			return signalGaus;
 		}
 		/*this class is insteaded to be run in batch mode 
 		many of the following functions are plotting functions which save a plot 
@@ -1545,11 +1545,11 @@ class OfficalBeamData
 			pbglCVCut->SetMarkerSize(.03);
 			pbglUnFit->SetMarkerSize(.03);
 			pbglNoCut->SetMarkerSize(.03);
-			makeDifferent(pbglCCut,1); //colors the lines 
+			pbglCCut->SetLineColor(kRed);
 			makeDifferent(pbglCVCut,2);
 			makeDifferent(pbglNoCut,3);
 			gPad->SetLogy();
-			TLegend *cutLegend = new TLegend(.2,.2,.8,.8);
+			TLegend *cutLegend = new TLegend(.7,.6,.9,.9);
 			cutLegend->SetBorderSize(0);
 			cutLegend->SetFillColorAlpha(kWhite,0);
 			pbglNoCut->Draw();
@@ -1561,6 +1561,7 @@ class OfficalBeamData
 			cutLegend->AddEntry(pbglCVCut,"Cherenkov+Veto","l");
 			cutLegend->AddEntry(pbglUnFit,"All Cuts","l");
 			cutLegend->Draw();
+			axisTitles(pbglNoCut,"ADC","N");
 			string outname = name+"cuts.pdf";
 			tc->Print(outname.c_str());
 			delete cutLegend;
@@ -1669,7 +1670,7 @@ class OfficalBeamData
 			myText(.12,.8,kBlack,name.c_str(),.13);
 			myText(.12,.6,kBlack,Form("Mean:%0.2f#pm %0.2f",mean.value,mean.uncertainty),.13);
 			myText(.12,.4,kBlack,Form("#sigma:%0.2f#pm %0.2f",sigma.value,sigma.uncertainty),.13);
-			myText(.12,.2,kBlack,Form("Resolution:%0.2f#pm%0.3f",(sigma/mean).value,(sigma/mean).uncertainty),.11);
+			myText(.12,.2,kBlack,Form("Resolution:%0.3f#pm%0.3f",(sigma/mean).value,(sigma/mean).uncertainty),.11);
 			for (int i = 0; i < 25; ++i)
 			{
 				tc->cd(i+1);
@@ -1773,7 +1774,7 @@ class OfficalBeamData
 				multiplicityType=1;
 			}
 			else{
-				multiplicityType=0;	
+				multiplicityType=1;	
 			}
 		}
 
@@ -3013,8 +3014,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1100; //choose what voltage to run 
-	bool newData=false;  //do you want the new dataset or the old one 
+	int voltageSelection=1000; //choose what voltage to run 
+	bool newData=true;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; 
