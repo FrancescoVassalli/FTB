@@ -569,7 +569,7 @@ class OfficalBeamData
 			runNumber = number;
 			cout<<"Processing run:"<<runNumber<<endl;
 			name = to_string(number);
-			setHighMultiplicity(); //decides if this event is highMultiplicity
+			const int kNHODO=setHighMultiplicity(); //decides if this event is highMultiplicity
 			//set up the constants of the histogram 
 			const float kMAX = 10000;
 			const float kMainBins = 300;
@@ -614,7 +614,8 @@ class OfficalBeamData
 			p_hodoh6 = new TH1D(string(name+"hodoh6").c_str(),"",20,0,2);
 			p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
 			p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
-			hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",multiplicityType,0,multiplicityType+.5,multiplicityType,0,multiplicityType+.5);
+
+			hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",kNHODO,0,kNHODO +.5,kNHODO ,0,kNHODO+.5);
 
 			//some booleans are recorded for which processes have already been run
 			for (int i = 0; i < NUMPLOTS; ++i)
@@ -1104,6 +1105,7 @@ class OfficalBeamData
 			TCanvas *tc = new TCanvas();
 			hodo2d->SetTitle(";Horizontal Hodoscope Counts;Vertical Hodoscope Counts");
 			hodo2d->Draw();
+			tc->SaveAs(title.c_str());
 			delete tc;
 		}
 		//prints what the data would look like for each hodo cut 
@@ -1823,13 +1825,14 @@ class OfficalBeamData
 
 		/*this sets the tightness of the hodoscope cut for each beam energy
 		0=8x8, 1=4x4, 2=2x2*/
-		inline void setHighMultiplicity(){
+		inline int setHighMultiplicity(){
 			if(beamEnergy>2){
 				multiplicityType=1;
 			}
 			else{
 				multiplicityType=1;	
 			}
+			return multiplicityToHodo(multiplicityType);
 		}
 		inline int multiplicityToHodo(int multiplicityType){
 			switch(multiplicityType){
