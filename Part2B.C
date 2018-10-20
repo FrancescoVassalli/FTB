@@ -551,7 +551,7 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	fit2016->FixParameter(1,.0244);
 	fit2016->SetLineColor(kBlue);
 	fit2016->Draw("same");
-	ehist->SetTitle("4x4;Beam Energy GeV;#sigma/mean");
+	ehist->SetTitle(";Beam Energy GeV;#sigma/mean");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);

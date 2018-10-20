@@ -614,6 +614,7 @@ class OfficalBeamData
 			p_hodoh6 = new TH1D(string(name+"hodoh6").c_str(),"",20,0,2);
 			p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
 			p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
+			hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",multiplicityType,0,multiplicityType+.5,multiplicityType,0,multiplicityType+.5);
 
 			//some booleans are recorded for which processes have already been run
 			for (int i = 0; i < NUMPLOTS; ++i)
@@ -707,6 +708,7 @@ class OfficalBeamData
 			p_veto2->Fill(veto[1]);
 			p_veto3->Fill(veto[2]);
 			p_veto4->Fill(veto[3]);
+			fillhodo2D(hhodo,vhodo);
 			//here the main plot is filled 
 			int pbglCUT;
 			/*the low energy points get closer to the minimum ionizing potential peak 
@@ -820,7 +822,9 @@ class OfficalBeamData
 			}
 			else{
 				return hodo[0]>HODOHcut[0]+.05 ^ hodo[1]>HODOHcut[1]+.05 ^ hodo[2]>HODOHcut[2]+.05 ^ hodo[3]>HODOHcut[3]+.05 ^ hodo[4]>HODOHcut[4]+.05 ^ hodo[5]>HODOHcut[5]+.05 ^ hodo[6]>HODOHcut[6]+.05 ^ hodo[7]>HODOHcut[7]+.05;
-			}	}
+			}	
+		}
+		//might need to tighen the hodo cut in 4x4 for 2GeV runs
 		inline bool passHodoV4x4(double* hodo){ //exclusive or 
 			return hodo[2]>HODOVcut[2] ^ hodo[3]>HODOVcut[3] ^ hodo[4]>HODOVcut[4] ^ hodo[5]>HODOVcut[5];
 		}
@@ -832,6 +836,47 @@ class OfficalBeamData
 		}
 		inline bool passHodoH2x2(double* hodo){ //exclusive or 
 			return hodo[3]>HODOHcut[3] ^ hodo[4]>HODOHcut[4];
+		}
+		inline void fillhodo2D(double* hhodo, double* vhodo){
+			//the plot only plots the hodoscopes I am using 
+			const int kSCOPES = multiplicityToHodo(multiplicityType);
+			//the cuts are slightly different for the second set 
+			int hHodo=-1;
+			int vHodo=-1;
+				switch(kSCOPES){
+					//default fill values 
+					
+					case 8:
+						for (int i = 0; i < kSCOPES; ++i)
+						{
+							hodo2d->Fill(hHodo,vHodo);
+						}
+						break;
+					case 4:
+						{
+							const int kHODOOFFSET=2;
+							for (int i = kHODOOFFSET; i < kSCOPES+kHODOOFFSET; ++i)
+							{
+								hodo2d->Fill(hHodo,vHodo);
+							}
+						}
+						break;
+
+					case 2:
+						{
+							const int kHODOOFFSET=4;
+							for (int i = kHODOOFFSET; i < kSCOPES+kHODOOFFSET; ++i)
+							{
+								hodo2d->Fill(hHodo,vHodo);
+								
+							}
+						}
+						break;
+					default:
+						cout<<"Warning bad multiplicity conversion"<<endl;
+						break;
+				}
+	
 		}
 		//returns the fit to the signal after the cuts 
 		TF1* makeGaus(){
@@ -1052,6 +1097,13 @@ class OfficalBeamData
 			tc->Print(out.c_str());
 			tc->Close();
 			delete tl;
+			delete tc;
+		}
+		void print2DHodo(){
+			string title  = "hodo2D"+to_string(runNumber)+".pdf";
+			TCanvas *tc = new TCanvas();
+			hodo2d->SetTitle(";Horizontal Hodoscope Counts;Vertical Hodoscope Counts");
+			hodo2d->Draw();
 			delete tc;
 		}
 		//prints what the data would look like for each hodo cut 
@@ -1734,6 +1786,8 @@ class OfficalBeamData
 		TH1D *hodo4=NULL;
 		TH1D *hodo8=NULL;
 
+		TH2D *hodo2d=NULL;
+
 		GausPlot *mainGaus=NULL; //combined class of the main plot and its gaussian 
 		CutPlot *cut_cerenkov=NULL; // combined class of the cherenkov signal and the line showing the cut 
 		CutPlot *cut_hodov1=NULL; // combined class of the hodo signal  and the line showing the cut
@@ -1775,6 +1829,23 @@ class OfficalBeamData
 			}
 			else{
 				multiplicityType=1;	
+			}
+		}
+		inline int multiplicityToHodo(int multiplicityType){
+			switch(multiplicityType){
+				case 0:
+					return 8;
+					break;
+				case 1:
+					return 4;
+					break;
+				case 2:
+					return 2;
+					break;
+				default:
+					cout<<"Warning bad multiplicity conversion"<<endl;
+					return 0;
+					break;
 			}
 		}
 
@@ -3014,8 +3085,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1000; //choose what voltage to run 
-	bool newData=true;  //do you want the new dataset or the old one 
+	int voltageSelection=1200; //choose what voltage to run 
+	bool newData=false;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; 
@@ -3068,7 +3139,8 @@ void Part2A(){
 		energy[i]=data->getEnergy();
 		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		data->makeBigPlot(bigname);
-		data->printCutPlot();
+		//data->printCutPlot();
+		data->print2DHodo();
 		//data->fitPlot("fit3");
 		//data->compareHodo(number[i]);
 		//cout<<"Energy:"<<energy[i]<<'\n';
