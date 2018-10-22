@@ -615,7 +615,8 @@ class OfficalBeamData
 			p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
 			p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
 
-			hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",kNHODO,0,kNHODO +.5,kNHODO ,0,kNHODO+.5);
+			const int kHODOOFFSET= setHodoOffset(kNHODO);
+			hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",kNHODO,kHODOOFFSET-.5,kNHODO+kHODOOFFSET-.5,kNHODO ,kHODOOFFSET	-.5,kNHODO+kHODOOFFSET-.5);
 
 			//some booleans are recorded for which processes have already been run
 			for (int i = 0; i < NUMPLOTS; ++i)
@@ -842,15 +843,27 @@ class OfficalBeamData
 			//the plot only plots the hodoscopes I am using 
 			const int kSCOPES = multiplicityToHodo(multiplicityType);
 			//the cuts are slightly different for the second set 
-			int hHodo=-1;
-			int vHodo=-1;
+				std::queue<int> trigged_scope_v;
+				std::queue<int> trigged_scope_h;
 				switch(kSCOPES){
 					//default fill values 
 					
 					case 8:
 						for (int i = 0; i < kSCOPES; ++i)
 						{
-							hodo2d->Fill(hHodo,vHodo);
+							if (hhodo[i]>HODOHcut[i])
+							{
+								trigged_scope_h.push(i);
+							}
+							if (vhodo[i]>HODOVcut[i])
+							{
+								trigged_scope_v.push(i);
+							}
+						}
+						while(!trigged_scope_v.empty()&&!trigged_scope_h.empty()){
+							hodo2d->Fill(trigged_scope_h.front(),trigged_scope_v.front());
+							trigged_scope_v.pop();
+							trigged_scope_h.pop();
 						}
 						break;
 					case 4:
@@ -858,7 +871,19 @@ class OfficalBeamData
 							const int kHODOOFFSET=2;
 							for (int i = kHODOOFFSET; i < kSCOPES+kHODOOFFSET; ++i)
 							{
-								hodo2d->Fill(hHodo,vHodo);
+								if (hhodo[i]>HODOHcut[i])
+								{
+									trigged_scope_h.push(i);
+								}
+								if (vhodo[i]>HODOVcut[i])
+								{
+									trigged_scope_v.push(i);
+								}
+							}
+							while(!trigged_scope_v.empty()&&!trigged_scope_h.empty()){
+								hodo2d->Fill(trigged_scope_h.front(),trigged_scope_v.front());
+								trigged_scope_v.pop();
+								trigged_scope_h.pop();
 							}
 						}
 						break;
@@ -868,8 +893,19 @@ class OfficalBeamData
 							const int kHODOOFFSET=4;
 							for (int i = kHODOOFFSET; i < kSCOPES+kHODOOFFSET; ++i)
 							{
-								hodo2d->Fill(hHodo,vHodo);
-								
+									if (hhodo[i]>HODOHcut[i])
+								{
+									trigged_scope_h.push(i);
+								}
+								if (vhodo[i]>HODOVcut[i])
+								{
+									trigged_scope_v.push(i);
+								}
+							}
+							while(!trigged_scope_v.empty()&&!trigged_scope_h.empty()){
+								hodo2d->Fill(trigged_scope_h.front(),trigged_scope_v.front());
+								trigged_scope_v.pop();
+								trigged_scope_h.pop();
 							}
 						}
 						break;
@@ -1104,7 +1140,7 @@ class OfficalBeamData
 			string title  = "hodo2D"+to_string(runNumber)+".pdf";
 			TCanvas *tc = new TCanvas();
 			hodo2d->SetTitle(";Horizontal Hodoscope Counts;Vertical Hodoscope Counts");
-			hodo2d->Draw();
+			hodo2d->Draw("colz");
 			tc->SaveAs(title.c_str());
 			delete tc;
 		}
@@ -1833,6 +1869,19 @@ class OfficalBeamData
 				multiplicityType=1;	
 			}
 			return multiplicityToHodo(multiplicityType);
+		}
+		inline int setHodoOffset(int nHodo){
+			switch(nHodo){
+				case 8:
+					return 0;
+				case 4:
+					return 2;
+				case 2:
+					return 4;
+				default:
+					cout<<"warning: invalid hodo offset"<<endl;
+					return 0;
+			}
 		}
 		inline int multiplicityToHodo(int multiplicityType){
 			switch(multiplicityType){
