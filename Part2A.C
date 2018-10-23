@@ -565,7 +565,8 @@ class OfficalBeamData
 	public:
 		OfficalBeamData(){}
 		//this constructor makes the TH1Ds and tracks the voltage and energy
-		OfficalBeamData(int number, int voltage, float beamEnergy) : beamVoltage(voltage), beamEnergy(beamEnergy){
+		OfficalBeamData(int number, int voltage, float beamEnergy,bool makeSidePlots)
+		 : makeSidePlots(makeSidePlots), beamVoltage(voltage), beamEnergy(beamEnergy){
 			runNumber = number;
 			cout<<"Processing run:"<<runNumber<<endl;
 			name = to_string(number);
@@ -593,31 +594,35 @@ class OfficalBeamData
 			pbglCVCut->Sumw2();
 			pbglNoCut->Sumw2();
 			//declare plots for energy, all veto counters, and hodoscopes counters
-			cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000); 
-			p_veto1 = new TH1D(string(name+"veto1").c_str(),"",20,0,2);
-			p_veto2 = new TH1D(string(name+"veto2").c_str(),"",20,0,2);
-			p_veto3 = new TH1D(string(name+"veto3").c_str(),"",20,0,2);
-			p_veto4 = new TH1D(string(name+"veto4").c_str(),"",20,0,2);
-			p_hodov1 = new TH1D(string(name+"hodov1").c_str(),"",20,0,2);
-			p_hodov2 = new TH1D(string(name+"hodov2").c_str(),"",20,0,2);
-			p_hodov3 = new TH1D(string(name+"hodov3").c_str(),"",20,0,2);
-			p_hodov4 = new TH1D(string(name+"hodov4").c_str(),"",20,0,2);
-			p_hodov5 = new TH1D(string(name+"hodov5").c_str(),"",20,0,2);
-			p_hodov6 = new TH1D(string(name+"hodov6").c_str(),"",20,0,2);
-			p_hodov7 = new TH1D(string(name+"hodov7").c_str(),"",20,0,2);
-			p_hodov8 = new TH1D(string(name+"hodov8").c_str(),"",20,0,2);
-			p_hodoh1 = new TH1D(string(name+"hodoh1").c_str(),"",20,0,2);
-			p_hodoh2 = new TH1D(string(name+"hodoh2").c_str(),"",20,0,2);
-			p_hodoh3 = new TH1D(string(name+"hodoh3").c_str(),"",20,0,2);
-			p_hodoh4 = new TH1D(string(name+"hodoh4").c_str(),"",20,0,2);
-			p_hodoh5 = new TH1D(string(name+"hodoh5").c_str(),"",20,0,2);
-			p_hodoh6 = new TH1D(string(name+"hodoh6").c_str(),"",20,0,2);
-			p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
-			p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
+			if (makeSidePlots)
+			{
+				cerenkov = new TH1D(string(name+"ceren").c_str(),"",200,0,10000); 
+				p_veto1 = new TH1D(string(name+"veto1").c_str(),"",20,0,2);
+				p_veto2 = new TH1D(string(name+"veto2").c_str(),"",20,0,2);
+				p_veto3 = new TH1D(string(name+"veto3").c_str(),"",20,0,2);
+				p_veto4 = new TH1D(string(name+"veto4").c_str(),"",20,0,2);
+				p_hodov1 = new TH1D(string(name+"hodov1").c_str(),"",20,0,2);
+				p_hodov2 = new TH1D(string(name+"hodov2").c_str(),"",20,0,2);
+				p_hodov3 = new TH1D(string(name+"hodov3").c_str(),"",20,0,2);
+				p_hodov4 = new TH1D(string(name+"hodov4").c_str(),"",20,0,2);
+				p_hodov5 = new TH1D(string(name+"hodov5").c_str(),"",20,0,2);
+				p_hodov6 = new TH1D(string(name+"hodov6").c_str(),"",20,0,2);
+				p_hodov7 = new TH1D(string(name+"hodov7").c_str(),"",20,0,2);
+				p_hodov8 = new TH1D(string(name+"hodov8").c_str(),"",20,0,2);
+				p_hodoh1 = new TH1D(string(name+"hodoh1").c_str(),"",20,0,2);
+				p_hodoh2 = new TH1D(string(name+"hodoh2").c_str(),"",20,0,2);
+				p_hodoh3 = new TH1D(string(name+"hodoh3").c_str(),"",20,0,2);
+				p_hodoh4 = new TH1D(string(name+"hodoh4").c_str(),"",20,0,2);
+				p_hodoh5 = new TH1D(string(name+"hodoh5").c_str(),"",20,0,2);
+				p_hodoh6 = new TH1D(string(name+"hodoh6").c_str(),"",20,0,2);
+				p_hodoh7 = new TH1D(string(name+"hodoh7").c_str(),"",20,0,2);
+				p_hodoh8 = new TH1D(string(name+"hodoh8").c_str(),"",20,0,2);
 
-			const int kHODOOFFSET= setHodoOffset(kNHODO);
-			hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",kNHODO,kHODOOFFSET-.5,kNHODO+kHODOOFFSET-.5,kNHODO ,kHODOOFFSET	-.5,kNHODO+kHODOOFFSET-.5);
+				const int kHODOOFFSET= TMath::Abs(setHodoOffset(kNHODO));
+				hodo2d = new TH2D(string(name+"hodo2d").c_str(),"",kNHODO,kHODOOFFSET-.5,kNHODO+kHODOOFFSET-.5,kNHODO ,kHODOOFFSET	-.5,kNHODO+kHODOOFFSET-.5);
 
+			}
+		
 			//some booleans are recorded for which processes have already been run
 			for (int i = 0; i < NUMPLOTS; ++i)
 			{
@@ -689,28 +694,32 @@ class OfficalBeamData
 		bool add(double cerenkov, double* veto, double* hhodo, double* vhodo, double pbgl){
 			bool r = false;
 			//fill all the cut plots with their data 
-			this->cerenkov->Fill(cerenkov);
-			p_hodoh1->Fill(hhodo[0]);
-			p_hodoh2->Fill(hhodo[1]);
-			p_hodoh3->Fill(hhodo[2]);
-			p_hodoh4->Fill(hhodo[3]);
-			p_hodoh5->Fill(hhodo[4]);
-			p_hodoh6->Fill(hhodo[5]);
-			p_hodoh7->Fill(hhodo[6]);
-			p_hodoh8->Fill(hhodo[7]);
-			p_hodov1->Fill(vhodo[0]);
-			p_hodov2->Fill(vhodo[1]);
-			p_hodov3->Fill(vhodo[2]);
-			p_hodov4->Fill(vhodo[3]);
-			p_hodov5->Fill(vhodo[4]);
-			p_hodov6->Fill(vhodo[5]);
-			p_hodov7->Fill(vhodo[6]);
-			p_hodov8->Fill(vhodo[7]);
-			p_veto1->Fill(veto[0]);
-			p_veto2->Fill(veto[1]);
-			p_veto3->Fill(veto[2]);
-			p_veto4->Fill(veto[3]);
-			fillhodo2D(hhodo,vhodo);
+			if (makeSidePlots)
+			{
+				this->cerenkov->Fill(cerenkov);
+				p_hodoh1->Fill(hhodo[0]);
+				p_hodoh2->Fill(hhodo[1]);
+				p_hodoh3->Fill(hhodo[2]);
+				p_hodoh4->Fill(hhodo[3]);
+				p_hodoh5->Fill(hhodo[4]);
+				p_hodoh6->Fill(hhodo[5]);
+				p_hodoh7->Fill(hhodo[6]);
+				p_hodoh8->Fill(hhodo[7]);
+				p_hodov1->Fill(vhodo[0]);
+				p_hodov2->Fill(vhodo[1]);
+				p_hodov3->Fill(vhodo[2]);
+				p_hodov4->Fill(vhodo[3]);
+				p_hodov5->Fill(vhodo[4]);
+				p_hodov6->Fill(vhodo[5]);
+				p_hodov7->Fill(vhodo[6]);
+				p_hodov8->Fill(vhodo[7]);
+				p_veto1->Fill(veto[0]);
+				p_veto2->Fill(veto[1]);
+				p_veto3->Fill(veto[2]);
+				p_veto4->Fill(veto[3]);
+				fillhodo2D(hhodo,vhodo);
+			}
+			
 			//here the main plot is filled 
 			int pbglCUT;
 			/*the low energy points get closer to the minimum ionizing potential peak 
@@ -732,8 +741,8 @@ class OfficalBeamData
 						if (passHodoH(hhodo)&&passHodoV(vhodo)){
 							hodo8->Fill(pbgl);
 							/*depending on the multiplicity of the event different 
-							hodoscope cuts can be set up I just use 8x8 for 2GeV and 
-							4x4 for >2GeV I have no <2GeV data*/
+							hodoscope cuts can be set up I use 4x4 for everything 
+							in the final plots but other cuts can provide insight*/
 							switch(multiplicityType){
 								case 0:
 									pbglPlot->Fill(pbgl);
@@ -768,6 +777,21 @@ class OfficalBeamData
 										if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
 										{
 											hodo2->Fill(pbgl);
+											pbglUnFit->Fill(pbgl);
+											pbglPlot->Fill(pbgl);
+											r=true;
+										}
+									}
+									break;
+								case 3:
+									if (passHodoH4x4(hhodo)&&passHodoV4x4(vhodo))
+									{	
+										hodo4->Fill(pbgl);
+										if (passHodoH2x2(hhodo)&&passHodoV2x2(vhodo))
+										{
+											hodo2->Fill(pbgl);
+										}
+										else{
 											pbglUnFit->Fill(pbgl);
 											pbglPlot->Fill(pbgl);
 											r=true;
@@ -1792,6 +1816,8 @@ class OfficalBeamData
 		int runNumber=0;
 		float mainBinWidth;
 
+		bool makeSidePlots;
+
 		//pointers for all the plots 
 		TH1D *pbglPlot=NULL; // the main data plot that gets fit 
 		TH1D *cerenkov=NULL; // the signal from the cherenkov counter 
@@ -1860,10 +1886,10 @@ class OfficalBeamData
 		Scalar sigma;
 
 		/*this sets the tightness of the hodoscope cut for each beam energy
-		0=8x8, 1=4x4, 2=2x2*/
+		0=8x8, 1=4x4, 2=2x2, 3=4x4-2x2 (to check leakage)*/
 		inline int setHighMultiplicity(){
 			if(beamEnergy>2){
-				multiplicityType=1;
+				multiplicityType=3;
 			}
 			else{
 				multiplicityType=1;	
@@ -1874,13 +1900,20 @@ class OfficalBeamData
 			switch(nHodo){
 				case 8:
 					return 0;
+					break;
 				case 4:
 					return 2;
+					break;
 				case 2:
 					return 4;
+					break;
+				case 3:
+					return -2;
+						break;
 				default:
 					cout<<"warning: invalid hodo offset"<<endl;
 					return 0;
+					break;
 			}
 		}
 		inline int multiplicityToHodo(int multiplicityType){
@@ -1893,6 +1926,9 @@ class OfficalBeamData
 					break;
 				case 2:
 					return 2;
+					break;
+				case 3:
+					return 4;
 					break;
 				default:
 					cout<<"Warning bad multiplicity conversion"<<endl;
@@ -2741,7 +2777,7 @@ class DSTReader551 {
 		virtual Int_t    GetEntry(Long64_t entry);
 		virtual Long64_t LoadTree(Long64_t entry);
 		virtual void     Init(TTree *tree);
-		virtual OfficalBeamData*     Loop(int runnumber);
+		virtual OfficalBeamData*     Loop(int runnumber,bool makeSidePlots);
 		virtual Bool_t   Notify();
 		virtual void     Show(Long64_t entry = -1);
 };
@@ -3073,13 +3109,13 @@ Int_t DSTReader551::Cut(Long64_t entry)
 }
 
 //this function has been changed from the auto generated one to interface with OffcialBeamData
-OfficalBeamData* DSTReader551::Loop(int number)
+OfficalBeamData* DSTReader551::Loop(int number, bool makeSidePlots=true)
 {
 	if (fChain == 0) return NULL;
 	fChain->GetEntry(1);
 	//the files have the beam energy in them except for this one 
 	if(number == 567){beam_MTNRG_GeV = 8;}
-	OfficalBeamData *tally = new OfficalBeamData(number,runToVoltage(number),TMath::Abs(beam_MTNRG_GeV));
+	OfficalBeamData *tally = new OfficalBeamData(number,runToVoltage(number),TMath::Abs(beam_MTNRG_GeV),makeSidePlots);
 	Long64_t nentries = fChain->GetEntriesFast();
 
 	Long64_t nbytes = 0, nb = 0;
@@ -3137,8 +3173,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1200; //choose what voltage to run 
-	bool newData=false;  //do you want the new dataset or the old one 
+	int voltageSelection=1000; //choose what voltage to run 
+	bool newData=true;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; 
@@ -3178,7 +3214,7 @@ void Part2A(){
 		file = new TFile(fileLocation.c_str());
 		TTree *orange= (TTree*) file->Get("T");
 		reader = new DSTReader551(orange,fileLocation);  
-		OfficalBeamData* data = reader->Loop(number[i]); // call the loop method for the reader you have, this fills data structures
+		OfficalBeamData* data = reader->Loop(number[i],true); // call the loop method for the reader you have, this fills data structures
 		//decide what data you want from the OfficalBeamData
 		//data->plotVeto(1);
 		//data->SaveMainHist();
