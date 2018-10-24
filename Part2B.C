@@ -526,7 +526,7 @@ TGraphErrors* resolution(queue<Data>* temp){
 TGraphErrors* resolution(TGraphErrors* ehist){
 	TCanvas *canvas1 = new TCanvas();
 	//the stochastic funtion
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1]+.02*.02)",0,
 		ehist->GetXaxis()->GetBinUpEdge(ehist->GetXaxis()->GetLast()));
 	eF->SetLineColor(kRed);
 	eF->SetParLimits(0,0,1000);
@@ -537,10 +537,10 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	float errors[2];
 	errors[0] = eF->GetParError(0);
 	errors[1] = eF->GetParError(1);
-	ehist->SetMarkerSize(2);
-	ehist->SetMarkerStyle(41);
-	ehist->SetMarkerColor(4);
-	ehist->SetLineColor(4);
+	ehist->SetMarkerSize(1);
+	ehist->SetMarkerStyle(21);
+	ehist->SetMarkerColor(kRed);
+	ehist->SetLineColor(kRed);
 	ehist->GetXaxis()->SetLimits(0,ehist->GetXaxis()->GetBinUpEdge(ehist->GetXaxis()->GetLast())+1);
 	gPad->SetTicks();
 	ehist->Draw("AP");
@@ -552,6 +552,16 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	fit2016->SetLineColor(kBlue);
 	fit2016->Draw("same");
 	ehist->SetTitle(";Beam Energy GeV;#sigma/mean");
+	const int kN2016=10;
+	double y2016[] = {.0556,.0448,.0395,.034,.03,.0318,.0308,.0297,.0301,.02567};
+	double ye2016[]={.003,.0025,.0012,.002,.0015,.0014,.0008,.001,.0004,.001};
+	double x2016[]={1,2,3,4,6,6,8,8,12,16};
+	TGraphErrors *points2016 = new TGraphErrors(kN2016,x2016,y2016,nullptr,ye2016);
+	points2016->SetMarkerColor(kBlue);
+	points2016->SetLineColor(kBlue);
+	points2016->SetMarkerSize(1);
+	points2016->SetMarkerStyle(21);
+	points2016->Draw("Psame");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
 	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
@@ -559,6 +569,7 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	myText(.24,.8,kRed,Form("Constant: %0.3f#pm%0.3f",eB,errors[1]),.05);
 	TLegend *tl = new TLegend(.75,.75,.95,.95);
 	tl->AddEntry(fit2016,"2016","l");
+	tl->AddEntry(eF,"2018","l");
 	tl->Draw();
 	return ehist;
 }
