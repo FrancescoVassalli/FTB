@@ -1889,7 +1889,7 @@ class OfficalBeamData
 		0=8x8, 1=4x4, 2=2x2, 3=4x4-2x2 (to check leakage)*/
 		inline int setHighMultiplicity(){
 			if(beamEnergy>2){
-				multiplicityType=3;
+				multiplicityType=1;
 			}
 			else{
 				multiplicityType=1;	
@@ -3173,7 +3173,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1000; //choose what voltage to run 
+	int voltageSelection=1100; //choose what voltage to run 
 	bool newData=true;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
