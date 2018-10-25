@@ -1121,7 +1121,7 @@ class OfficalBeamData
 		}
 		//saves the histogram of the main plot
 		void SaveMainHist(){
-			string outname = name+"MainHist.root";
+			string outname = name+"-"+to_string(multiplicityType)+"pbglfinal.root";
 			pbglPlot->SaveAs(outname.c_str());
 		}
 		TH1D* getPlot(){
@@ -1169,7 +1169,7 @@ class OfficalBeamData
 			delete tc;
 		}
 		void save2DHodo(){
-			string title  = "hodo2D"+to_string(runNumber)+".root";
+			string title  = "hodo2D"+to_string(runNumber)+"-"+to_string(multiplicityType)+".root";
 			hodo2d->SaveAs(title.c_str());
 		}
 		//prints what the data would look like for each hodo cut 
@@ -3178,7 +3178,7 @@ OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
 	int voltageSelection=1100; //choose what voltage to run 
-	bool newData=true;  //do you want the new dataset or the old one 
+	bool newData=false;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; 
@@ -3232,7 +3232,7 @@ void Part2A(){
 		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		data->makeBigPlot(bigname);
 		//data->printCutPlot();
-		data->save2DHodo();
+		data->SaveMainHist();
 		//data->fitPlot("fit3");
 		//data->compareHodo(number[i]);
 		//cout<<"Energy:"<<energy[i]<<'\n';
