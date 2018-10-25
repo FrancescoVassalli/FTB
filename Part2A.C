@@ -1168,6 +1168,10 @@ class OfficalBeamData
 			tc->SaveAs(title.c_str());
 			delete tc;
 		}
+		void save2DHodo(){
+			string title  = "hodo2D"+to_string(runNumber)+".root";
+			hodo2d->SaveAs(title.c_str());
+		}
 		//prints what the data would look like for each hodo cut 
 		void compareHodo(int number){
 			TCanvas *tc = new TCanvas();
@@ -3228,7 +3232,7 @@ void Part2A(){
 		string bigname = to_string(number[i])+": "+to_string(runToEnergy(number[i]))+"GeV "+to_string(runToVoltage(number[i]))+"V";
 		data->makeBigPlot(bigname);
 		//data->printCutPlot();
-		data->print2DHodo();
+		data->save2DHodo();
 		//data->fitPlot("fit3");
 		//data->compareHodo(number[i]);
 		//cout<<"Energy:"<<energy[i]<<'\n';
