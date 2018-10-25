@@ -573,7 +573,15 @@ class OfficalBeamData
 			const int kNHODO=setHighMultiplicity(); //decides if this event is highMultiplicity
 			//set up the constants of the histogram 
 			const float kMAX = 10000;
-			const float kMainBins = 300;
+			float bintemp;
+			if (beamEnergy>=8&&beamEnergy<=16&&beamVoltage==1100)
+			{
+				bintemp=450;
+			}
+			else{
+				bintemp=300;
+			}
+			const float kMainBins = bintemp;
 			mainBinWidth = kMAX/kMainBins;
 			//this is main plot that will have the final data
 			pbglPlot = new TH1D(name.c_str(),"",kMainBins,0,kMAX); 
@@ -3177,8 +3185,8 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1200; //choose what voltage to run 
-	bool newData=false;  //do you want the new dataset or the old one 
+	int voltageSelection=1100; //choose what voltage to run 
+	bool newData=true;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage
 	string fileLocation = "/Users/naglelab/Documents/FranData/FTB/"; 
