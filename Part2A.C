@@ -3177,7 +3177,7 @@ void superArraySorter5000(float* energies, float* mean, float* meanError, float*
 OfficialBeamData and formats a text file to output*/
 void Part2A(){
 	//The first few lines set up what files you want 
-	int voltageSelection=1100; //choose what voltage to run 
+	int voltageSelection=1200; //choose what voltage to run 
 	bool newData=false;  //do you want the new dataset or the old one 
 	//uses your choices to initialize a FCTOR to select the files 
 	RunSelecTOR selecTOR(newData,true,voltageSelection); //newData, checkvoltage,voltage

@@ -1,3 +1,11 @@
+#include <iostream>
+void myText(Double_t x,Double_t y,Color_t color, const char *text, Double_t tsize) {
+	TLatex l; //l.SetTextAlign(12); 
+	l.SetTextSize(tsize); 
+	l.SetNDC();
+	l.SetTextColor(color);
+	l.DrawLatex(x,y,text);
+}
 void recursiveGaus(TH1* h, TF1* gaus, Scalar* data, float sigmadistance,int lazyMan=0){
 	h->Fit(gaus,"QN","",data[0]-data[1]*sigmadistance,data[0]+data[1]*sigmadistance);
 	if(data[0]!=gaus->GetParameter(1)){
@@ -41,7 +49,7 @@ TF1* makeGaus(TH1* pbglPlot){
 /*removes the contents of file2 from file1 then fits a guass*/
 void SignalSubtraction(){
 	//these strings can be edited to handle the files you make 
-	int run=2127;
+	int run=1945;
 	string plotname1=std::to_string(run);
 	string plotname2=plotname1;
 	string base=std::to_string(run)+"-";
@@ -57,14 +65,29 @@ void SignalSubtraction(){
 	TH1 *hist1 = (TH1*) file1->Get(plotname1.c_str());
 	TH1 *hist2 = (TH1*) file2->Get(plotname2.c_str());
 	//subtract the hists then delete 2 for clairity all the data is in 1
+	
 
+	/*TCanvas *t2 = new TCanvas();
+	hist1->DrawNormalized()
+	hist2->DrawNormalized("same");*/
 	TCanvas *t3 = new TCanvas();
+	hist1->Add(hist2,-1);
 	hist1->Scale(1/hist1->Integral());
 	hist2->Scale(1/hist2->Integral());
-	hist1->Add(hist2,-1);
-	delete hist2;
-	//TF1* subfit = makeGaus(hist1);
+	hist2->SetLineColor(kRed);
+	TF1* subfit = makeGaus(hist1);
+	TF1* subfit2 = makeGaus(hist2);
+	subfit->SetLineColor(kBlue);
+	hist1->SetTitle(";PbGl ADC Signal;Arbitary Unit");
 	hist1->Draw();
-	t3->SaveAs(outname.c_str());
+	hist2->Draw("same");
+	subfit->Draw("same");
+	subfit2->Draw("same");	
+	Scalar sm= Scalar(subfit->GetParameter(2),subfit->GetParError(2))/Scalar(subfit->GetParameter(1),subfit->GetParError(1));
+	Scalar sm2= Scalar(subfit2->GetParameter(2),subfit2->GetParError(2))/Scalar(subfit2->GetParameter(1),subfit2->GetParError(1));
 	//subfit->Draw("same");
+	sm-=sm2;
+	string label = Form("#Delta#frac{#sigma}{#mu}=%0.2f#pm%0.2f",sm.value,sm.uncertainty);
+	myText(.5,.8,kBlack,label.c_str(),.08);
+	
 }
