@@ -164,7 +164,8 @@ TGraphErrors* graphConvert(const int SIZE,float*energy, float* mean, float* mean
 	p_mean->Clone()->Draw("AP");
 	lin->Draw("same");
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}+%0.3f",linearFactor,linearError,bterm),.04);
-	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}: %0.2f",chi),.04);
+	myText(.2,.725,kRed,Form("Linear: #NDF: %i",ndf),.04);
 	if (convert)
 	{
 		p_mean=unitConverter(p_mean);
@@ -282,7 +283,8 @@ TGraphErrors* doubleFileAnalysis(TGraphErrors* g1){
 	myText(.15,.86,kBlue,Form("Quad: E_{PbGl} = (%0.3f#pm %0.3f)*(E_{beam})^{2} + (%0.3f#pm %0.3f)*E_{beam}",nonLinearFactor,nonLinearError,polylinear,polylinearError),.04);
 	myText(.15,.815,kBlue,Form("Quad: #chi^{2}/NDF: %0.2f",chi2/ndf),.04);
 	myText(.15,.77,kRed,Form("Linear: E_{PbGl} = (%0.3f #pm %0.3f)*E_{beam}",linearFactor,linearError),.04);
-	myText(.15,.725,kRed,Form("Linear: #chi^{2}/NDF: %0.2f",chi/ndf),.04);
+	myText(.15,.725,kRed,Form("Linear: #chi^{2}: %0.2f",chi),.04);
+	myText(.2,.725,kRed,Form("Linear: #chi^{2}: %i",ndf),.04);
 	cout<<"Returning combined double"<<endl;
 	return g1;
 }
@@ -526,7 +528,7 @@ TGraphErrors* resolution(queue<Data>* temp){
 TGraphErrors* resolution(TGraphErrors* ehist){
 	TCanvas *canvas1 = new TCanvas();
 	//the stochastic funtion
-	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1]+.02*.02)",0,
+	TF1* eF = new TF1("eF","TMath::Sqrt([0]*[0]/x+[1]*[1])",0,
 		ehist->GetXaxis()->GetBinUpEdge(ehist->GetXaxis()->GetLast()));
 	eF->SetLineColor(kRed);
 	eF->SetParLimits(0,0,1000);
@@ -564,7 +566,8 @@ TGraphErrors* resolution(TGraphErrors* ehist){
 	points2016->Draw("Psame");
 	float chi = eF->GetChisquare();
 	int ndf = eF->GetNDF();
-	myText(.3,.7,kRed,Form("#chi^{2}/NDF:%0.2f",chi/ndf),.05);
+	myText(.3,.7,kRed,Form("#chi^{2}:%0.2f",chi),.05);
+	myText(.35,.7,kRed,Form("#NDF:%i",ndf),.05);
 	myText(.24,.85,kRed,Form("Stochastic: %0.3f#pm%0.3f ",eA,errors[0]),.05);
 	myText(.24,.8,kRed,Form("Constant: %0.3f#pm%0.3f",eB,errors[1]),.05);
 	TLegend *tl = new TLegend(.75,.75,.95,.95);
